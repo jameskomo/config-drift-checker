@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>config-drift-checker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#F4F6F8;--surface:#fff;--ink:#1A222D;--muted:#5B6672;--rule:#D6DCE3;--accent:#B85C1E;--pass:#2E7D4F;--fail:#B3362B}
+@media(prefers-color-scheme:dark){:root{--bg:#141922;--surface:#1B222D;--ink:#E6EAEF;--muted:#98A3B0;--rule:#2C3541;--accent:#E0823C;--pass:#5DBB84;--fail:#E06A5E}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Serif 4",Georgia,serif}
+.wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}h1,h2,h3{font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:44px;letter-spacing:-.02em}h2{font-size:26px;margin:52px 0 14px}h3{font-size:18px;margin:0 0 6px}
+.lede{font-size:20px;color:var(--muted);max-width:62ch;margin:14px 0 26px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.5}
+a{color:var(--accent)}.btn{display:inline-block;font-family:"Familjen Grotesk",sans-serif;font-weight:600;background:var(--accent);color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;margin:6px 8px 6px 0}.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px}.card .price{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:600;margin:6px 0 10px}.card ul{margin:0;padding-left:18px;font-size:15px}.card.hi{border-color:var(--accent)}
+.tag{display:inline-block;font-family:"Familjen Grotesk",sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:3px;padding:2px 7px;margin-bottom:8px}
+table{border-collapse:collapse;width:100%;background:var(--surface);border:1px solid var(--rule);border-radius:6px;font-size:15px}th,td{padding:9px 12px;border-bottom:1px solid var(--rule);text-align:left}th{font-family:"Familjen Grotesk",sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}tr:last-child td{border-bottom:0}.ok{color:var(--pass);font-family:"JetBrains Mono",monospace}.bad{color:var(--fail);font-family:"JetBrains Mono",monospace}
+small{color:var(--muted)}
+</style></head><body><div class="wrap">
+<h1>CI for your agent setup.</h1>
+<p class="lede">Your CLAUDE.md, skills and hooks are how your code gets written now — and they break silently when Claude Code ships, when the model behind an alias changes, or when a teammate edits a skill. config-drift-checker tells you <b>when</b>, <b>why</b>, and <b>what changed</b>.</p>
+<a class="btn" href="https://github.com/jameskomo/config-drift-checker">Get it — free, open source</a>
+<a class="btn ghost" href="https://jameskomo.github.io/config-drift-checker-demo/report.html">See a real report</a>
+
+<h2>Two commands, then it runs itself</h2>
+<pre class="mono">claude plugin marketplace add jameskomo/config-drift-checker
+claude plugin install config-drift-checker@jameskomo
+claude   →  /config-drift-checker:setup</pre>
+<p><code>setup</code> writes eval cases from your real CLAUDE.md, skills and hooks, smoke-runs them, and writes a GitHub workflow. From then on the suite runs on every Claude Code release and every PR that touches your setup: red or green check, PR comment, Slack alert, and an HTML report with every grader's reason. Your machine, your CI, your API key — nothing is sent anywhere.</p>
+
+<h2>What it found on day one</h2>
+<table><thead><tr><th>case (demo repo)</th><th>with the setup</th><th>without</th><th>meaning</th></tr></thead><tbody>
+<tr><td>guard hook blocks <code>git reset --hard</code></td><td class="ok">1.00</td><td class="bad">0.33</td><td>the hook is the only thing that reliably stops it</td></tr>
+<tr><td>add an endpoint across three files</td><td class="ok">1.00</td><td class="bad">0.50</td><td>the conventions skill carries real weight here</td></tr>
+<tr><td>Dockerfile request must not trigger the backend skill</td><td class="ok">1.00</td><td class="ok">1.00</td><td>no over-triggering</td></tr>
+</tbody></table>
+<small>Scores are the mean of 3 runs per case; the report shows every run, grader and reason.</small>
+
+<h2>Hosted — for teams who outgrow one repo</h2>
+<p>The open-source Action and plugin stay free. The hosted service adds what a results branch can't: history across all your repos and Claude Code versions, the score-over-versions chart, release-watch without GitHub Actions, alerts, and cross-agent runs (Codex, Cursor). Compute is always yours — agent runs bill to your own API key; you pay for the loop around them.</p>
+<div class="grid">
+<div class="card"><span class="tag">Starter</span><h3>One team, one repo</h3><div class="price">$49 / mo</div><ul><li>hosted history &amp; dashboard, 1 repo</li><li>release-watch without Actions</li><li>Slack / email alerts</li><li>90-day history</li></ul></div>
+<div class="card hi"><span class="tag">Team</span><h3>Platform teams</h3><div class="price">$149 / mo</div><ul><li>10 repos, cross-repo view</li><li>Claude Code + Codex + Cursor</li><li>ablation reports: what each skill is worth</li><li>1-year history, PR comments</li></ul></div>
+<div class="card"><span class="tag">Business</span><h3>100+ seats, audits</h3><div class="price">$399 / mo</div><ul><li>unlimited repos</li><li>hook-enforcement audit export</li><li>SAML, private runner</li><li>priority release-watch (&lt; 1 h)</li></ul></div>
+</div>
+<p style="margin-top:22px"><a class="btn" href="mailto:progressoverperfection01@gmail.com?subject=config-drift-checker%20hosted%20beta&body=Repos%20with%20a%20Claude%20Code%20setup%3A%20%0AAgents%20we%20use%20(Claude%20Code%2FCodex%2FCursor)%3A%20%0ATeam%20size%3A%20%0AWhat%20we%27d%20want%20first%3A%20">Request the hosted beta</a> <small>Design partners get their first suite written with them, and the beta at Starter price.</small></p>
+
+<h2>Read more</h2>
+<p><a href="user-guide.html">User guide</a> · <a href="architecture.html">Architecture</a> · <a href="eval-format-and-runner.html">Eval format &amp; runner</a> · <a href="runbook.html">Runbook</a> · <a href="security.html">Security</a> · <a href="https://github.com/jameskomo/config-drift-checker/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/jameskomo/config-drift-checker/blob/main/LICENSE">Licence: FSL-1.1-Apache-2.0</a></p>
+</div></body></html>
