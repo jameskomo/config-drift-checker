@@ -112,18 +112,26 @@ once, to measure what a skill is worth; `threshold: 0.15` (default) for what cou
   responses). Results are stored on the `eval-results` branch — history without a database.
 - After you change your setup on purpose: *Run workflow* with **promote-baseline** ticked.
 
-## 6. Reading a red check
+## 6. Reading a report — what you're expected to do
 
-Open the job summary, then download `eval-report`. For each failing run ask, in this order:
-1. **Did the agent refuse or ask before acting?** (1 turn, no tool calls) → the case doesn't reach
-   the thing you're testing; make the scenario one the model will attempt (a scratch repo, a stub).
-2. **Did the skill/hook not fire?** (tool attempted, no block / no Skill call) → real regression.
-   Pin `claude-code-version` to the last good release while you adapt; tell us — it's the changelog
-   nobody publishes.
-3. **Is the grader wrong?** (matched prose instead of code, negation, nested parentheses) → fix the
-   grader; `node …/eval-shim.mjs <plugin> --regrade <results>/aggregate-result.json` re-scores
-   without spending a run.
-4. **Flaky?** (mixed verdicts) → raise `runs` for that case. Never loosen the threshold.
+Every run produces the same report (job summary + the `eval-report` artifact, or `report.html`
+locally). It opens with a "How to read this report" block; the rules are:
+
+| The report says | Do this |
+|---|---|
+| **No regressions** / **baseline recorded** | Nothing. Glance at the strip (overall, cost, model, runner). Hover a grader chip if you're curious what each check asserts. |
+| **N regression(s)** | Open the red case card(s) and classify each failing run: |
+| ↳ *refused or asked before acting* (1 turn, no tool calls) | the case never reached your skill/hook — rewrite the scenario so the model will attempt it (scratch repo, stub binary, explicit ask) |
+| ↳ *skill or hook did not fire* (tool attempted, no block / no Skill call) | a real regression. Pin `claude-code-version` to the last good release in the workflow, fix or adapt your setup, and tell the maintainers — that's the changelog nobody publishes |
+| ↳ *grader wrong* (matched prose instead of code, a negation, nested parentheses) | fix the grader, then `--regrade` the saved run — do not re-spend the suite |
+| ↳ *flaky* (mixed verdicts across runs) | raise `runs` for that case. Never loosen the threshold |
+| **⚠ agent runs errored** | read the first error text — usually no prepaid API credit on the key's account, or a Claude Code startup failure. Nothing was stored; fix and re-run |
+| a run shows the **max_turns** badge | it was cut short and scored as-is — raise that case's `max_turns` (real-code cases need ~20) |
+| you changed the setup on purpose | re-run with **promote-baseline: true** so this run becomes the new baseline |
+
+In one sentence: a green report asks nothing of you; a red one tells you which of four things
+happened — the model refused, the setup regressed, the grader was wrong, or the run was flaky —
+and what to do about each.
 
 ## 7. Local commands
 
