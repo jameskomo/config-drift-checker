@@ -66,14 +66,14 @@ footer{border-top:1px solid var(--rule);padding:28px 0 60px;color:var(--muted);f
 <div class="wrap"><div class="open">
   <div>
     <h1 class="h">Your Claude Code setup is code. Nobody tests it.</h1>
-    <p class="lede">config-drift-checker runs tests against your CLAUDE.md, skills and hooks every time Claude Code ships a release, and tells you the day one of them stops working.</p>
-    <p class="sub">Open source. Runs in your own GitHub Actions with your own API key. Nothing leaves your repo.</p>
+    <p class="lede">config-drift-checker tests your CLAUDE.md, skills and hooks every time Claude Code ships a release, and tells you as soon as one of them stops working.</p>
+    <p class="sub">Open source. It runs in your own GitHub Actions with your own API key, and nothing leaves your repository.</p>
     <a class="cta" href="https://github.com/jameskomo/config-drift-checker">Get it on GitHub</a>
     <a class="cta quiet" href="https://jameskomo.github.io/config-drift-checker-demo/report.html">Open a real report</a>
   </div>
   <div class="artifact" aria-label="Example of a failed check and PR comment">
     <div class="bar"><b>config-drift-checker</b> <span>· pull request #14 · after Claude Code 2.1.248</span></div>
-    <div class="check"><span class="dot red"></span><span class="name">eval</span><span class="why">1 case regressed against baseline</span></div>
+    <div class="check"><span class="dot red"></span><span class="name">eval</span><span class="why">1 case regressed against the baseline</span></div>
     <div class="comment">
       <div class="who"><b>config-drift-checker</b> commented 6 minutes ago</div>
       <table class="diff"><thead><tr><th></th><th>case</th><th>before</th><th>after</th><th>failing graders</th></tr></thead><tbody>
@@ -82,7 +82,7 @@ footer{border-top:1px solid var(--rule);padding:28px 0 60px;color:var(--muted);f
         <tr><td><span class="pill g"></span></td><td>negative-dockerfile-request</td><td class="n">1.00</td><td class="n">1.00</td><td></td></tr>
       </tbody></table>
     </div>
-    <div class="foot">Full report in the eval-report artifact: every run, every grader, the tool calls and the response.</div>
+    <div class="foot">The full report is in the eval-report artifact: every run, every grader, the tool calls and the response.</div>
   </div>
 </div></div>
 
@@ -93,28 +93,28 @@ claude plugin install config-drift-checker@jameskomo
 claude
 <span class="c">&gt;</span> /config-drift-checker:setup</pre>
   <div class="steps">
-    <div><b>It reads what you already have</b><p>Your CLAUDE.md, your skills, your hooks. From those it writes the first test cases: a real change to your code, a request that must not trigger a skill, a command the guard hook must block.</p></div>
-    <div><b>It runs the real agent</b><p>Each case runs in a throwaway copy of your repo, several times, with your plugin loaded. Every grader records a verdict and a reason. A judge model explains what it saw.</p></div>
-    <div><b>It watches releases for you</b><p>A small job checks npm every six hours. When Claude Code ships, the suite runs against the new version, compares with your baseline, and turns the check red if something moved. Slack if you want it.</p></div>
+    <div><b>It reads what you already have</b><p>Your CLAUDE.md, your skills and your hooks. From those it writes the first test cases: a real change to your code, a request that must not trigger a skill, and a command the guard hook must block.</p></div>
+    <div><b>It runs the real agent</b><p>Each case runs several times in a throwaway copy of your repository, with your plugin loaded. Every grader records a verdict and a reason, and a judge model explains what it saw.</p></div>
+    <div><b>It watches releases for you</b><p>A small job checks npm every six hours. When Claude Code ships, the suite runs against the new version, compares the result with your baseline, and turns the check red if something has moved. It can post to Slack as well.</p></div>
   </div>
-  <p style="margin-top:22px">Already have cases, or just want the check in an existing pipeline? One step: <span class="mono">uses: jameskomo/config-drift-checker/action@v0</span>. The cases are in Anthropic's own <span class="mono">claude plugin eval</span> format, so there is nothing of ours to learn and nothing to migrate away from.</p>
+  <p style="margin-top:22px">If you already have cases, or only want the check in an existing pipeline, it is one step: <span class="mono">uses: jameskomo/config-drift-checker/action@v0</span>. The cases use Anthropic's own <span class="mono">claude plugin eval</span> format, so there is nothing of ours to learn and nothing to migrate away from later.</p>
 </div></div></section>
 
 <section id="found"><div class="wrap sec"><div class="rail">What it found</div><div>
-  <h2 class="h">Day one, on a small Spring Boot service.</h2>
-  <p>The interesting number is the second column. The same cases were run with the team's setup loaded and with it removed. The difference is what each piece of the setup is actually worth.</p>
-  <table class="find"><thead><tr><th>case</th><th>with the setup</th><th>without</th><th>so</th></tr></thead><tbody>
-    <tr><td>The guard hook must block <span class="mono">git reset --hard</span></td><td class="n g">1.00</td><td class="n r">0.33</td><td>Without the hook the command usually runs. The hook is doing real work.</td></tr>
+  <h2 class="h">What it found on day one, on a small Spring Boot service.</h2>
+  <p>The interesting number is in the second column. The same cases were run with the team's setup loaded and with it removed; the difference is what each part of the setup is actually worth.</p>
+  <table class="find"><thead><tr><th>case</th><th>with the setup</th><th>without</th><th>What it means</th></tr></thead><tbody>
+    <tr><td>The guard hook must block <span class="mono">git reset --hard</span></td><td class="n g">1.00</td><td class="n r">0.33</td><td>Without the hook, the command usually runs. The hook is doing real work.</td></tr>
     <tr><td>Add an endpoint across service, DTO and controller</td><td class="n g">1.00</td><td class="n r">0.50</td><td>The conventions skill changes how the code comes out. Keep it.</td></tr>
     <tr><td>A Dockerfile request must not wake the backend skill</td><td class="n g">1.00</td><td class="n g">1.00</td><td>No over-triggering. Nothing to fix.</td></tr>
   </tbody></table>
-  <p style="margin-top:16px;color:var(--muted);font-size:15px">Three runs per case. The report shows each run, each grader and the judge's reason, so a score is never the end of the conversation. <a href="https://jameskomo.github.io/config-drift-checker-demo/report.html">See the report</a>.</p>
-  <p>One thing we learned early: a hook test once passed because the model refused the command on its own, before the hook ever ran. Same score, different cause. That is why the report keeps the reasons.</p>
+  <p style="margin-top:16px;color:var(--muted);font-size:15px">Three runs per case. The report shows each run, each grader and the judge's reason, so a score is never the end of the story. <a href="https://jameskomo.github.io/config-drift-checker-demo/report.html">See the report</a>.</p>
+  <p>One thing we learned early: a hook test once passed because the model refused the command on its own, before the hook had run. Same score, different cause. That is why the report keeps the reasons.</p>
 </div></div></section>
 
 <section id="hosted"><div class="wrap sec"><div class="rail">Hosted</div><div>
-  <h2 class="h">When one repo is not enough.</h2>
-  <p>The plugin and the Action stay free and open. The hosted service is for teams who run this across many repos and want to see all of it in one place: history across every repo and every Claude Code version, the chart of scores over releases, release-watch without GitHub Actions, and the same suite run against Codex and Cursor as well.</p>
+  <h2 class="h">When one repository is not enough.</h2>
+  <p>The plugin and the Action stay free and open. The hosted service is for teams that run this across many repositories and want to see all of it in one place: history across every repository and every Claude Code version, a chart of scores over releases, release-watch without GitHub Actions, and the same suite run against Codex and Cursor.</p>
   <p>Agent runs always bill to your own API key. You pay us for the loop around them, never for the model.</p>
   <table class="price"><thead><tr><th></th><th>Starter<span class="amt">$49<small> / month</small></span></th><th>Team<span class="amt">$149<small> / month</small></span></th><th>Business<span class="amt">$399<small> / month</small></span></th></tr></thead><tbody>
     <tr><td>Repos</td><td>1</td><td>10</td><td>unlimited</td></tr>
@@ -129,6 +129,6 @@ claude
 
 <footer><div class="wrap">
   <a href="user-guide.html">User guide</a><a href="architecture.html">Architecture</a><a href="eval-format-and-runner.html">Eval format</a><a href="runbook.html">Runbook</a><a href="security.html">Security</a><a href="https://github.com/jameskomo/config-drift-checker/blob/main/PRIVACY.md">Privacy</a><a href="https://github.com/jameskomo/config-drift-checker/blob/main/LICENSE">Licence</a>
-  <div style="margin-top:12px">FSL-1.1-Apache-2.0. Free to use and self-host. Not for resale as a competing service; becomes Apache-2.0 two years after each release.</div>
+  <div style="margin-top:12px">FSL-1.1-Apache-2.0. Free to use and self-host. Not for resale as a competing service; it becomes Apache-2.0 two years after each release.</div>
 </div></footer>
 </body></html>
