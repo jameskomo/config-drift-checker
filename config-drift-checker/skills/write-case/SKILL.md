@@ -45,6 +45,6 @@ to act on — a git repo, a file, a branch), `context.add_dirs` (fixtures).
    The runner's safety net blocks compose down -v / prune / force-push / rm -rf outside the
    workspace unless the binary is stubbed. Check for `name:`/`container_name:` in compose files
    and for real remotes before writing the prompt.
-9. Turn budgets: real-code cases need `max_turns: 20` (read → edit 2–4 files → test); single-file
+9. Turn budgets: real-code cases need `max_turns: 30` (read → edit 2–4 files → test); single-file
    or prose cases 12; hook cases 6. Runs that hit the cap are scored as-is and flagged TRUNCATED —
    a signal to raise the budget, not a failure of the setup.
