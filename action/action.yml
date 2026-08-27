@@ -62,7 +62,7 @@ runs:
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
         errs=$(node -p "const a=require('$out/aggregate-result.json').aggregates||{}; (a.erroredRuns||0)+'/'+(a.totalRuns||0)+' '+(a.partialReason||'')")
-        case "$errs" in 0/*) ;; *) echo "::error::agent runs errored — $errs. Nothing is stored as a baseline. Common cause: the API key's account has no prepaid credits (console.anthropic.com → Billing)."; echo "errored=true" >> "$GITHUB_OUTPUT"; exit 1;; esac
+        case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored — $errs. Nothing will be stored as a baseline. Common causes: no prepaid API credit on the key's account (console.anthropic.com → Billing), or a Claude Code startup failure — see the eval-report artifact's stderrTail."; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
 
     - id: baseline
       shell: bash
@@ -80,14 +80,14 @@ runs:
       shell: bash
       run: |
         set +e
-        if [ "${{ steps.baseline.outputs.exists }}" = "true" ] && [ "${{ inputs.promote-baseline }}" != "true" ]; then
+        if [ "${{ steps.run.outputs.errored }}" != "true" ] && [ "${{ steps.baseline.outputs.exists }}" = "true" ] && [ "${{ inputs.promote-baseline }}" != "true" ]; then
           node "${{ github.action_path }}/../config-drift-checker/tools/eval-diff.mjs" "$RUNNER_TEMP/baseline.json" "${{ steps.run.outputs.result }}" \
             --threshold "${{ inputs.threshold }}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
           code=$?
           echo "regressed=$(node -p "require('$RUNNER_TEMP/diff.json').regressed")" >> "$GITHUB_OUTPUT"
         else
           node "${{ github.action_path }}/../config-drift-checker/tools/eval-diff.mjs" "${{ steps.run.outputs.result }}" "${{ steps.run.outputs.result }}" --md "$RUNNER_TEMP/diff.md" >/dev/null
-          sed -i '1s/.*/## Agent-config eval: baseline recorded (no comparison yet)/' "$RUNNER_TEMP/diff.md"
+          if [ "${{ steps.run.outputs.errored }}" = "true" ]; then sed -i '1s/.*/## Agent-config eval: ⚠ agent runs errored — nothing stored/' "$RUNNER_TEMP/diff.md"; else sed -i '1s/.*/## Agent-config eval: baseline recorded (no comparison yet)/' "$RUNNER_TEMP/diff.md"; fi
           echo "regressed=0" >> "$GITHUB_OUTPUT"; code=0
         fi
         { echo "**Runner:** ${{ steps.runner.outputs.runner }} · **Claude Code:** ${{ steps.install.outputs.version }}"; echo; cat "$RUNNER_TEMP/diff.md"; } >> "$GITHUB_STEP_SUMMARY"
@@ -110,6 +110,7 @@ runs:
         retention-days: 90
 
     - id: store
+      if: steps.run.outputs.errored != 'true'
       shell: bash
       env: { GH_TOKEN: '${{ inputs.github-token }}' }
       run: |
@@ -141,4 +142,5 @@ runs:
     - id: gate
       shell: bash
       run: |
+        if [ "${{ steps.run.outputs.errored }}" = "true" ]; then echo "::error::agent runs errored; see the eval-report artifact (stderrTail per run)"; exit 1; fi
         if [ "${{ steps.diff.outputs.regressed }}" != "0" ]; then echo "::error::${{ steps.diff.outputs.regressed }} case(s) regressed vs baseline"; exit 1; fi

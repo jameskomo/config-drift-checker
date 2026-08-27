@@ -150,7 +150,7 @@ async function runAgent(c, arm) {
   for (const f of files) { try { const s = await fs.stat(path.join(ws, f)); if (s.size < 200_000) fileContents[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
   if (cfg) await fs.rm(cfg, { recursive: true, force: true });
   await fs.rm(ws, { recursive: true, force: true });
-  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !!result?.is_error || code !== 0, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
+  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !!result?.is_error || code !== 0, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
 }
 async function snapshot(dir) {
   const m = new Map();
@@ -261,10 +261,10 @@ for (const c of cases) {
       }
       const scored = graders.filter((g) => g.scored && g.score !== null);
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
-      if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.response || run.stderr || 'unknown error').trim().slice(0, 200); }
+      if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.response || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
-      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? run.stderr : undefined });
-      if (run.isError) log(`    ERROR: ${(run.response || run.stderr || 'unknown error').trim().slice(0, 160)}`);
+      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
+      if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.response || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
     }
   }
