@@ -37,6 +37,11 @@ jobs:
           gh release create "v$next" --title "v$next" --generate-notes --latest
           echo "released v$next (was $cur, $level)"
           echo "version=$next" >> "$GITHUB_OUTPUT"
+      - name: sync the Marketplace mirror now (only if MIRROR_TOKEN is set; otherwise its 30-min schedule catches up)
+        env: { GH_TOKEN: '${{ secrets.MIRROR_TOKEN }}' }
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then echo "MIRROR_TOKEN not set; mirror syncs on schedule"; exit 0; fi
+          gh workflow run sync.yml -R jameskomo/config-drift-checker-action && echo "mirror sync dispatched"
       - name: npm publish (only if NPM_TOKEN is set)
         env: { NPM_TOKEN: '${{ secrets.NPM_TOKEN }}' }
         run: |

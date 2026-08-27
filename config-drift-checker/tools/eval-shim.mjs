@@ -135,12 +135,15 @@ async function runAgent(c, arm) {
   const t0 = Date.now();
   const { stdout, stderr, code, timedOut } = await exec('claude', args, { cwd: ws, env, timeout: c.timeout });
   const events = stdout.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-  const texts = [], toolUses = [];
+  const texts = [], toolUses = [], toolResults = [];
   let result = null;
   for (const e of events) {
     if (e.type === 'assistant') for (const b of e.message?.content ?? []) {
       if (b.type === 'text' && b.text?.trim()) texts.push(b.text);
       if (b.type === 'tool_use') toolUses.push({ tool: b.name, input: b.input });
+    }
+    if (e.type === 'user') for (const b of e.message?.content ?? []) {
+      if (b.type === 'tool_result') { const c = Array.isArray(b.content) ? b.content.map((x) => x.text ?? '').join('\n') : String(b.content ?? ''); toolResults.push({ error: !!b.is_error, text: c.slice(0, 600) }); }
     }
     if (e.type === 'result') result = e;
   }
@@ -150,7 +153,7 @@ async function runAgent(c, arm) {
   for (const f of files) { try { const s = await fs.stat(path.join(ws, f)); if (s.size < 200_000) fileContents[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
   if (cfg) await fs.rm(cfg, { recursive: true, force: true });
   await fs.rm(ws, { recursive: true, force: true });
-  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !result || !!result.is_error, truncated: !!result && !result.is_error && (code !== 0 || String(result.subtype ?? '').startsWith('error_max_turns')), resultSubtype: result?.subtype ?? null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
+  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, toolResults, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !result || !!result.is_error, truncated: !!result && !result.is_error && (code !== 0 || String(result.subtype ?? '').startsWith('error_max_turns')), resultSubtype: result?.subtype ?? null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
 }
 async function snapshot(dir) {
   const m = new Map();
@@ -182,7 +185,7 @@ function targetText(g, run) {
   const t = g.target ?? 'last_message';
   if (t === 'last_message') return run.lastMessage; // all assistant text for the run (robust to sub-agent chatter); 'final_message' = the closing message only
   if (t === 'final_message') return run.finalMessage;
-  if (t === 'trace') return run.trace.map((e) => JSON.stringify(e)).join('\n');
+  if (t === 'trace') return run.trace.length ? run.trace.map((e) => JSON.stringify(e)).join('\n') : [...run.toolUses.map((u) => 'TOOL_USE ' + JSON.stringify(u)), ...(run.toolResults ?? []).map((r) => 'TOOL_RESULT' + (r.error ? '(error) ' : ' ') + r.text), ...run.texts].join('\n');
   if (t === 'files') return Object.entries(run.fileContents).map(([f, c]) => `### ${f}\n${c}`).join('\n\n'); // changed/created files only
   return run.lastMessage;
 }
@@ -237,7 +240,7 @@ function fromSaved(r) {
   const didWork = toolUses.length > 0 && !!(r.response && r.response.trim());
   const isError = !!r.isError && !didWork && !r.truncated;
   const truncated = !!r.truncated || (!!r.isError && didWork);
-  return { lastMessage: r.response ?? '', finalMessage: r.response ?? '', texts: [r.response ?? ''], toolUses, files: r.filesChanged ?? [], fileContents: r.fileContents ?? {}, trace: [], costUsd: 0, inputTokens: r.inputTokens, outputTokens: r.outputTokens, numTurns: r.numTurns, isError, truncated, resultSubtype: r.resultSubtype ?? (truncated ? 'error_max_turns (inferred)' : null), exitCode: r.exitCode ?? null, timedOut: r.timedOut, durationMs: r.durationMs, stderr: '', model: r.model };
+  return { lastMessage: r.response ?? '', finalMessage: r.response ?? '', texts: [r.response ?? ''], toolUses, toolResults: r.toolResults ?? [], files: r.filesChanged ?? [], fileContents: r.fileContents ?? {}, trace: [], costUsd: 0, inputTokens: r.inputTokens, outputTokens: r.outputTokens, numTurns: r.numTurns, isError, truncated, resultSubtype: r.resultSubtype ?? (truncated ? 'error_max_turns (inferred)' : null), exitCode: r.exitCode ?? null, timedOut: r.timedOut, durationMs: r.durationMs, stderr: '', model: r.model };
 }
 
 // ---------- drive ----------
@@ -268,7 +271,7 @@ for (const c of cases) {
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
       if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.lastMessage || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
-      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
+      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), toolResults: run.toolResults ?? [], prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
       if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
       if (run.truncated) { truncatedRuns++; log(`    TRUNCATED (${run.resultSubtype || 'exit ' + run.exitCode}, ${run.numTurns} turns): scored as-is — raise max_turns for this case`); }
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
