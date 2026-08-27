@@ -84,6 +84,7 @@ details{margin:4px 0}summary{cursor:pointer;font-size:13px;color:var(--muted)}su
 code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.9em;background:var(--code);padding:1px 4px;border-radius:3px}
 pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);border-radius:4px;padding:10px;font-size:12.5px;max-height:420px;overflow:auto;margin:6px 0 0}
 .muted{color:var(--muted)}
+.howto{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:8px 14px;margin:0 0 18px;font-size:13.5px}.howto summary{font-weight:600;color:var(--ink)}.howto ol{margin:8px 0 4px;padding-left:20px}.howto li{margin:4px 0}
 #failing-only:checked ~ .cases .run.ok{display:none}.filter{font-size:13px;color:var(--muted);margin:0 0 12px;display:block}
 @media (max-width:640px){.runs{grid-template-columns:1fr}}`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(cur.suite?.name ?? 'eval')} · eval report</title>
@@ -93,6 +94,14 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 ${base ? `<span>vs baseline <b class="${regressed ? 'fail' : ''}">${regressed} regressed</b> (threshold ${threshold})</span>` : ''}
 <span>passed <b>${a.passed ?? '—'}</b> / ${(cur.cases ?? []).length}</span>${a.erroredRuns ? `<span class="big fail" style="font-size:14px">⚠ ${esc(a.partialReason)}</span>` : ''}<span>cost <b>${money(a.costUsd)}</b></span><span>model <b>${esc([...models].join(', ') || '?')}</b></span>
 <span>${cur.shim ? 'shim' : 'official'} runner</span><span>${esc(cur.generatedAt ?? '')}</span>${cur.regradeOf ? '<span>regrade</span>' : ''}</div>
+<details class="howto"><summary>How to read this report — and what to do</summary>
+<ol>
+<li><b>Header says no regressions / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
+<li><b>Header says N regression(s):</b> open the red case(s) and classify each failing run: <i>refused or asked before acting</i> (1 turn, no tool calls) → the case never reached the skill/hook, rewrite the scenario; <i>skill/hook did not fire</i> → a real regression: pin <code>claude-code-version</code> to the last good release, fix the setup, tell the maintainers; <i>grader wrong</i> (matched prose, a negation, nested parentheses) → fix the grader and re-score with <code>--regrade</code>; <i>flaky</i> (mixed verdicts across runs) → raise <code>runs</code>, never the threshold.</li>
+<li><b>Header says agent runs errored:</b> read the error text — usually no prepaid API credit or a Claude Code startup failure. Nothing was stored; fix and re-run.</li>
+<li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is → raise that case's <code>max_turns</code>.</li>
+<li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
+</ol></details>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ vs base</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>runs</th><th>cost</th></tr></thead><tbody>${rows}</tbody></table></div>
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter">☐ show failing runs only (click to toggle)</label>
 <div class="cases">${sections}</div>
