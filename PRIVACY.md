@@ -16,4 +16,4 @@
 - Anthropic's handling of the prompts and responses in those API calls is governed by
   Anthropic's own policies, under your agreement with them: https://www.anthropic.com/legal/privacy
 
-Questions: progressoverperfection01@gmail.com
+Questions: james.komoh@gmail.com
