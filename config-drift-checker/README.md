@@ -6,8 +6,8 @@ Site: https://jameskomo.github.io/config-drift-checker/ · Demo report: https://
 written now — and they break silently when Claude Code ships (25 releases last month), when the
 model behind an alias changes, or when a teammate edits a skill. config-drift-checker turns "what my
 setup must do" into test cases, runs the real agent against them on every release and every PR,
-diffs the result against your baseline, and tells you the day something regresses — with the
-reason, not just a score.
+diffs the result against your baseline, and tells you as soon as something regresses, with the
+reason and not just a score.
 
 Works with any codebase (Spring Boot, Nuxt, Django, Go — it tests the *agent's behaviour*, not
 your app). Runs on your machine and your GitHub Actions, with your Anthropic API key. Nothing is
