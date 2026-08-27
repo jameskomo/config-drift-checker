@@ -261,10 +261,10 @@ for (const c of cases) {
       }
       const scored = graders.filter((g) => g.scored && g.score !== null);
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
-      if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.response || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
+      if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.lastMessage || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
       entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
-      if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.response || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
+      if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
     }
   }
