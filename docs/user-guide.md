@@ -17,7 +17,7 @@ sent to us.
 claude plugin marketplace add jameskomo/config-drift-checker
 claude plugin install config-drift-checker@jameskomo
 ```
-(Once listed in Anthropic's official marketplace: `claude plugin install config-drift-checker`.)
+(Once accepted into Anthropic's community marketplace: `claude plugin marketplace add anthropics/claude-plugins-community` then `claude plugin install config-drift-checker@claude-community`.)
 
 You now have three skills in Claude Code: `/config-drift-checker:setup`, `/config-drift-checker:run`,
 `/config-drift-checker:write-case`, and the runner scripts inside the plugin. Nothing has touched any
