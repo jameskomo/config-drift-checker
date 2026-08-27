@@ -131,6 +131,15 @@ dependencies, theme-aware. The shim writes `report.html` beside every `aggregate
 (including regrades) - the JSON is the source of truth, the HTML is derived and reproducible; the
 Action uploads it as the `eval-report` workflow artifact and links it from the job summary. CLI: `node tools/eval-report.mjs current.json [--baseline b.json] [--out r.html]`.
 
+## 5c. Dashboard (`tools/eval-dashboard.mjs`)
+
+Reads a history directory (the results branch's `history/*.json`, or a local `evals/results/`),
+optionally a baseline, and writes one HTML file: latest status, a card per case (score, delta vs
+baseline, sparkline, description), an SVG line chart of score per case over runs with the Claude
+Code version on the x-axis (fixed categorical colours, direct labels and a legend, validated for
+colour-vision deficiency on both themes), and the run list with cost and links to each run's report.
+The Action writes it as `docs/index.html` on the results branch when `pages` is true.
+
 ## 6. Results branch layout
 
 ```
@@ -138,6 +147,9 @@ eval-results (orphan)
   baseline.json                         # promoted result
   history/<UTC stamp>-cc<version>-<official|shim>.json
   .claude-code-version
+  docs/index.html                       # dashboard (GitHub Pages: source = this branch, /docs)
+  docs/report.html                      # latest run's report
+  docs/history/<run>.html               # every run's report
 ```
 
 Written by the Action with a bot identity; one commit per run. The branch is plain JSON, so any tool can read it.

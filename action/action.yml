@@ -16,6 +16,7 @@ inputs:
   promote-baseline:      { description: 'Overwrite baseline.json with this run (use on the first run or after an intentional change)', default: 'false' }
   slack-webhook-url:     { description: 'Incoming-webhook URL to notify on regression (pass a secret)', default: '' }
   github-token:          { description: 'Token for pushing results and commenting on PRs', default: '${{ github.token }}' }
+  pages:                 { description: 'Also write docs/index.html (dashboard), docs/report.html and docs/history/<run>.html to the results branch, for GitHub Pages (source: results branch, /docs)', default: 'true' }
 
 outputs:
   regressed:       { description: 'Number of regressed/missing cases', value: '${{ steps.diff.outputs.regressed }}' }
@@ -120,9 +121,19 @@ runs:
         git fetch origin "$br" 2>/dev/null && git worktree add "$wt" "origin/$br" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$br" && git rm -rfq . 2>/dev/null || true); }
         cd "$wt"; mkdir -p history
         stamp=$(date -u +%Y%m%dT%H%M%SZ)
-        cp "${{ steps.run.outputs.result }}" "history/${stamp}-cc${{ steps.install.outputs.version }}-${{ steps.runner.outputs.runner }}.json"
+        name="${stamp}-cc${{ steps.install.outputs.version }}-${{ steps.runner.outputs.runner }}"
+        cp "${{ steps.run.outputs.result }}" "history/${name}.json"
         if [ "${{ steps.baseline.outputs.exists }}" != "true" ] || [ "${{ inputs.promote-baseline }}" = "true" ]; then cp "${{ steps.run.outputs.result }}" baseline.json; fi
         echo "${{ steps.install.outputs.version }}" > .claude-code-version
+        if [ "${{ inputs.pages }}" = "true" ]; then
+          mkdir -p docs/history
+          cp "$RUNNER_TEMP/eval-report.html" "docs/history/${name}.html"
+          cp "$RUNNER_TEMP/eval-report.html" docs/report.html
+          node "${{ github.action_path }}/../config-drift-checker/tools/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "${{ github.repository }}" >/dev/null
+          sed -i 's#href="\([^"]*\)\.html"#href="history/\1.html"#' docs/index.html 2>/dev/null || true
+          touch docs/.nojekyll
+          echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $br, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
+        fi
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "eval ${stamp} cc${{ steps.install.outputs.version }} regressed=${{ steps.diff.outputs.regressed }}" || true
         git push -q origin "HEAD:$br"

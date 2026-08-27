@@ -135,6 +135,17 @@ In one sentence: a green report asks nothing of you; a red one tells you which o
 happened — the model refused, the setup regressed, the grader was wrong, or the run was flaky —
 and what to do about each.
 
+## 6b. The dashboard (history across runs and versions)
+
+Every CI run also writes, to the `eval-results` branch under `docs/`: `index.html`, a dashboard
+built from the whole history (score per case over Claude Code versions, the latest status, a card
+per case with its trend and delta against the baseline, the run list with cost and a link to each
+run's report), plus `report.html` (latest) and `history/<run>.html` (every run). To publish it:
+repo → Settings → Pages → Source: branch `eval-results`, folder `/docs`. The demo's is at
+https://jameskomo.github.io/config-drift-checker-demo/ . Locally:
+`node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --out dashboard.html`.
+Turn it off with `pages: 'false'` on the Action.
+
 ## 7. Local commands
 
 ```bash
@@ -143,6 +154,7 @@ node <plugin-root>/tools/eval-shim.mjs <plugin> --scaffold                 # eve
 node <plugin-root>/tools/eval-shim.mjs <plugin> --case 'guard*' --runs 1 --ablation none --scaffold
 node <plugin-root>/tools/eval-diff.mjs baseline.json current.json          # exit 1 on regression
 node <plugin-root>/tools/eval-report.mjs current.json --baseline baseline.json
+node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --out dashboard.html   # history → dashboard
 ```
 `<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every run
 writes `aggregate-result.json` + `report.html` into `<your-plugin>/evals/results/<timestamp>/`.

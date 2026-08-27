@@ -82,16 +82,17 @@ export function renderReport(cur, base = null, opt = {}) {
 h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}h1 small{font-weight:500;color:var(--muted);font-size:13px;margin-left:10px;letter-spacing:.04em;text-transform:uppercase}
 .strip{display:flex;gap:26px;flex-wrap:wrap;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--muted);margin:10px 0 24px}.strip b{color:var(--ink);font-weight:500}
 .big{font-size:22px;font-weight:600}.big.pass{color:var(--pass)}.big.fail{color:var(--fail)}
+.status{display:inline-flex;align-items:center;font-family:"Familjen Grotesk",sans-serif;font-weight:600;font-size:13px;padding:3px 10px;border-radius:4px}.status.pass{background:var(--pass-bg);color:var(--pass)}.status.fail{background:var(--fail-bg);color:var(--fail)}
 .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface);margin:0 0 30px}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
 td{padding:9px 12px;border-bottom:1px solid var(--rule)}tr:last-child td{border-bottom:0}td.num{text-align:right;font-family:"JetBrains Mono",monospace;font-size:13px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted)}.dot.pass,.dot.stable,.dot.improved{background:var(--pass)}.dot.fail,.dot.regressed{background:var(--fail)}.dot.new{background:var(--accent)}
 tr.st-regressed td,tr.st-fail td{background:var(--fail-bg)}
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-.case{margin:0 0 34px;padding-top:12px;border-top:1px solid var(--rule)}.case h2{font-size:18px;margin:0 0 4px}.case h2 small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.case{margin:0 0 40px;padding-top:18px;border-top:2px solid var(--rule)}.case h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}.case h2 small{display:block;font-weight:400;color:var(--muted);font-size:13px}
 .tags span{display:inline-block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:3px;padding:1px 6px;margin-right:6px}
 .runs{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px}
-.run{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--muted);border-radius:6px;padding:10px 12px;min-width:0}.run.ok{border-left-color:var(--pass)}.run.bad{border-left-color:var(--fail)}
+.run{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--muted);border-radius:6px;padding:12px 14px;min-width:0;box-shadow:0 1px 0 rgba(0,0,0,.03)}.run.ok{border-left-color:var(--pass)}.run.bad{border-left-color:var(--fail)}
 .run header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13px}.arm{font-family:"JetBrains Mono",monospace;font-size:11px;padding:1px 6px;border-radius:3px;background:var(--code)}.arm.without{opacity:.8}
 .score{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:15px}.meta{color:var(--muted);font-size:12px;margin-left:auto}.err{color:var(--fail);font-style:normal}
 .chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}.chip{font-size:12px;padding:2px 7px;border-radius:3px;background:var(--code);cursor:help}.chip.pass{background:var(--pass-bg);color:var(--pass)}.chip.fail{background:var(--fail-bg);color:var(--fail)}.chip.ind{opacity:.7}.chip i{font-style:normal;font-size:9px;margin-left:4px;letter-spacing:.05em}
@@ -107,7 +108,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(cur.suite?.name ?? 'eval')} · eval report</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"><style>${css}</style></head><body><div class="wrap">
 <h1>${esc(cur.suite?.name ?? 'eval')}<small>eval report</small></h1>
-<div class="strip"><span class="big ${a.overallScore === 1 ? 'pass' : 'fail'}">${f(a.overallScore)}</span>
+<div class="strip"><span class="status ${a.erroredRuns ? 'fail' : regressed ? 'fail' : a.overallScore === 1 ? 'pass' : 'fail'}">${a.erroredRuns ? 'runs errored' : regressed ? regressed + ' regression' + (regressed === 1 ? '' : 's') : a.overallScore === 1 ? 'all cases pass' : 'below 1.00'}</span><span class="big ${a.overallScore === 1 ? 'pass' : 'fail'}">${f(a.overallScore)}</span>
 ${base ? `<span>vs baseline <b class="${regressed ? 'fail' : ''}">${regressed} regressed</b> (threshold ${threshold})</span>` : ''}
 <span>passed <b>${a.passed ?? '—'}</b> / ${(cur.cases ?? []).length}</span>${a.erroredRuns ? `<span class="big fail" style="font-size:14px">⚠ ${esc(a.partialReason)}</span>` : ''}<span>cost <b>${money(a.costUsd)}</b></span><span>model <b>${esc([...models].join(', ') || '?')}</b></span>
 <span>${cur.shim ? 'shim' : 'official'} runner</span><span>${esc(cur.generatedAt ?? '')}</span>${cur.regradeOf ? '<span>regrade</span>' : ''}</div>

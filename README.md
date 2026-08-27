@@ -1,6 +1,6 @@
 # config-drift-checker
 
-**CI for your agent setup.** · [site](https://jameskomo.github.io/config-drift-checker/) · [demo report](https://jameskomo.github.io/config-drift-checker-demo/report.html)
+**CI for your agent setup.** · [site](https://jameskomo.github.io/config-drift-checker/) · [demo dashboard](https://jameskomo.github.io/config-drift-checker-demo/) · [demo report](https://jameskomo.github.io/config-drift-checker-demo/report.html)
 
 A tool that tells your team **when** its coding-agent setup — `CLAUDE.md`, skills, hooks — stopped
 doing what it should, **why**, and **what changed**: a model change behind an alias, a Claude Code
@@ -25,7 +25,8 @@ them, and keeps score over time:
    and on demand — in a throwaway workspace, with your plugin loaded, several times per case.
 3. **Scores and reasons**: every grader's verdict and the judge's explanation, the tool calls, the
    full response — not just a number.
-4. **Diff against your baseline** → red or green check, PR comment, Slack alert, HTML report.
+4. **Diff against your baseline** → red or green check, PR comment, Slack alert, HTML report, and a
+   dashboard of every case over every Claude Code version, served from your results branch by GitHub Pages.
 
 Two things ride on top of that core:
 
@@ -79,6 +80,7 @@ config-drift-checker/     the plugin: skills (setup · run · write-case) and th
   tools/eval-shim.mjs       runs a suite via `claude -p` when the official runner is gated
   tools/eval-diff.mjs       baseline vs current → table, exit 1 on regression
   tools/eval-report.mjs     aggregate-result.json → self-contained HTML report
+  tools/eval-dashboard.mjs  results history → dashboard (score per case over versions, run list)
   tools/release-watch.mjs   "did Claude Code publish a new version?"
   tools/safety-net.mjs      PreToolUse hook injected into every eval run
 action/                   composite GitHub Action: install → run → diff → store → report → alert
