@@ -204,6 +204,12 @@ Read the three cases — they are the best starting point for writing your own.
 
 ## 11. FAQ
 
+**Isn't this what `/doctor` (or `/skill-doctor`) does?** No. Those are static health checks: they
+confirm your settings parse, your hooks are well-formed, your plugins load, your skills follow best
+practices. They never run the agent. A setup can be perfectly well-formed and silently useless after a
+release, and `/doctor` will say "no issues found" before and after. config-drift-checker runs real tasks
+against your setup, on every release, and compares the behaviour with your baseline. Linter versus test suite.
+
 **Does installing the plugin change my repos?** No. Only `/config-drift-checker:setup` writes files,
 and only in the repo you run it in, as a reviewable diff.
 
