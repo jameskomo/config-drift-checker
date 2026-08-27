@@ -1,50 +1,134 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>config-drift-checker</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<meta name="description" content="Tests for your Claude Code setup that run on every release. Know when a skill or hook stops working, and why.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#F4F6F8;--surface:#fff;--ink:#1A222D;--muted:#5B6672;--rule:#D6DCE3;--accent:#B85C1E;--pass:#2E7D4F;--fail:#B3362B}
-@media(prefers-color-scheme:dark){:root{--bg:#141922;--surface:#1B222D;--ink:#E6EAEF;--muted:#98A3B0;--rule:#2C3541;--accent:#E0823C;--pass:#5DBB84;--fail:#E06A5E}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Serif 4",Georgia,serif}
-.wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}h1,h2,h3{font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.15;text-wrap:balance;margin:0}
-h1{font-size:44px;letter-spacing:-.02em}h2{font-size:26px;margin:52px 0 14px}h3{font-size:18px;margin:0 0 6px}
-.lede{font-size:20px;color:var(--muted);max-width:62ch;margin:14px 0 26px}
-.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px}
-pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.5}
-a{color:var(--accent)}.btn{display:inline-block;font-family:"Familjen Grotesk",sans-serif;font-weight:600;background:var(--accent);color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;margin:6px 8px 6px 0}.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px}.card .price{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:600;margin:6px 0 10px}.card ul{margin:0;padding-left:18px;font-size:15px}.card.hi{border-color:var(--accent)}
-.tag{display:inline-block;font-family:"Familjen Grotesk",sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:3px;padding:2px 7px;margin-bottom:8px}
-table{border-collapse:collapse;width:100%;background:var(--surface);border:1px solid var(--rule);border-radius:6px;font-size:15px}th,td{padding:9px 12px;border-bottom:1px solid var(--rule);text-align:left}th{font-family:"Familjen Grotesk",sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}tr:last-child td{border-bottom:0}.ok{color:var(--pass);font-family:"JetBrains Mono",monospace}.bad{color:var(--fail);font-family:"JetBrains Mono",monospace}
-small{color:var(--muted)}
-</style></head><body><div class="wrap">
-<h1>CI for your agent setup.</h1>
-<p class="lede">Your CLAUDE.md, skills and hooks are how your code gets written now — and they break silently when Claude Code ships, when the model behind an alias changes, or when a teammate edits a skill. config-drift-checker tells you <b>when</b>, <b>why</b>, and <b>what changed</b>.</p>
-<a class="btn" href="https://github.com/jameskomo/config-drift-checker">Get it — free, open source</a>
-<a class="btn ghost" href="https://jameskomo.github.io/config-drift-checker-demo/report.html">See a real report</a>
+:root{--bg:#F3F4F6;--paper:#FFFFFF;--ink:#161B22;--muted:#5F6B78;--rule:#D7DCE2;--accent:#B85C1E;--accent-ink:#8F4514;--pass:#2E7D4F;--fail:#B3362B;--pass-bg:#E7F3EC;--fail-bg:#F9E7E4;--mono-bg:#EEF0F3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161C;--paper:#1A2029;--ink:#E7EBF0;--muted:#98A3B0;--rule:#2A323C;--accent:#E0823C;--accent-ink:#F0A468;--pass:#5DBB84;--fail:#E06A5E;--pass-bg:#1B2E23;--fail-bg:#3A1F1C;--mono-bg:#0F1318}}
+:root[data-theme="dark"]{--bg:#12161C;--paper:#1A2029;--ink:#E7EBF0;--muted:#98A3B0;--rule:#2A323C;--accent:#E0823C;--accent-ink:#F0A468;--pass:#5DBB84;--fail:#E06A5E;--pass-bg:#1B2E23;--fail-bg:#3A1F1C;--mono-bg:#0F1318}
+*{box-sizing:border-box}html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Serif 4",Georgia,"Times New Roman",serif}
+a{color:var(--accent-ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.h{font-family:"Familjen Grotesk",system-ui,-apple-system,sans-serif;text-wrap:balance;line-height:1.1;margin:0}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+header.top{border-bottom:1px solid var(--rule)}header.top .wrap{display:flex;align-items:baseline;justify-content:space-between;padding:18px 28px}
+.brand{font-family:"Familjen Grotesk",sans-serif;font-weight:700;font-size:18px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+nav a{font-family:"Familjen Grotesk",sans-serif;font-size:14.5px;color:var(--muted);text-decoration:none;margin-left:22px}nav a:hover{color:var(--ink)}
+/* opening */
+.open{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start;padding:64px 0 56px}
+.open h1{font-size:46px;font-weight:700;letter-spacing:-.022em}
+.open p.lede{font-size:19px;color:var(--ink);max-width:42ch;margin:22px 0 0}
+.open p.sub{color:var(--muted);max-width:44ch;margin:14px 0 26px}
+.cta{display:inline-block;font-family:"Familjen Grotesk",sans-serif;font-weight:600;font-size:15px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:4px;text-decoration:none}
+.cta.quiet{background:transparent;color:var(--ink);border:1px solid var(--ink);margin-left:8px}
+.cta:hover{opacity:.9}
+/* the artifact */
+.artifact{background:var(--paper);border:1px solid var(--rule);border-radius:6px;overflow:hidden;font-size:14px}
+.artifact .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule);font-family:"Familjen Grotesk",sans-serif;font-size:13px;color:var(--muted)}
+.artifact .bar b{color:var(--ink);font-weight:600}
+.check{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}.dot.red{background:var(--fail)}.dot.green{background:var(--pass)}
+.check .name{font-family:"Familjen Grotesk",sans-serif;font-weight:600}.check .why{color:var(--muted)}
+.comment{padding:12px 14px}.comment .who{font-family:"Familjen Grotesk",sans-serif;font-size:13px;color:var(--muted);margin-bottom:8px}.comment .who b{color:var(--ink)}
+table.diff{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+table.diff th{text-align:left;font-family:"Familjen Grotesk",sans-serif;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--rule)}
+table.diff td{padding:7px 8px;border-bottom:1px solid var(--rule)}table.diff tr:last-child td{border-bottom:0}
+table.diff td.n{font-family:"JetBrains Mono",monospace;text-align:right}.reg td{background:var(--fail-bg)}
+.pill{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}.pill.r{background:var(--fail)}.pill.g{background:var(--pass)}
+.artifact .foot{padding:8px 14px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted)}
+/* sections */
+section{border-top:1px solid var(--rule);padding:48px 0}
+.sec{display:grid;grid-template-columns:180px minmax(0,1fr);gap:32px}
+.rail{font-family:"Familjen Grotesk",sans-serif;font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-top:6px}
+.sec h2{font-size:28px;font-weight:600;letter-spacing:-.015em;margin:0 0 14px}
+.sec p{max-width:66ch;margin:0 0 14px}
+pre.term{background:var(--mono-bg);border:1px solid var(--rule);border-radius:4px;padding:14px 16px;font-size:13.5px;line-height:1.55;overflow-x:auto;margin:14px 0 18px;max-width:66ch}
+pre.term .c{color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;max-width:900px;margin-top:8px}
+.steps div{border-top:2px solid var(--ink);padding-top:10px}.steps b{font-family:"Familjen Grotesk",sans-serif;display:block;margin-bottom:4px}.steps p{font-size:15px;color:var(--muted);margin:0}
+/* findings */
+table.find{border-collapse:collapse;width:100%;max-width:900px;font-size:15px;font-variant-numeric:tabular-nums}
+table.find th{text-align:left;font-family:"Familjen Grotesk",sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--ink)}
+table.find td{padding:10px;border-bottom:1px solid var(--rule);vertical-align:top}table.find td.n{font-family:"JetBrains Mono",monospace;text-align:right;white-space:nowrap}
+.g{color:var(--pass)}.r{color:var(--fail)}
+/* pricing */
+table.price{border-collapse:collapse;width:100%;max-width:900px;font-size:15px}
+table.price th{text-align:left;font-family:"Familjen Grotesk",sans-serif;font-weight:600;font-size:16px;padding:12px 10px 4px;border-bottom:1px solid var(--ink);vertical-align:bottom}
+table.price th .amt{display:block;font-family:"JetBrains Mono",monospace;font-weight:600;font-size:20px;margin-top:4px}table.price th .amt small{font-size:12px;color:var(--muted);font-weight:400}
+table.price td{padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink)}table.price td:first-child{color:var(--muted);width:30%}
+.req{margin-top:22px}
+footer{border-top:1px solid var(--rule);padding:28px 0 60px;color:var(--muted);font-size:14px}footer a{color:var(--muted);margin-right:18px}
+@media (max-width:820px){.open{grid-template-columns:1fr;gap:28px;padding:40px 0 36px}.open h1{font-size:36px}.sec{grid-template-columns:1fr;gap:6px}.steps{grid-template-columns:1fr}nav a{margin-left:14px}table.price{font-size:14px}}
+</style></head><body>
+<header class="top"><div class="wrap"><a class="brand" href="#">config-drift-checker</a><nav><a href="#how">How it works</a><a href="#found">What it found</a><a href="#hosted">Hosted</a><a href="https://github.com/jameskomo/config-drift-checker">GitHub</a></nav></div></header>
 
-<h2>Two commands, then it runs itself</h2>
-<pre class="mono">claude plugin marketplace add jameskomo/config-drift-checker
+<div class="wrap"><div class="open">
+  <div>
+    <h1 class="h">Your Claude Code setup is code. Nobody tests it.</h1>
+    <p class="lede">config-drift-checker runs tests against your CLAUDE.md, skills and hooks every time Claude Code ships a release, and tells you the day one of them stops working.</p>
+    <p class="sub">Open source. Runs in your own GitHub Actions with your own API key. Nothing leaves your repo.</p>
+    <a class="cta" href="https://github.com/jameskomo/config-drift-checker">Get it on GitHub</a>
+    <a class="cta quiet" href="https://jameskomo.github.io/config-drift-checker-demo/report.html">Open a real report</a>
+  </div>
+  <div class="artifact" aria-label="Example of a failed check and PR comment">
+    <div class="bar"><b>config-drift-checker</b> <span>· pull request #14 · after Claude Code 2.1.248</span></div>
+    <div class="check"><span class="dot red"></span><span class="name">eval</span><span class="why">1 case regressed against baseline</span></div>
+    <div class="comment">
+      <div class="who"><b>config-drift-checker</b> commented 6 minutes ago</div>
+      <table class="diff"><thead><tr><th></th><th>case</th><th>before</th><th>after</th><th>failing graders</th></tr></thead><tbody>
+        <tr class="reg"><td><span class="pill r"></span></td><td>guard-blocks-reset-hard</td><td class="n">1.00</td><td class="n">0.33</td><td>reported-blocked ×3, not-succeeded ×2</td></tr>
+        <tr><td><span class="pill g"></span></td><td>update-note-endpoint</td><td class="n">1.00</td><td class="n">1.00</td><td></td></tr>
+        <tr><td><span class="pill g"></span></td><td>negative-dockerfile-request</td><td class="n">1.00</td><td class="n">1.00</td><td></td></tr>
+      </tbody></table>
+    </div>
+    <div class="foot">Full report in the eval-report artifact: every run, every grader, the tool calls and the response.</div>
+  </div>
+</div></div>
+
+<section id="how"><div class="wrap sec"><div class="rail">How it works</div><div>
+  <h2 class="h">Two commands. Then it looks after itself.</h2>
+  <pre class="term mono">claude plugin marketplace add jameskomo/config-drift-checker
 claude plugin install config-drift-checker@jameskomo
-claude   →  /config-drift-checker:setup</pre>
-<p><code>setup</code> writes eval cases from your real CLAUDE.md, skills and hooks, smoke-runs them, and writes a GitHub workflow. From then on the suite runs on every Claude Code release and every PR that touches your setup: red or green check, PR comment, Slack alert, and an HTML report with every grader's reason. Your machine, your CI, your API key — nothing is sent anywhere.</p>
+claude
+<span class="c">&gt;</span> /config-drift-checker:setup</pre>
+  <div class="steps">
+    <div><b>It reads what you already have</b><p>Your CLAUDE.md, your skills, your hooks. From those it writes the first test cases: a real change to your code, a request that must not trigger a skill, a command the guard hook must block.</p></div>
+    <div><b>It runs the real agent</b><p>Each case runs in a throwaway copy of your repo, several times, with your plugin loaded. Every grader records a verdict and a reason. A judge model explains what it saw.</p></div>
+    <div><b>It watches releases for you</b><p>A small job checks npm every six hours. When Claude Code ships, the suite runs against the new version, compares with your baseline, and turns the check red if something moved. Slack if you want it.</p></div>
+  </div>
+  <p style="margin-top:22px">Already have cases, or just want the check in an existing pipeline? One step: <span class="mono">uses: jameskomo/config-drift-checker/action@v0</span>. The cases are in Anthropic's own <span class="mono">claude plugin eval</span> format, so there is nothing of ours to learn and nothing to migrate away from.</p>
+</div></div></section>
 
-<h2>What it found on day one</h2>
-<table><thead><tr><th>case (demo repo)</th><th>with the setup</th><th>without</th><th>meaning</th></tr></thead><tbody>
-<tr><td>guard hook blocks <code>git reset --hard</code></td><td class="ok">1.00</td><td class="bad">0.33</td><td>the hook is the only thing that reliably stops it</td></tr>
-<tr><td>add an endpoint across three files</td><td class="ok">1.00</td><td class="bad">0.50</td><td>the conventions skill carries real weight here</td></tr>
-<tr><td>Dockerfile request must not trigger the backend skill</td><td class="ok">1.00</td><td class="ok">1.00</td><td>no over-triggering</td></tr>
-</tbody></table>
-<small>Scores are the mean of 3 runs per case; the report shows every run, grader and reason.</small>
+<section id="found"><div class="wrap sec"><div class="rail">What it found</div><div>
+  <h2 class="h">Day one, on a small Spring Boot service.</h2>
+  <p>The interesting number is the second column. The same cases were run with the team's setup loaded and with it removed. The difference is what each piece of the setup is actually worth.</p>
+  <table class="find"><thead><tr><th>case</th><th>with the setup</th><th>without</th><th>so</th></tr></thead><tbody>
+    <tr><td>The guard hook must block <span class="mono">git reset --hard</span></td><td class="n g">1.00</td><td class="n r">0.33</td><td>Without the hook the command usually runs. The hook is doing real work.</td></tr>
+    <tr><td>Add an endpoint across service, DTO and controller</td><td class="n g">1.00</td><td class="n r">0.50</td><td>The conventions skill changes how the code comes out. Keep it.</td></tr>
+    <tr><td>A Dockerfile request must not wake the backend skill</td><td class="n g">1.00</td><td class="n g">1.00</td><td>No over-triggering. Nothing to fix.</td></tr>
+  </tbody></table>
+  <p style="margin-top:16px;color:var(--muted);font-size:15px">Three runs per case. The report shows each run, each grader and the judge's reason, so a score is never the end of the conversation. <a href="https://jameskomo.github.io/config-drift-checker-demo/report.html">See the report</a>.</p>
+  <p>One thing we learned early: a hook test once passed because the model refused the command on its own, before the hook ever ran. Same score, different cause. That is why the report keeps the reasons.</p>
+</div></div></section>
 
-<h2 id="hosted">Hosted — for teams who outgrow one repo</h2>
-<p>The open-source Action and plugin stay free. The hosted service adds what a results branch can't: history across all your repos and Claude Code versions, the score-over-versions chart, release-watch without GitHub Actions, alerts, and cross-agent runs (Codex, Cursor). Compute is always yours — agent runs bill to your own API key; you pay for the loop around them.</p>
-<div class="grid">
-<div class="card"><span class="tag">Starter</span><h3>One team, one repo</h3><div class="price">$49 / mo</div><ul><li>hosted history &amp; dashboard, 1 repo</li><li>release-watch without Actions</li><li>Slack / email alerts</li><li>90-day history</li></ul></div>
-<div class="card hi"><span class="tag">Team</span><h3>Platform teams</h3><div class="price">$149 / mo</div><ul><li>10 repos, cross-repo view</li><li>Claude Code + Codex + Cursor</li><li>ablation reports: what each skill is worth</li><li>1-year history, PR comments</li></ul></div>
-<div class="card"><span class="tag">Business</span><h3>100+ seats, audits</h3><div class="price">$399 / mo</div><ul><li>unlimited repos</li><li>hook-enforcement audit export</li><li>SAML, private runner</li><li>priority release-watch (&lt; 1 h)</li></ul></div>
-</div>
-<p style="margin-top:22px"><a class="btn" href="mailto:progressoverperfection01@gmail.com?subject=config-drift-checker%20hosted%20beta&body=Repos%20with%20a%20Claude%20Code%20setup%3A%20%0AAgents%20we%20use%20(Claude%20Code%2FCodex%2FCursor)%3A%20%0ATeam%20size%3A%20%0AWhat%20we%27d%20want%20first%3A%20">Request the hosted beta</a> <small>Design partners get their first suite written with them, and the beta at Starter price.</small></p>
+<section id="hosted"><div class="wrap sec"><div class="rail">Hosted</div><div>
+  <h2 class="h">When one repo is not enough.</h2>
+  <p>The plugin and the Action stay free and open. The hosted service is for teams who run this across many repos and want to see all of it in one place: history across every repo and every Claude Code version, the chart of scores over releases, release-watch without GitHub Actions, and the same suite run against Codex and Cursor as well.</p>
+  <p>Agent runs always bill to your own API key. You pay us for the loop around them, never for the model.</p>
+  <table class="price"><thead><tr><th></th><th>Starter<span class="amt">$49<small> / month</small></span></th><th>Team<span class="amt">$149<small> / month</small></span></th><th>Business<span class="amt">$399<small> / month</small></span></th></tr></thead><tbody>
+    <tr><td>Repos</td><td>1</td><td>10</td><td>unlimited</td></tr>
+    <tr><td>History</td><td>90 days</td><td>1 year</td><td>unlimited</td></tr>
+    <tr><td>Agents</td><td>Claude Code</td><td>Claude Code, Codex, Cursor</td><td>Claude Code, Codex, Cursor</td></tr>
+    <tr><td>Release-watch</td><td>hosted, 6-hourly</td><td>hosted, 6-hourly</td><td>hosted, under an hour</td></tr>
+    <tr><td>Reports</td><td>per run</td><td>per run, plus ablation: what each skill is worth</td><td>per run, ablation, audit export for hook enforcement</td></tr>
+    <tr><td>Access</td><td>GitHub login</td><td>GitHub org</td><td>SAML, private runner</td></tr>
+  </tbody></table>
+  <p class="req"><a class="cta" href="mailto:progressoverperfection01@gmail.com?subject=config-drift-checker%20hosted%20beta&body=Repos%20with%20a%20Claude%20Code%20setup%3A%20%0AAgents%20we%20use%3A%20%0ATeam%20size%3A%20%0AWhat%20we%20would%20want%20first%3A%20">Ask for the beta</a> <span style="color:var(--muted);font-size:15px;margin-left:10px">The first teams get their suite written with them, and the beta at the Starter price.</span></p>
+</div></div></section>
 
-<h2>Read more</h2>
-<p><a href="user-guide.html">User guide</a> · <a href="architecture.html">Architecture</a> · <a href="eval-format-and-runner.html">Eval format &amp; runner</a> · <a href="runbook.html">Runbook</a> · <a href="security.html">Security</a> · <a href="https://github.com/jameskomo/config-drift-checker/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/jameskomo/config-drift-checker/blob/main/LICENSE">Licence: FSL-1.1-Apache-2.0</a></p>
-</div></body></html>
+<footer><div class="wrap">
+  <a href="user-guide.html">User guide</a><a href="architecture.html">Architecture</a><a href="eval-format-and-runner.html">Eval format</a><a href="runbook.html">Runbook</a><a href="security.html">Security</a><a href="https://github.com/jameskomo/config-drift-checker/blob/main/PRIVACY.md">Privacy</a><a href="https://github.com/jameskomo/config-drift-checker/blob/main/LICENSE">Licence</a>
+  <div style="margin-top:12px">FSL-1.1-Apache-2.0. Free to use and self-host. Not for resale as a competing service; becomes Apache-2.0 two years after each release.</div>
+</div></footer>
+</body></html>
