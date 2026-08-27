@@ -50,7 +50,7 @@ Review the diff like any PR. Commit.
 
 | What | Where | Why |
 |---|---|---|
-| `ANTHROPIC_API_KEY` secret | repo → Settings → Secrets → Actions (or `gh secret set ANTHROPIC_API_KEY`) | agent runs bill to **your** key (BYOK). Use an API key from console.anthropic.com, not a consumer subscription. Set a monthly limit there |
+| `ANTHROPIC_API_KEY` secret | repo → Settings → Secrets → Actions (or `gh secret set ANTHROPIC_API_KEY`) | agent runs bill to **your** key (BYOK). Use an API key from console.anthropic.com, not a consumer subscription — and **add prepaid API credit first** (Billing → a few dollars is enough; a suite costs $1–2 per release). Set a monthly limit there. With no credit, runs fail with "Credit balance is too low" and nothing is stored |
 | `SLACK_WEBHOOK_URL` secret (optional) | Slack → Apps → Incoming Webhooks | regression alerts |
 | Workflow permissions **Read and write** | repo → Settings → Actions → General | the run stores results on an `eval-results` branch and comments on PRs |
 
