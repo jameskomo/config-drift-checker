@@ -26,7 +26,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with: { node-version: '22' }
 
     - id: install
@@ -101,7 +101,7 @@ runs:
         cp "${{ steps.run.outputs.result }}" "$RUNNER_TEMP/aggregate-result.json"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: eval-report
         path: |

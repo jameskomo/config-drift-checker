@@ -20,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs: { run: '${{ steps.decide.outputs.run }}', version: '${{ steps.rw.outputs.version }}' }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with: { repository: jameskomo/config-drift-checker, ref: v0, path: cdc }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '22' }
       - id: rw
         run: |
@@ -44,7 +44,7 @@ jobs:
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}     # BYOK — agent runs bill to your key
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: jameskomo/config-drift-checker/action@v0
         with:
           plugin-dir: .                      # the repo root is the plugin (.claude-plugin/plugin.json)
