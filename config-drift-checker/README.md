@@ -132,7 +132,7 @@ done by `/config-drift-checker:setup` **unattended** (headless, `--permission-mo
    it could not do (no `gh` → secrets left to the owner).
 
 Everything it produced is in the demo repo as it was generated, with its run log in
-`docs/README.md`; the baseline results and the HTML report are in `agent-config/evals/results/`.
+the demo repo's `docs/claude/README.md`; its baseline results and HTML report are in `agent-config/evals/results/`.
 Read the three cases — they are the best starting point for writing your own.
 
 ## 10. FAQ
