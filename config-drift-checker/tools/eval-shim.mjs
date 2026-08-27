@@ -250,7 +250,7 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = opt.outputDir ?? path.join(evalDir, 'results', stamp);
 await fs.mkdir(outDir, { recursive: true });
 log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(',')} · model=${opt.model} · judge=${opt.judgeModel}${opt.regrade ? ' · REGRADE of ' + path.basename(path.dirname(opt.regrade)) : ''}`);
-const report = { schemaVersion: '1', shim: true, generatedAt: opt.regrade ? (regradeSource?.generatedAt ?? new Date().toISOString()) : new Date().toISOString(), regradedAt: opt.regrade ? new Date().toISOString() : undefined, regradeOf: opt.regrade ?? undefined, suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {} };
+const report = { schemaVersion: '1', shim: true, startedAt: new Date().toISOString(), generatedAt: opt.regrade ? (regradeSource?.generatedAt ?? new Date().toISOString()) : new Date().toISOString(), regradedAt: opt.regrade ? new Date().toISOString() : undefined, regradeOf: opt.regrade ?? undefined, suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {} };
 let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null;
 for (const c of cases) {
   const entry = { name: c.name, dir: c.dir, tags: c.tags, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
@@ -287,6 +287,7 @@ for (const c of cases) {
 const withScores = report.cases.map((c) => c.summary.score).filter((s) => s !== null);
 const totalRuns = report.cases.reduce((n, c) => n + Object.values(c.arms).flat().length, 0);
 report.aggregates = { overallScore: withScores.length ? withScores.reduce((a, b) => a + b, 0) / withScores.length : null, passed: report.cases.filter((c) => c.summary.score === 1).length, failed: report.cases.filter((c) => c.summary.score !== null && c.summary.score !== 1).length, costUsd: totalCost, erroredRuns, truncatedRuns, totalRuns, partialReason: erroredRuns ? `${erroredRuns} of ${totalRuns} agent runs errored: ${firstError}` : null };
+if (!opt.regrade) report.generatedAt = new Date().toISOString(); // stamp at completion; startedAt keeps the start
 const outPath = path.join(outDir, 'aggregate-result.json');
 await fs.writeFile(outPath, JSON.stringify(report, null, 2));
 await fs.writeFile(path.join(outDir, 'report.html'), renderReport(report));
