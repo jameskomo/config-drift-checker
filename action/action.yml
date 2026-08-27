@@ -100,6 +100,7 @@ runs:
         node "${{ github.action_path }}/../config-drift-checker/tools/eval-report.mjs" "${{ steps.run.outputs.result }}" $base --threshold "${{ inputs.threshold }}" --out "$RUNNER_TEMP/eval-report.html"
         cp "${{ steps.run.outputs.result }}" "$RUNNER_TEMP/aggregate-result.json"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"; echo "<sub>Running this on several repos, or want history across Claude Code versions? → <a href=\"https://jameskomo.github.io/config-drift-checker/#hosted\">hosted beta</a> · <a href=\"https://github.com/jameskomo/config-drift-checker\">⭐ repo</a></sub>" >> "$GITHUB_STEP_SUMMARY"
 
     - uses: actions/upload-artifact@v6
       with:
