@@ -61,6 +61,8 @@ runs:
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
+        errs=$(node -p "const a=require('$out/aggregate-result.json').aggregates||{}; (a.erroredRuns||0)+'/'+(a.totalRuns||0)+' '+(a.partialReason||'')")
+        case "$errs" in 0/*) ;; *) echo "::error::agent runs errored — $errs. Nothing is stored as a baseline. Common cause: the API key's account has no prepaid credits (console.anthropic.com → Billing)."; echo "errored=true" >> "$GITHUB_OUTPUT"; exit 1;; esac
 
     - id: baseline
       shell: bash

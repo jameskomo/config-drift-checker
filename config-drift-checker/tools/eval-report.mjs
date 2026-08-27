@@ -91,7 +91,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 <h1>${esc(cur.suite?.name ?? 'eval')}<small>eval report</small></h1>
 <div class="strip"><span class="big ${a.overallScore === 1 ? 'pass' : 'fail'}">${f(a.overallScore)}</span>
 ${base ? `<span>vs baseline <b class="${regressed ? 'fail' : ''}">${regressed} regressed</b> (threshold ${threshold})</span>` : ''}
-<span>passed <b>${a.passed ?? '—'}</b> / ${(cur.cases ?? []).length}</span><span>cost <b>${money(a.costUsd)}</b></span><span>model <b>${esc([...models].join(', ') || '?')}</b></span>
+<span>passed <b>${a.passed ?? '—'}</b> / ${(cur.cases ?? []).length}</span>${a.erroredRuns ? `<span class="big fail" style="font-size:14px">⚠ ${esc(a.partialReason)}</span>` : ''}<span>cost <b>${money(a.costUsd)}</b></span><span>model <b>${esc([...models].join(', ') || '?')}</b></span>
 <span>${cur.shim ? 'shim' : 'official'} runner</span><span>${esc(cur.generatedAt ?? '')}</span>${cur.regradeOf ? '<span>regrade</span>' : ''}</div>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ vs base</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>runs</th><th>cost</th></tr></thead><tbody>${rows}</tbody></table></div>
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter">☐ show failing runs only (click to toggle)</label>

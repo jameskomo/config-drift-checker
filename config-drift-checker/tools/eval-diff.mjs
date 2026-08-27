@@ -44,11 +44,12 @@ for (const [k, b] of baseMap) {
 for (const [k, c] of curMap) if (!baseMap.has(k)) rows.push({ case: k, status: 'new', before: null, after: score(c), delta: null, runs: runs(c), failedGraders: failedGraders(c) });
 
 const regressed = rows.filter((r) => r.status === 'regressed' || r.status === 'missing');
+const errored = cur.aggregates?.erroredRuns ?? 0;
 const f = (x) => (x === null || x === undefined ? '—' : x.toFixed(2));
 const fd = (x) => (x === null || x === undefined ? '—' : (x >= 0 ? '+' : '') + x.toFixed(2));
 const icon = { regressed: '🔴', missing: '🔴', improved: '🟢', stable: '⚪', new: '🆕', unknown: '❔' };
 const md = [
-  `## Agent-config eval: ${regressed.length ? `**${regressed.length} regression(s)**` : 'no regressions'}`,
+  `## Agent-config eval: ${errored ? `**⚠ ${cur.aggregates.partialReason}**` : regressed.length ? `**${regressed.length} regression(s)**` : 'no regressions'}`,
   '',
   `Suite \`${cur.suite?.name ?? '?'}\` · model ${model(cur)} (baseline ${model(base)}) · threshold ${opt.threshold} · overall ${f(base.aggregates?.overallScore)} → ${f(cur.aggregates?.overallScore)} · cost $${(cur.aggregates?.costUsd ?? 0).toFixed(2)}`,
   '',
@@ -62,4 +63,4 @@ const md = [
 console.log(md);
 if (opt.md) await fs.writeFile(opt.md, md + '\n');
 if (opt.json) await fs.writeFile(opt.json, JSON.stringify({ regressed: regressed.length, threshold: opt.threshold, rows, overall: { before: base.aggregates?.overallScore ?? null, after: cur.aggregates?.overallScore ?? null } }, null, 2));
-process.exit(regressed.length ? 1 : 0);
+process.exit(errored && errored === (cur.aggregates?.totalRuns ?? -1) ? 2 : regressed.length ? 1 : 0);

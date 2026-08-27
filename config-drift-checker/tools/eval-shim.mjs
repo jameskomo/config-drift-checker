@@ -243,7 +243,7 @@ const outDir = opt.outputDir ?? path.join(evalDir, 'results', stamp);
 await fs.mkdir(outDir, { recursive: true });
 log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(',')} · model=${opt.model} · judge=${opt.judgeModel}${opt.regrade ? ' · REGRADE of ' + path.basename(path.dirname(opt.regrade)) : ''}`);
 const report = { schemaVersion: '1', shim: true, generatedAt: new Date().toISOString(), regradeOf: opt.regrade ?? undefined, suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {} };
-let totalCost = 0;
+let totalCost = 0, erroredRuns = 0, firstError = null;
 for (const c of cases) {
   const entry = { name: c.name, dir: c.dir, tags: c.tags, arms: {}, summary: {} };
   for (const arm of arms) {
@@ -260,9 +260,11 @@ for (const c of cases) {
         graders.push(await grade(g, run, arm, ablating));
       }
       const scored = graders.filter((g) => g.scored && g.score !== null);
-      const score = scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null;
+      const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
+      if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.response || run.stderr || 'unknown error').trim().slice(0, 200); }
       totalCost += run.costUsd ?? 0;
       entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? run.stderr : undefined });
+      if (run.isError) log(`    ERROR: ${(run.response || run.stderr || 'unknown error').trim().slice(0, 160)}`);
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
     }
   }
@@ -274,7 +276,8 @@ for (const c of cases) {
   report.cases.push(entry);
 }
 const withScores = report.cases.map((c) => c.summary.score).filter((s) => s !== null);
-report.aggregates = { overallScore: withScores.length ? withScores.reduce((a, b) => a + b, 0) / withScores.length : null, passed: report.cases.filter((c) => c.summary.score === 1).length, failed: report.cases.filter((c) => c.summary.score !== null && c.summary.score !== 1).length, costUsd: totalCost, partialReason: null };
+const totalRuns = report.cases.reduce((n, c) => n + Object.values(c.arms).flat().length, 0);
+report.aggregates = { overallScore: withScores.length ? withScores.reduce((a, b) => a + b, 0) / withScores.length : null, passed: report.cases.filter((c) => c.summary.score === 1).length, failed: report.cases.filter((c) => c.summary.score !== null && c.summary.score !== 1).length, costUsd: totalCost, erroredRuns, totalRuns, partialReason: erroredRuns ? `${erroredRuns} of ${totalRuns} agent runs errored: ${firstError}` : null };
 const outPath = path.join(outDir, 'aggregate-result.json');
 await fs.writeFile(outPath, JSON.stringify(report, null, 2));
 await fs.writeFile(path.join(outDir, 'report.html'), renderReport(report));
@@ -283,7 +286,8 @@ else if (opt.json) await fs.writeFile(opt.json, JSON.stringify(report, null, 2))
 
 log('\n' + pad('case', 44) + pad('with', 8) + (ablating ? pad('without', 9) + pad('delta', 8) : '') + 'cost');
 for (const c of report.cases) log(pad(c.dir, 44) + pad(fmt(c.summary.score), 8) + (ablating ? pad(fmt(c.summary.baselineScore), 9) + pad(fmtDelta(c.summary.delta), 8) : '') + `$${c.summary.costUsd.toFixed(3)}`);
-log(`\noverall=${fmt(report.aggregates.overallScore)} passed=${report.aggregates.passed}/${cases.length} cost=$${totalCost.toFixed(3)}\n→ ${outPath}\n→ ${path.join(outDir, 'report.html')}`);
+log(`\noverall=${fmt(report.aggregates.overallScore)} passed=${report.aggregates.passed}/${cases.length} cost=$${totalCost.toFixed(3)}${erroredRuns ? `\nERRORED RUNS: ${report.aggregates.partialReason}` : ''}\n→ ${outPath}\n→ ${path.join(outDir, 'report.html')}`);
+if (erroredRuns === totalRuns && totalRuns > 0) process.exitCode = 2; // nothing ran: partial, like the official runner
 function fmt(s) { return s === null || s === undefined ? '—' : s.toFixed(2); }
 function fmtDelta(d) { return d === null || d === undefined ? '—' : (d >= 0 ? '+' : '') + d.toFixed(2); }
 function pad(s, n) { return String(s).padEnd(n); }
