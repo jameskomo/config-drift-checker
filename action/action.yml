@@ -130,7 +130,6 @@ runs:
           cp "$RUNNER_TEMP/eval-report.html" "docs/history/${name}.html"
           cp "$RUNNER_TEMP/eval-report.html" docs/report.html
           node "${{ github.action_path }}/../config-drift-checker/tools/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "${{ github.repository }}" >/dev/null
-          sed -i 's#href="\([^"]*\)\.html"#href="history/\1.html"#' docs/index.html 2>/dev/null || true
           touch docs/.nojekyll
           echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $br, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
         fi
