@@ -15,7 +15,7 @@
 - Tools available to the agent are exactly the case's `allowed_tools`; everything else is denied
   (`--permission-mode dontAsk`). **Network, Docker, and the host are not sandboxed** in v0.1 —
   same as the official runner. On 2026-08-27 a without-arm run tore down a real Docker stack
-  from a throwaway workspace (findings F12). Since then every run carries a **safety-net
+  from a throwaway workspace . Since then every run carries a **safety-net
   PreToolUse hook** that blocks host-global destructive commands in both arms; cases that must
   run such a command stub the binary in `.eval-bin/`. `--no-safety-net` exists and is dangerous.
 - Hook cases must be harmless when the command *succeeds* (the without-arm has no guard by
