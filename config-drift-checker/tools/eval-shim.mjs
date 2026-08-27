@@ -98,7 +98,7 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
   let scaffoldScript = null;
   const casePath = path.join(evalDir, d.name, 'case.yaml');
   if (existsSync(casePath)) { const m = (await fs.readFile(casePath, 'utf8')).match(/scaffold_script:\s*\|\s*\n((?:[ \t]+.*\n?)+)/); if (m) scaffoldScript = m[1].replace(/^[ \t]+/gm, ''); }
-  cases.push({ scaffoldScript, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], runs: opt.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model, prompt: body, graders });
+  cases.push({ scaffoldScript, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], runs: opt.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model, prompt: body, graders });
 }
 if (!cases.length) die('No eval cases found');
 function globToRe(g) { const alts = g.replace(/^\{(.*)\}$/, '$1').split(',').map((x) => x.trim()).filter(Boolean); return new RegExp('^(?:' + alts.map((a) => a.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')).join('|') + ')$'); } // supports a,b and {a,b}
@@ -245,7 +245,7 @@ log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(','
 const report = { schemaVersion: '1', shim: true, generatedAt: new Date().toISOString(), regradeOf: opt.regrade ?? undefined, suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {} };
 let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null;
 for (const c of cases) {
-  const entry = { name: c.name, dir: c.dir, tags: c.tags, arms: {}, summary: {} };
+  const entry = { name: c.name, dir: c.dir, tags: c.tags, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
   for (const arm of arms) {
     entry.arms[arm] = [];
     const saved = opt.regrade ? (regradeSource.cases.find((x) => (x.dir ?? x.name) === c.dir)?.arms?.[arm] ?? []) : null;

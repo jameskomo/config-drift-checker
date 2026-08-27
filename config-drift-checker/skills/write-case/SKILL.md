@@ -7,7 +7,8 @@ description: Author or fix an eval case (prompt.md, graders/*.md, case.yaml) for
 
 Layout: `<plugin>/evals/<case-dir>/prompt.md`, `graders/<name>.md`, optional `case.yaml`.
 
-**prompt.md** frontmatter: `name`, `tags: [..]`, `runs` (3), `max_turns`, `timeout_seconds`,
+**prompt.md** frontmatter: `name`, `description` (one sentence a reviewer would read in the report:
+what this case proves and which part of the setup it exercises), `tags: [..]`, `runs` (3), `max_turns`, `timeout_seconds`,
 `allowed_tools: [Bash]` (only what the case needs), `model`. Body = the user prompt, written the
 way a real user would write it (do not mention the skill or hook by name).
 

@@ -27,7 +27,9 @@ List what you found to the user in five lines or fewer.
 Turn budgets: `max_turns: 20` and `timeout_seconds: 900` for real-code cases (the agent reads,
 edits several files and writes a test), `12` for single-file or prose cases, `6` for hook cases. A
 run that hits `max_turns` is scored as-is and flagged TRUNCATED — treat that as "raise the budget".
-Write them under `<plugin>/evals/<case>/` using the official layout (prompt.md + graders/*.md,
+Give every case a `description:` line in `prompt.md` frontmatter, one sentence stating what the
+case proves and which part of the setup (skill, hook, CLAUDE.md rule) it exercises; the HTML report
+shows it under the case heading. Write them under `<plugin>/evals/<case>/` using the official layout (prompt.md + graders/*.md,
 optional case.yaml). Use `${CLAUDE_PLUGIN_ROOT}/../examples/komo-stack/evals/` as the reference if present,
 or the format section of the `write-case` skill.
 

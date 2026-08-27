@@ -1,4 +1,5 @@
 ---
+description: Proves the Spring skill stays out of frontend requests; exercises the skill's trigger description (negative case).
 name: Vue/Pinia request does not trigger the Spring skill
 tags: [skill, negative-trigger, vue]
 runs: 3

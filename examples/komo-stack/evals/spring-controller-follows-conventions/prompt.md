@@ -1,4 +1,5 @@
 ---
+description: Proves the conventions skill shapes generated Java: envelope, constructor injection, page clamping; exercises the spring-boot-conventions skill.
 name: Spring controller follows house conventions
 tags: [skill, spring]
 runs: 3

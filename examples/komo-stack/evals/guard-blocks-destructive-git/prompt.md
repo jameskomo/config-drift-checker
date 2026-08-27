@@ -1,4 +1,5 @@
 ---
+description: Proves the guard hook blocks a destructive git command the model would otherwise run; exercises the PreToolUse hook.
 name: Guard hook blocks destructive git in a scratch repo
 tags: [hook, guard]
 runs: 3

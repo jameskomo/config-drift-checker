@@ -52,8 +52,24 @@ export function renderReport(cur, base = null, opt = {}) {
       ${base ? `<td class="num">${f(b?.summary?.score)}</td>` : ''}<td class="num">${f(c.summary?.score)}</td>${base ? `<td class="num">${fd(b ? (c.summary?.score ?? 0) - (b.summary?.score ?? 0) : null)}</td>` : ''}
       ${ablating ? `<td class="num">${f(c.summary?.baselineScore)}</td><td class="num">${fd(c.summary?.delta)}</td>` : ''}<td class="num">${runsOf(c, 'with').length}${ablating ? '+' + runsOf(c, 'without').length : ''}</td><td class="num">${money(c.summary?.costUsd)}</td></tr>`;
   }).join('');
+  const graderWhat = (g) => {
+    const t = g.type;
+    if (t === 'regex') return `${g.match === 'not_contains' ? 'must NOT contain' : g.match?.startsWith('count') ? 'must contain ' + g.match.slice(6) + '× ' : 'must contain'} <code>${esc(g.pattern ?? '')}</code> in ${esc(g.target ?? 'last_message')}`;
+    if (t === 'tool_used') return `tool <code>${esc(g.tool ?? '')}</code>${g.input_match ? ' matching <code>' + esc(g.input_match) + '</code>' : ''} used ${g.max === 0 ? '0 times' : (g.min ?? 1) + '+ times' + (g.max != null ? ', at most ' + g.max : '')}${g.arm ? ' (' + esc(g.arm) + ' arm)' : ''}`;
+    if (t === 'file_exists') return `a file matching <code>${esc(g.path ?? '')}</code> exists`;
+    if (t === 'llm') return `judge model: ${esc(g.criteria ?? '')}`;
+    return esc(t);
+  };
+  const about = (c) => (c.prompt || (c.graders ?? []).length) ? `<div class="about">
+      <div class="about-h">What this case evaluates</div>
+      ${c.description ? `<p class="about-desc">${esc(c.description)}</p>` : ''}
+      ${c.prompt ? `<details open><summary>The request given to the agent</summary><pre class="prompt">${esc(c.prompt)}</pre></details>` : ''}
+      ${(c.graders ?? []).length ? `<details open><summary>The checks (${c.graders.length})</summary><table class="checks"><tbody>${c.graders.map((g) => `<tr><td><code>${esc(g.name)}</code></td><td class="t">${esc(g.type)}</td><td>${esc(g.rubric ?? '')}<div class="how">${graderWhat(g)}</div></td></tr>`).join('')}</tbody></table></details>` : ''}
+      ${c.scaffold ? `<details><summary>Workspace setup before each run</summary><pre class="prompt">${esc(c.scaffold)}</pre></details>` : ''}
+    </div>` : '';
   const sections = (cur.cases ?? []).map((c) => `<section class="case" id="case-${esc(key(c))}"><h2>${esc(key(c))}<small>${esc(c.name && c.name !== key(c) ? c.name : '')}</small></h2>
     <p class="tags">${(c.tags ?? []).map((t) => `<span>${esc(t)}</span>`).join('')}</p>
+    ${about(c)}
     <div class="runs">${['with', 'without'].flatMap((arm) => runsOf(c, arm).map((r) => runCard(r, arm))).join('')}</div></section>`).join('');
   const a = cur.aggregates ?? {};
   const regressed = base ? (cur.cases ?? []).filter((c) => status(c) === 'regressed').length : null;
@@ -84,6 +100,7 @@ details{margin:4px 0}summary{cursor:pointer;font-size:13px;color:var(--muted)}su
 code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.9em;background:var(--code);padding:1px 4px;border-radius:3px}
 pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);border-radius:4px;padding:10px;font-size:12.5px;max-height:420px;overflow:auto;margin:6px 0 0}
 .muted{color:var(--muted)}
+.about{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;margin:8px 0 14px;font-size:14px}.about-h{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}.about-desc{margin:0 0 8px;font-size:15px}.about details{margin:4px 0}.about summary{color:var(--ink);font-weight:500}pre.prompt{white-space:pre-wrap;background:var(--code);border-radius:4px;padding:10px;font-size:13px;margin:6px 0 4px}table.checks{border-collapse:collapse;width:100%;margin:6px 0 4px}table.checks td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top;font-size:13.5px}table.checks td.t{color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:12px;white-space:nowrap}table.checks .how{color:var(--muted);font-size:12.5px;margin-top:2px}
 .howto{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:8px 14px;margin:0 0 18px;font-size:13.5px}.howto summary{font-weight:600;color:var(--ink)}.howto ol{margin:8px 0 4px;padding-left:20px}.howto li{margin:4px 0}
 #failing-only:checked ~ .cases .run.ok{display:none}.filter{font-size:13px;color:var(--muted);margin:0 0 12px;display:block}
 @media (max-width:640px){.runs{grid-template-columns:1fr}}`;
