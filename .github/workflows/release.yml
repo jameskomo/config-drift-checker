@@ -1,0 +1,20 @@
+name: release
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+permissions: { contents: write }
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with: { fetch-depth: 0 }
+      - env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          set -euo pipefail
+          v="${GITHUB_REF_NAME}"
+          claude_ver=$(node -p "require('./config-drift-checker/.claude-plugin/plugin.json').version")
+          [ "v$claude_ver" = "$v" ] || echo "::warning::tag $v does not match plugin.json version $claude_ver"
+          gh release create "$v" --title "$v" --generate-notes --latest || echo "release exists"
+          # keep the floating major tag on the release commit
+          git tag -f v0 && git push -q --force origin v0
