@@ -56,7 +56,52 @@ Review the diff like any PR. Commit.
 
 Then: Actions → **config-drift-checker** → *Run workflow*. That first run records your **baseline**.
 
-## 4. What happens from now on (automatic)
+## 4. Adding the check to an existing pipeline (no Claude Code needed)
+
+If you already have a plugin manifest and an `evals/` folder — or a teammate ran `setup` — the CI
+half is **one step**. It can live in its own workflow (recommended: the 6-hourly release-watch
+schedule then never touches your main pipeline) or as an extra job in an existing one.
+
+```yaml
+# .github/workflows/config-drift-checker.yml
+on:
+  schedule: [{ cron: '17 */6 * * *' }]        # release-watch: runs only when Claude Code shipped
+  pull_request: { paths: ['CLAUDE.md', '.claude/**', 'agent-config/**'] }
+  workflow_dispatch:
+permissions: { contents: write, pull-requests: write }
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }   # your key; runs bill to you
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jameskomo/config-drift-checker/action@v0             # ← the whole check
+        with:
+          plugin-dir: .                        # where .claude-plugin/plugin.json lives
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}   # optional
+```
+
+That one step installs Claude Code, runs your suite, diffs against your baseline, stores results
+on your `eval-results` branch, comments on the PR, uploads the `eval-report` artifact, posts to
+Slack on regression, and sets the check red or green. (The full template with the release-watch
+job that skips runs when nothing shipped is in the plugin: `ci/config-drift-checker.yml`.)
+
+**Gate merges on it:** Settings → Branches → branch protection → *Require status checks to pass* →
+add `eval`. A setup regression then blocks the PR that caused it.
+
+**Inputs you may want:** `runs: 1` and `model: haiku` for cheap PR smoke; `ablation: with-without`
+once, to measure what a skill is worth; `threshold: 0.15` (default) for what counts as a drop;
+`promote-baseline: true` after an intentional change; `claude-code-version: 2.1.247` to pin.
+
+**Which path is for me?**
+
+| You are… | Do |
+|---|---|
+| a developer with Claude Code who wants the cases written for you | §2 `setup`, then push — it writes the workflow above |
+| a platform team adding a stage to an existing pipeline | this section: the step + the secret + (optionally) branch protection |
+| on GitLab / Buildkite / other CI | run the runner directly: `node <plugin-root>/tools/eval-shim.mjs <plugin> --scaffold` and `eval-diff.mjs` in your job; the Action is a thin wrapper around them |
+
+## 5. What happens from now on (automatic)
 
 - **Every 6 hours** a tiny job checks npm; if Claude Code published a new version, the suite runs
   against it. No release → nothing runs, nothing costs.
@@ -67,7 +112,7 @@ Then: Actions → **config-drift-checker** → *Run workflow*. That first run re
   responses). Results are stored on the `eval-results` branch — history without a database.
 - After you change your setup on purpose: *Run workflow* with **promote-baseline** ticked.
 
-## 5. Reading a red check
+## 6. Reading a red check
 
 Open the job summary, then download `eval-report`. For each failing run ask, in this order:
 1. **Did the agent refuse or ask before acting?** (1 turn, no tool calls) → the case doesn't reach
@@ -80,7 +125,7 @@ Open the job summary, then download `eval-report`. For each failing run ask, in 
    without spending a run.
 4. **Flaky?** (mixed verdicts) → raise `runs` for that case. Never loosen the threshold.
 
-## 6. Local commands
+## 7. Local commands
 
 ```bash
 /config-drift-checker:run                      # inside Claude Code: run, diff, explain red
@@ -92,13 +137,13 @@ node <plugin-root>/tools/eval-report.mjs current.json --baseline baseline.json
 `<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every run
 writes `aggregate-result.json` + `report.html` into `<your-plugin>/evals/results/<timestamp>/`.
 
-## 7. Cost (measured)
+## 8. Cost (measured)
 
 $0.05–0.08 per short Sonnet run; $0.20–0.25 per real-code run editing three files. A 5-case suite
 at 3 runs ≈ $1–2 per release. Use `ablation: none` for scheduled runs (with/without is for proving a
 skill's worth once), Haiku for PR smoke, and the release-watch — not a nightly cron.
 
-## 8. Safety
+## 9. Safety
 
 Workspaces are throwaway directories, not sandboxes for Docker, the network or your host. Every
 run carries a safety-net hook that blocks `docker compose down -v`, prunes, force-pushes, `rm -rf`
@@ -107,7 +152,7 @@ harmless when it *succeeds*: a scratch git repo, or a stub binary created in `.e
 case's `scaffold_script` (the `setup` skill does this for you). Read third-party suites before
 running them with `--scaffold`.
 
-## 9. See it work — the demo repo
+## 10. See it work — the demo repo
 
 `config-drift-checker-demo` (a tiny Spring Boot 3.5 / Java 21 notes API) is a repo with a typical
 setup — `CLAUDE.md`, one conventions skill, one guard hook — and nothing else. Everything below was
@@ -135,7 +180,7 @@ Everything it produced is in the demo repo as it was generated, with its run log
 the demo repo's `docs/claude/README.md`; its baseline results and HTML report are in `agent-config/evals/results/`.
 Read the three cases — they are the best starting point for writing your own.
 
-## 10. FAQ
+## 11. FAQ
 
 **Does installing the plugin change my repos?** No. Only `/config-drift-checker:setup` writes files,
 and only in the repo you run it in, as a reviewable diff.

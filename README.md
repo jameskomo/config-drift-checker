@@ -32,6 +32,13 @@ and writes the GitHub workflow. You add one secret (`ANTHROPIC_API_KEY`) and pus
 the suite runs on every Claude Code release and every PR that touches your setup: red check, PR
 comment, Slack alert, and an HTML report with every grader's reason.
 
+Already have a suite, or just want the stage? One step:
+
+```yaml
+- uses: jameskomo/config-drift-checker/action@v0
+  with: { plugin-dir: . }
+```
+
 See it end to end on a small Spring Boot service: **[config-drift-checker-demo](https://github.com/jameskomo/config-drift-checker-demo)**.
 
 ## What's here
