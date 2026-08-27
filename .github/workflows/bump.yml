@@ -1,0 +1,44 @@
+name: bump-and-release
+# On every push that changes something functional, bump the version (patch by default; put #minor or
+# #major in a commit message to bump those), commit with [skip ci], tag, create the GitHub release, move v0.
+# The Marketplace mirror (config-drift-checker-action) syncs itself from the new tag within 30 minutes.
+on:
+  push:
+    branches: [main]
+    paths: ['config-drift-checker/tools/**', 'config-drift-checker/skills/**', 'config-drift-checker/.claude-plugin/**', 'config-drift-checker/ci/**', 'action/**']
+  workflow_dispatch:
+    inputs:
+      level: { description: 'patch | minor | major', default: 'patch' }
+permissions: { contents: write }
+concurrency: { group: bump-and-release, cancel-in-progress: false }
+jobs:
+  bump:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with: { fetch-depth: 0 }
+      - id: v
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          set -euo pipefail
+          cur=$(node -p "require('./config-drift-checker/.claude-plugin/plugin.json').version")
+          level="${{ inputs.level || 'patch' }}"
+          msgs=$(git log -1 --format=%B)
+          case "$msgs" in *'#major'*) level=major;; *'#minor'*) level=minor;; esac
+          IFS=. read -r a b c <<< "$cur"
+          case "$level" in major) a=$((a+1)); b=0; c=0;; minor) b=$((b+1)); c=0;; *) c=$((c+1));; esac
+          next="$a.$b.$c"
+          node -e "for (const f of ['config-drift-checker/.claude-plugin/plugin.json','config-drift-checker/package.json']) { const fs=require('fs'); const j=JSON.parse(fs.readFileSync(f,'utf8')); j.version='$next'; fs.writeFileSync(f, JSON.stringify(j,null,2)+'\n'); }"
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A && git commit -qm "chore(release): v$next [skip ci]"
+          git tag "v$next" && git tag -f v0
+          git push -q origin main && git push -q origin "v$next" && git push -q --force origin v0
+          gh release create "v$next" --title "v$next" --generate-notes --latest
+          echo "released v$next (was $cur, $level)"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+      - name: npm publish (only if NPM_TOKEN is set)
+        env: { NPM_TOKEN: '${{ secrets.NPM_TOKEN }}' }
+        run: |
+          if [ -z "${NPM_TOKEN:-}" ]; then echo "NPM_TOKEN not set; skipping npm publish"; exit 0; fi
+          cd config-drift-checker && echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc && npm publish --access public && echo "published to npm"
