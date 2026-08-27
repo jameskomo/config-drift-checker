@@ -1,5 +1,7 @@
 # config-drift-checker — user guide
 
+Site: https://jameskomo.github.io/config-drift-checker/ · Demo report: https://jameskomo.github.io/config-drift-checker-demo/report.html · Hosted beta: https://jameskomo.github.io/config-drift-checker/#hosted
+
 **CI for your Claude Code setup.** Your CLAUDE.md, skills and hooks are how your code gets
 written now — and they break silently when Claude Code ships (25 releases last month), when the
 model behind an alias changes, or when a teammate edits a skill. config-drift-checker turns "what my
