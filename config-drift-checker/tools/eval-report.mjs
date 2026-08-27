@@ -38,7 +38,7 @@ export function renderReport(cur, base = null, opt = {}) {
     const files = (r.filesChanged ?? r.filesCreated ?? []).map((x) => `<li><code>${esc(x)}</code></li>`).join('');
     return `<article class="run ${r.score === 1 ? 'ok' : r.score === null ? 'na' : 'bad'}">
       <header><span class="arm ${arm}">${arm}</span> <b>run ${(r.runIndex ?? 0) + 1}</b> <span class="score">${f(r.score)}</span>
-        <span class="meta">${r.numTurns ?? '—'} turns · ${money(r.costUsd)} · ${r.durationMs ? Math.round(r.durationMs / 1000) + ' s' : ''} ${r.isError ? '· <em class="err">error</em>' : ''}${r.timedOut ? '· <em class="err">timeout</em>' : ''}</span></header>
+        <span class="meta">${r.numTurns ?? '—'} turns · ${money(r.costUsd)} · ${r.durationMs ? Math.round(r.durationMs / 1000) + ' s' : ''} ${r.isError ? '· <em class="err">error</em>' : ''}${r.truncated ? '· <em class="err">max_turns</em>' : ''}${r.timedOut ? '· <em class="err">timeout</em>' : ''}</span></header>
       <div class="chips">${(r.graders ?? []).map(chip).join('')}</div>
       ${reasons ? `<details><summary>Judge reasons</summary><ul class="reasons">${reasons}</ul></details>` : ''}
       <details><summary>Tool calls (${(r.toolUses ?? []).length})</summary>${tools ? `<ol class="tools">${tools}</ol>` : '<p class="muted">none</p>'}</details>

@@ -150,7 +150,7 @@ async function runAgent(c, arm) {
   for (const f of files) { try { const s = await fs.stat(path.join(ws, f)); if (s.size < 200_000) fileContents[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
   if (cfg) await fs.rm(cfg, { recursive: true, force: true });
   await fs.rm(ws, { recursive: true, force: true });
-  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !!result?.is_error || code !== 0, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
+  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !result || !!result.is_error, truncated: !!result && !result.is_error && (code !== 0 || String(result.subtype ?? '').startsWith('error_max_turns')), resultSubtype: result?.subtype ?? null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
 }
 async function snapshot(dir) {
   const m = new Map();
@@ -243,7 +243,7 @@ const outDir = opt.outputDir ?? path.join(evalDir, 'results', stamp);
 await fs.mkdir(outDir, { recursive: true });
 log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(',')} · model=${opt.model} · judge=${opt.judgeModel}${opt.regrade ? ' · REGRADE of ' + path.basename(path.dirname(opt.regrade)) : ''}`);
 const report = { schemaVersion: '1', shim: true, generatedAt: new Date().toISOString(), regradeOf: opt.regrade ?? undefined, suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {} };
-let totalCost = 0, erroredRuns = 0, firstError = null;
+let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null;
 for (const c of cases) {
   const entry = { name: c.name, dir: c.dir, tags: c.tags, arms: {}, summary: {} };
   for (const arm of arms) {
@@ -263,8 +263,9 @@ for (const c of cases) {
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
       if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.lastMessage || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
-      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
+      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
       if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
+      if (run.truncated) { truncatedRuns++; log(`    TRUNCATED (${run.resultSubtype || 'exit ' + run.exitCode}, ${run.numTurns} turns): scored as-is — raise max_turns for this case`); }
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
     }
   }
@@ -277,7 +278,7 @@ for (const c of cases) {
 }
 const withScores = report.cases.map((c) => c.summary.score).filter((s) => s !== null);
 const totalRuns = report.cases.reduce((n, c) => n + Object.values(c.arms).flat().length, 0);
-report.aggregates = { overallScore: withScores.length ? withScores.reduce((a, b) => a + b, 0) / withScores.length : null, passed: report.cases.filter((c) => c.summary.score === 1).length, failed: report.cases.filter((c) => c.summary.score !== null && c.summary.score !== 1).length, costUsd: totalCost, erroredRuns, totalRuns, partialReason: erroredRuns ? `${erroredRuns} of ${totalRuns} agent runs errored: ${firstError}` : null };
+report.aggregates = { overallScore: withScores.length ? withScores.reduce((a, b) => a + b, 0) / withScores.length : null, passed: report.cases.filter((c) => c.summary.score === 1).length, failed: report.cases.filter((c) => c.summary.score !== null && c.summary.score !== 1).length, costUsd: totalCost, erroredRuns, truncatedRuns, totalRuns, partialReason: erroredRuns ? `${erroredRuns} of ${totalRuns} agent runs errored: ${firstError}` : null };
 const outPath = path.join(outDir, 'aggregate-result.json');
 await fs.writeFile(outPath, JSON.stringify(report, null, 2));
 await fs.writeFile(path.join(outDir, 'report.html'), renderReport(report));
@@ -286,7 +287,7 @@ else if (opt.json) await fs.writeFile(opt.json, JSON.stringify(report, null, 2))
 
 log('\n' + pad('case', 44) + pad('with', 8) + (ablating ? pad('without', 9) + pad('delta', 8) : '') + 'cost');
 for (const c of report.cases) log(pad(c.dir, 44) + pad(fmt(c.summary.score), 8) + (ablating ? pad(fmt(c.summary.baselineScore), 9) + pad(fmtDelta(c.summary.delta), 8) : '') + `$${c.summary.costUsd.toFixed(3)}`);
-log(`\noverall=${fmt(report.aggregates.overallScore)} passed=${report.aggregates.passed}/${cases.length} cost=$${totalCost.toFixed(3)}${erroredRuns ? `\nERRORED RUNS: ${report.aggregates.partialReason}` : ''}\n→ ${outPath}\n→ ${path.join(outDir, 'report.html')}`);
+log(`\noverall=${fmt(report.aggregates.overallScore)} passed=${report.aggregates.passed}/${cases.length} cost=$${totalCost.toFixed(3)}${erroredRuns ? `\nERRORED RUNS: ${report.aggregates.partialReason}` : ''}${truncatedRuns ? `\nTRUNCATED RUNS: ${truncatedRuns} hit max_turns — scored as-is; raise max_turns on those cases` : ''}\n→ ${outPath}\n→ ${path.join(outDir, 'report.html')}`);
 if (erroredRuns === totalRuns && totalRuns > 0) process.exitCode = 2; // nothing ran: partial, like the official runner
 function fmt(s) { return s === null || s === undefined ? '—' : s.toFixed(2); }
 function fmtDelta(d) { return d === null || d === undefined ? '—' : (d >= 0 ? '+' : '') + d.toFixed(2); }
