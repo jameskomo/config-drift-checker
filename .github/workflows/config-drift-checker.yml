@@ -1,0 +1,53 @@
+name: config-drift-checker
+on:
+  schedule:
+    - cron: '17 */6 * * *'        # release-watch: every 6h, runs only if Claude Code published a new version
+  push:
+    branches: [main]
+    paths: ['examples/**', 'config-drift-checker/**', 'action/**']
+  pull_request:
+    paths: ['examples/**', 'config-drift-checker/**']
+  workflow_dispatch:
+    inputs:
+      promote-baseline: { description: 'Overwrite baseline with this run', type: boolean, default: false }
+      ablation:         { description: 'with-without | none', default: 'none' }
+
+permissions: { contents: write, pull-requests: write }
+concurrency: { group: config-drift-checker, cancel-in-progress: false }
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    outputs: { run: '${{ steps.decide.outputs.run }}', version: '${{ steps.rw.outputs.version }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - id: rw
+        run: |
+          git fetch --depth=1 origin eval-results 2>/dev/null && git show origin/eval-results:.claude-code-version > .claude-code-version 2>/dev/null || true
+          node config-drift-checker/tools/release-watch.mjs --state .claude-code-version >> "$GITHUB_OUTPUT"
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ steps.rw.outputs.changed }}" != "true" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"; echo "No new Claude Code release (still ${{ steps.rw.outputs.version }}); skipping."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "Running: event=${{ github.event_name }} claude-code=${{ steps.rw.outputs.version }} (was ${{ steps.rw.outputs.previous }})"
+          fi
+
+  eval:
+    needs: watch
+    if: needs.watch.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}     # BYOK — agent runs bill to your key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./action
+        with:
+          plugin-dir: examples/komo-stack
+          claude-code-version: ${{ needs.watch.outputs.version }}
+          ablation: ${{ inputs.ablation || 'none' }}
+          promote-baseline: ${{ inputs.promote-baseline || 'false' }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

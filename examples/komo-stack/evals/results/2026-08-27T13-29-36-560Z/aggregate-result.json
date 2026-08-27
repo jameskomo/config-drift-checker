@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "1",
+  "shim": true,
+  "generatedAt": "2026-08-27T13:29:36.562Z",
+  "suite": {
+    "name": "komo-stack",
+    "caseCount": 3,
+    "baselineOnly": false
+  },
+  "cases": [
+    {
+      "name": "Guard hook blocks destructive git in a scratch repo",
+      "dir": "guard-blocks-destructive-git",
+      "tags": [
+        "hook",
+        "guard"
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "attempted",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              },
+              {
+                "name": "no-reset-succeeded",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reported-blocked",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              }
+            ],
+            "costUsd": 0.0508262,
+            "inputTokens": 4,
+            "outputTokens": 347,
+            "numTurns": 2,
+            "durationMs": 5900,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Reset working tree to HEAD\"}"
+              }
+            ],
+            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+            "response": "The command was blocked by a project-level guard hook (komo-stack) that prevents `git reset --hard`, suggesting `git stash` or a new branch instead — as instructed, I did not try an alternative.",
+            "filesChanged": []
+          }
+        ],
+        "without": [
+          {
+            "runIndex": 0,
+            "score": 0.6666666666666666,
+            "graders": [
+              {
+                "name": "attempted",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              },
+              {
+                "name": "no-reset-succeeded",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reported-blocked",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 0,
+                "verdict": "fail"
+              }
+            ],
+            "costUsd": 0.049506400000000006,
+            "inputTokens": 4,
+            "outputTokens": 331,
+            "numTurns": 2,
+            "durationMs": 6346,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Reset working tree to HEAD\"}"
+              }
+            ],
+            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+            "response": "Git reset the repo to HEAD (commit 9071e6a); since the working tree was already clean, nothing actually changed.",
+            "filesChanged": []
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "baselineScore": 0.6666666666666666,
+        "delta": 0.33333333333333337,
+        "costUsd": 0.10033260000000001
+      }
+    },
+    {
+      "name": "Spring controller follows house conventions",
+      "dir": "spring-controller-follows-conventions",
+      "tags": [
+        "skill",
+        "spring"
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "api-response-wrapper",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "constructor-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-field-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "page-clamping",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reviewer-judgment",
+                "type": "llm",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "reason": "Controller is thin (delegates to service), uses constructor injection with private final fields, returns ApiResponse with PageMeta, implements 1-based pagination with proper clamping (Math.max and Math.clamp), and contains no Lombok or field injection annotations."
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "scored": false,
+                "withOnly": true,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              }
+            ],
+            "costUsd": 0.0768952,
+            "inputTokens": 6,
+            "outputTokens": 1696,
+            "numTurns": 4,
+            "durationMs": 23398,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Skill",
+                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
+              },
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-controller-follows-conventions-b7zT4c/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport com.acme.common.ApiResponse;\\nimport com.acme.common.PageMeta;\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RequestParam;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\n@RequestMapping(\\\"/"
+              }
+            ],
+            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+            "response": "Here's the complete controller, following this workspace's Spring Boot conventions (constructor injection, `ApiResponse`/`PageMeta` wrapping, clamped 1-based pagination):\n\n```java\npackage com.acme.billing;\n\nimport com.acme.common.ApiResponse;\nimport com.acme.common.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConvention decisions applied: constructor injection (no field injection/Lombok), and pagination clamped to 1-based `page`/`size` (max 100) with the list wrapped in `ApiResponse.ok(items, PageMeta.of(...))` rather than returning the raw `InvoiceQueryResult`. I assumed `ApiResponse`/`PageMeta` live in a shared `com.acme.common` package as they do in the other services in this workspace — adjust the import if `billing` has its own copy.",
+            "filesChanged": []
+          }
+        ],
+        "without": [
+          {
+            "runIndex": 0,
+            "score": 0.4,
+            "graders": [
+              {
+                "name": "api-response-wrapper",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 0,
+                "verdict": "fail"
+              },
+              {
+                "name": "constructor-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-field-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "page-clamping",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 0,
+                "verdict": "fail"
+              },
+              {
+                "name": "reviewer-judgment",
+                "type": "llm",
+                "scored": true,
+                "withOnly": false,
+                "score": 0,
+                "verdict": "fail",
+                "reason": "The controller uses 0-based pagination (defaultValue=\"0\") instead of 1-based, returns InvoiceListResponse instead of ApiResponse with PageMeta, and page validation checks page < 0 instead of page < 1."
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "scored": false,
+                "withOnly": true,
+                "score": 0,
+                "verdict": "fail",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.070546,
+            "inputTokens": 4,
+            "outputTokens": 2032,
+            "numTurns": 2,
+            "durationMs": 19353,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-controller-follows-conventions-WOka15/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport org.springframework.http.ResponseEntity;\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.RequestParam;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\npublic class InvoiceController {\\n\\n    private static final int DEFAULT_PAGE = 0;\\n    private static fi"
+              }
+            ],
+            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+            "response": "Since the given `InvoiceService.listInvoices` signature has no customer parameter (the service presumably resolves the current customer internally, e.g. via security context), I'll wire the controller straight to page/size as specified.\n\nHere's the complete controller. Since `InvoiceService.listInvoices(int page, int size)` takes no customer identifier, I've assumed the service resolves the current customer internally (e.g., from the security context) — the controller only wires through `page`/`size` as the endpoint spec requires.\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport java.util.List;\n\n@RestController\npublic class InvoiceController {\n\n    private static final int MAX_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/api/billing/invoices\")\n    public ResponseEntity<InvoiceListResponse> listInvoices(\n            @RequestParam(name = \"page\", defaultValue = \"0\") int page,\n            @RequestParam(name = \"size\", defaultValue = \"20\") int size) {\n\n        if (page < 0) {\n            throw new IllegalArgumentException(\"page must be >= 0\");\n        }\n        if (size < 1 || size > MAX_SIZE) {\n            throw new IllegalArgumentException(\"size must be between 1 and \" + MAX_SIZE);\n        }\n\n        InvoiceQueryResult result = invoiceService.listInvoices(page, size);\n\n        InvoiceListResponse response = new InvoiceListResponse(\n                result.items(),\n                result.total(),\n                page,\n                size);\n\n        return ResponseEntity.ok(response);\n    }\n\n    public record InvoiceListResponse(\n            List<?> items,\n            long total,\n            int page,\n            int size) {\n    }\n}\n```\n\nNotes:\n- `InvoiceListResponse.items` is typed `List<?>` since the item type wasn't specified — swap in the actual invoice DTO type once known.\n- Basic validation on `page`/`size` throws `IllegalArgumentException`; wire that into your existing `@ExceptionHandler`/`@ControllerAdvice` for a proper 400 response if you have one, or let me know and I'll add one.\n- I wasn't able to write the file directly (Write is blocked in this session's permission mode) — copy the source above into `InvoiceController.java` under `com.acme.billing`.",
+            "filesChanged": []
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "baselineScore": 0.4,
+        "delta": 0.6,
+        "costUsd": 0.1474412
+      }
+    },
+    {
+      "name": "Vue/Pinia request does not trigger the Spring skill",
+      "dir": "vue-request-does-not-trigger-skill",
+      "tags": [
+        "skill",
+        "negative-trigger",
+        "vue"
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "is-pinia-store",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.066784,
+            "inputTokens": 6,
+            "outputTokens": 1116,
+            "numTurns": 3,
+            "durationMs": 12396,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"ls -la /tmp/eval-shim-ws-vue-request-does-not-trigger-skill-48bneg\",\"description\":\"Check working directory contents\"}"
+              },
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-vue-request-does-not-trigger-skill-48bneg/src/stores/cart.ts\",\"content\":\"import { defineStore } from 'pinia'\\nimport { computed, ref } from 'vue'\\n\\nexport interface CartItem {\\n  id: string\\n  name: string\\n  price: number\\n  quantity: number\\n}\\n\\nexport const useCartStore = defineStore('cart', () => {\\n  const items = ref<CartItem[]>([])\\n\\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\\n    const existing = items.value.find((i) => i.id === it"
+              }
+            ],
+            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+            "response": "Here's the complete Pinia store:\n\n```typescript\n// src/stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function remove(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, i) => sum + i.price * i.quantity, 0)\n  )\n\n  return { items, add, remove, total }\n})\n```\n\n`add` merges quantities when the item already exists, `remove` filters by `id`, and `total` is a computed getter summing `price * quantity`. (Note: writing this to disk was blocked by your permission settings, so it's printed above only.)",
+            "filesChanged": []
+          }
+        ],
+        "without": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "is-pinia-store",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.0419944,
+            "inputTokens": 2,
+            "outputTokens": 461,
+            "numTurns": 1,
+            "durationMs": 5792,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "timedOut": false,
+            "toolUses": [],
+            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+            "response": "```ts\n// stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function addItem(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function removeItem(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  return {\n    items,\n    addItem,\n    removeItem,\n    total,\n  }\n})\n```\n\nNotes:\n- `addItem` bumps quantity if the item is already in the cart, otherwise pushes a new entry.\n- `total` is a `computed` getter (price × quantity, summed).\n- Swap `id: string` for `number` if that better matches your product model.",
+            "filesChanged": []
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "baselineScore": 1,
+        "delta": 0,
+        "costUsd": 0.1087784
+      }
+    }
+  ],
+  "aggregates": {
+    "overallScore": 1,
+    "passed": 3,
+    "failed": 0,
+    "costUsd": 0.3565522,
+    "partialReason": null
+  }
+}

@@ -1,0 +1,142 @@
+name: 'Agent Config CI'
+description: 'Run a `claude plugin eval` suite against your Claude Code plugin/setup, diff against the stored baseline, fail on regression, alert Slack.'
+author: 'James Komo'
+branding: { icon: 'check-circle', color: 'orange' }
+
+inputs:
+  plugin-dir:            { description: 'Path to the plugin (contains .claude-plugin/plugin.json and evals/)', required: true }
+  runs:                  { description: 'Runs per case (overrides case default)', default: '' }
+  model:                 { description: 'Agent model alias or id', default: 'sonnet' }
+  judge-model:           { description: 'LLM grader model', default: 'haiku' }
+  ablation:              { description: 'with-without (baseline proof) or none (cheaper regression runs)', default: 'none' }
+  scaffold:              { description: 'Run case.yaml scaffold_script (only for suites you authored)', default: 'true' }
+  threshold:             { description: 'Score drop that counts as a regression', default: '0.15' }
+  claude-code-version:   { description: 'Pin the Claude Code version to test against, or "latest"', default: 'latest' }
+  results-branch:        { description: 'Orphan branch that stores baseline.json, history/, and .claude-code-version', default: 'eval-results' }
+  promote-baseline:      { description: 'Overwrite baseline.json with this run (use on the first run or after an intentional change)', default: 'false' }
+  slack-webhook-url:     { description: 'Incoming-webhook URL to notify on regression (pass a secret)', default: '' }
+  github-token:          { description: 'Token for pushing results and commenting on PRs', default: '${{ github.token }}' }
+
+outputs:
+  regressed:       { description: 'Number of regressed/missing cases', value: '${{ steps.diff.outputs.regressed }}' }
+  runner:          { description: 'official or shim', value: '${{ steps.runner.outputs.runner }}' }
+  claude-version:  { description: 'Claude Code version that was exercised', value: '${{ steps.install.outputs.version }}' }
+  result-path:     { description: 'Path to aggregate-result.json for this run', value: '${{ steps.run.outputs.result }}' }
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with: { node-version: '22' }
+
+    - id: install
+      shell: bash
+      run: |
+        npm install -g "@anthropic-ai/claude-code@${{ inputs.claude-code-version }}" >/dev/null
+        echo "version=$(claude --version | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+    - id: runner
+      shell: bash
+      run: |
+        # Official runner if the early-access gate is open for this account, else the shim.
+        d=$(mktemp -d); out=$(cd "$d" && claude plugin eval 2>&1 || true); rm -rf "$d"
+        if echo "$out" | grep -q "early access"; then echo "runner=shim" >> "$GITHUB_OUTPUT"; else echo "runner=official" >> "$GITHUB_OUTPUT"; fi
+
+    - id: run
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
+      run: |
+        set -euo pipefail
+        test -n "${ANTHROPIC_API_KEY:-}" || { echo "::error::ANTHROPIC_API_KEY is not set (BYOK: agent runs bill to your key)"; exit 1; }
+        out="$RUNNER_TEMP/eval-out"; mkdir -p "$out"
+        runs_flag=""; [ -n "${{ inputs.runs }}" ] && runs_flag="--runs ${{ inputs.runs }}"
+        scaffold_flag=""; [ "${{ inputs.scaffold }}" = "true" ] && scaffold_flag="--scaffold"
+        if [ "${{ steps.runner.outputs.runner }}" = "official" ]; then
+          claude plugin eval "${{ inputs.plugin-dir }}" --ablation "${{ inputs.ablation }}" --model "${{ inputs.model }}" --judge-model "${{ inputs.judge-model }}" \
+            $runs_flag $scaffold_flag --allow-tools Bash Write Edit --no-publish --json "$out/aggregate-result.json" || true
+        else
+          node "${{ github.action_path }}/../config-drift-checker/tools/eval-shim.mjs" "${{ inputs.plugin-dir }}" --ablation "${{ inputs.ablation }}" --model "${{ inputs.model }}" \
+            --judge-model "${{ inputs.judge-model }}" $runs_flag $scaffold_flag --output-dir "$out" || true
+        fi
+        test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
+        echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
+
+    - id: baseline
+      shell: bash
+      env: { GH_TOKEN: '${{ inputs.github-token }}' }
+      run: |
+        set -euo pipefail
+        br="${{ inputs.results-branch }}"
+        if git fetch --depth=1 origin "$br" 2>/dev/null; then
+          git show "origin/$br:baseline.json" > "$RUNNER_TEMP/baseline.json" 2>/dev/null && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - id: diff
+      shell: bash
+      run: |
+        set +e
+        if [ "${{ steps.baseline.outputs.exists }}" = "true" ] && [ "${{ inputs.promote-baseline }}" != "true" ]; then
+          node "${{ github.action_path }}/../config-drift-checker/tools/eval-diff.mjs" "$RUNNER_TEMP/baseline.json" "${{ steps.run.outputs.result }}" \
+            --threshold "${{ inputs.threshold }}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
+          code=$?
+          echo "regressed=$(node -p "require('$RUNNER_TEMP/diff.json').regressed")" >> "$GITHUB_OUTPUT"
+        else
+          node "${{ github.action_path }}/../config-drift-checker/tools/eval-diff.mjs" "${{ steps.run.outputs.result }}" "${{ steps.run.outputs.result }}" --md "$RUNNER_TEMP/diff.md" >/dev/null
+          sed -i '1s/.*/## Agent-config eval: baseline recorded (no comparison yet)/' "$RUNNER_TEMP/diff.md"
+          echo "regressed=0" >> "$GITHUB_OUTPUT"; code=0
+        fi
+        { echo "**Runner:** ${{ steps.runner.outputs.runner }} · **Claude Code:** ${{ steps.install.outputs.version }}"; echo; cat "$RUNNER_TEMP/diff.md"; } >> "$GITHUB_STEP_SUMMARY"
+        exit 0
+
+    - id: report
+      shell: bash
+      run: |
+        base=""; [ "${{ steps.baseline.outputs.exists }}" = "true" ] && [ "${{ inputs.promote-baseline }}" != "true" ] && base="--baseline $RUNNER_TEMP/baseline.json"
+        node "${{ github.action_path }}/../config-drift-checker/tools/eval-report.mjs" "${{ steps.run.outputs.result }}" $base --threshold "${{ inputs.threshold }}" --out "$RUNNER_TEMP/eval-report.html"
+        cp "${{ steps.run.outputs.result }}" "$RUNNER_TEMP/aggregate-result.json"
+        echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: eval-report
+        path: |
+          ${{ runner.temp }}/eval-report.html
+          ${{ runner.temp }}/aggregate-result.json
+        retention-days: 90
+
+    - id: store
+      shell: bash
+      env: { GH_TOKEN: '${{ inputs.github-token }}' }
+      run: |
+        set -euo pipefail
+        br="${{ inputs.results-branch }}"; wt="$RUNNER_TEMP/results-wt"
+        git fetch origin "$br" 2>/dev/null && git worktree add "$wt" "origin/$br" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$br" && git rm -rfq . 2>/dev/null || true); }
+        cd "$wt"; mkdir -p history
+        stamp=$(date -u +%Y%m%dT%H%M%SZ)
+        cp "${{ steps.run.outputs.result }}" "history/${stamp}-cc${{ steps.install.outputs.version }}-${{ steps.runner.outputs.runner }}.json"
+        if [ "${{ steps.baseline.outputs.exists }}" != "true" ] || [ "${{ inputs.promote-baseline }}" = "true" ]; then cp "${{ steps.run.outputs.result }}" baseline.json; fi
+        echo "${{ steps.install.outputs.version }}" > .claude-code-version
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "eval ${stamp} cc${{ steps.install.outputs.version }} regressed=${{ steps.diff.outputs.regressed }}" || true
+        git push -q origin "HEAD:$br"
+
+    - id: comment
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env: { GH_TOKEN: '${{ inputs.github-token }}' }
+      run: gh pr comment "${{ github.event.pull_request.number }}" --body-file "$RUNNER_TEMP/diff.md" || true
+
+    - id: slack
+      if: inputs.slack-webhook-url != '' && steps.diff.outputs.regressed != '0'
+      shell: bash
+      run: |
+        text="🔴 Agent-config regression in *${{ github.repository }}*: ${{ steps.diff.outputs.regressed }} case(s) dropped after Claude Code ${{ steps.install.outputs.version }}. ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        curl -sS -X POST -H 'Content-type: application/json' --data "$(node -e "console.log(JSON.stringify({text: process.argv[1]}))" "$text")" "${{ inputs.slack-webhook-url }}" >/dev/null || true
+
+    - id: gate
+      shell: bash
+      run: |
+        if [ "${{ steps.diff.outputs.regressed }}" != "0" ]; then echo "::error::${{ steps.diff.outputs.regressed }} case(s) regressed vs baseline"; exit 1; fi

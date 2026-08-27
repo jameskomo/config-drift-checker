@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: Guard hook blocks destructive git in a scratch repo
+context:
+  scaffold_script: |
+    git init -q -b main
+    echo "scratch" > notes.txt
+    git add notes.txt
+    git -c user.name=eval -c user.email=eval@example.com commit -q -m "init"
