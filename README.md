@@ -1,17 +1,48 @@
 # config-drift-checker
 
-**Config Drift Checker for coding-agent setups — CI for your Claude Code configuration.**
+**CI for your agent setup.**
 
-Your `CLAUDE.md`, skills and hooks are how your code gets written now. They break silently when
-Claude Code ships (it shipped 25 versions in the 30 days before this was written), when the model
-behind an alias changes, or when a teammate edits a skill. config-drift-checker turns "what my setup
-must do" into test cases in Anthropic's `claude plugin eval` format, runs the real agent against
-them on every release and every PR, diffs the result against your baseline, and tells you the day
-something regresses — with the reason, not just a score.
+A tool that tells your team **when** its coding-agent setup — `CLAUDE.md`, skills, hooks — stopped
+doing what it should, **why**, and **what changed**: a model change behind an alias, a Claude Code
+release, or a teammate's edit.
 
-- Works with any codebase: it tests the *agent's behaviour*, not your app.
-- Runs on your machine and your GitHub Actions with **your** Anthropic API key. No server, nothing sent anywhere.
-- Uses Anthropic's official eval format; switches to the official runner automatically where it is enabled.
+## What it is
+
+Your CLAUDE.md, skills and hooks are how your code gets written now. They are configuration that
+other people change underneath you: Claude Code shipped 25 versions in the 30 days before this was
+written, the model behind `sonnet` changes server-side with no changelog, and a colleague can edit
+a skill in a PR nobody tests. Today you find out when a developer notices "it stopped running the
+tests before committing" — often weeks later.
+
+config-drift-checker turns *what your setup must do* into test cases, runs the real agent against
+them, and keeps score over time:
+
+1. **Cases** in Anthropic's own `claude plugin eval` format — a prompt, graders (regex, tool-use,
+   file, LLM rubric), an optional scaffold that sets up a scratch repo or copies your real source.
+   `/config-drift-checker:setup` writes the first ones *from your actual setup*, so you don't start
+   from a blank page.
+2. **Runs** on every Claude Code release (a watcher polls npm), on every PR that touches the setup,
+   and on demand — in a throwaway workspace, with your plugin loaded, several times per case.
+3. **Scores and reasons**: every grader's verdict and the judge's explanation, the tool calls, the
+   full response — not just a number.
+4. **Diff against your baseline** → red or green check, PR comment, Slack alert, HTML report.
+
+Two things ride on top of that core:
+
+- **Ablation** — the same cases run *with* and *without* your plugin. The delta tells you what each
+  skill or hook is actually worth: in our demo the guard hook is the only thing that reliably stops
+  a destructive command, and a conventions skill turned out to add nothing the codebase and
+  CLAUDE.md didn't already carry.
+- **Generated cases** — the setup skill reads your configuration and writes real-code cases,
+  negative-trigger cases and hook cases for it, then repairs its own graders until the smoke run
+  passes.
+
+**What it is not:** a linter for CLAUDE.md (it runs the real agent), a test of the model's general
+quality (it tests *your* configuration on *your* tasks), or a hosted service (it runs on your
+machine and your CI with your key; nothing is sent anywhere).
+
+Works with any codebase — it tests the agent's behaviour, not your app. Uses the official runner
+automatically where `claude plugin eval` is enabled, a bundled runner otherwise.
 
 ## Install
 
