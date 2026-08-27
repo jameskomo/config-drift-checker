@@ -4,9 +4,9 @@ on:
     - cron: '17 */6 * * *'        # release-watch: every 6h, runs only if Claude Code published a new version
   push:
     branches: [main]
-    paths: ['examples/**', 'config-drift-checker/**', 'action/**']
+    paths: ['examples/**', 'action/**', 'config-drift-checker/tools/**', 'config-drift-checker/skills/**', 'config-drift-checker/.claude-plugin/**']
   pull_request:
-    paths: ['examples/**', 'config-drift-checker/**']
+    paths: ['examples/**', 'action/**', 'config-drift-checker/tools/**', 'config-drift-checker/skills/**', 'config-drift-checker/.claude-plugin/**']
   workflow_dispatch:
     inputs:
       promote-baseline: { description: 'Overwrite baseline with this run', type: boolean, default: false }
