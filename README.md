@@ -1,6 +1,6 @@
 # config-drift-checker
 
-**CI for your agent setup.** · [site](https://jameskomo.github.io/config-drift-checker/) · [demo dashboard](https://jameskomo.github.io/config-drift-checker-demo/) · [demo report](https://jameskomo.github.io/config-drift-checker-demo/report.html)
+**CI for your agent setup.** · [site](https://jameskomo.github.io/config-drift-checker/) · [demo: trend dashboard](https://jameskomo.github.io/config-drift-checker-demo/) · [demo: interactive report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/) · [demo: static report](https://jameskomo.github.io/config-drift-checker-demo/report.html)
 
 A tool that tells your team **when** its coding-agent setup — `CLAUDE.md`, skills, hooks — stopped
 doing what it should, **why**, and **what changed**: a model change behind an alias, a Claude Code
