@@ -44,10 +44,14 @@ runs:
 
     - id: config
       shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        PLUGIN_DIR_INPUT: ${{ inputs.plugin-dir }}
+        TRACK_INPUT: ${{ inputs.track }}
       run: |
         set -euo pipefail
-        tools="${{ github.action_path }}/../config-drift-checker/tools"; echo "tools=$tools" >> "$GITHUB_OUTPUT"
-        node "$tools/cdc-config.mjs" "${{ inputs.plugin-dir }}" resolve ${{ inputs.track }} --github-output | tee -a "$GITHUB_OUTPUT"
+        tools="$ACTION_PATH/../config-drift-checker/tools"; echo "tools=$tools" >> "$GITHUB_OUTPUT"
+        node "$tools/cdc-config.mjs" "$PLUGIN_DIR_INPUT" resolve $TRACK_INPUT --github-output | tee -a "$GITHUB_OUTPUT"
 
     - id: coverage
       shell: bash
