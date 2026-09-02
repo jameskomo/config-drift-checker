@@ -1,66 +1,130 @@
 #!/usr/bin/env node
-// eval-diff — compare a new aggregate-result.json against a baseline and report regressions.
+// eval-diff — compare a new aggregate-result.json against a baseline and report drift.
 //
 //   node tools/eval-diff.mjs <baseline.json> <current.json> [--threshold 0.15] [--md <out.md>] [--json <out.json>]
+//        [--config <plugin-dir>]          read thresholds and fail_on from <plugin-dir>/.cdc.yml
+//        [--turns-threshold 0.5] [--cost-threshold 0.5] [--duration-threshold 0.5]   relative change that counts as drift
+//        [--fail-on score,turns,cost,duration]   which drifts turn the exit code red (default: score)
 //
-// Exit 0: no regression. Exit 1: at least one case dropped by more than --threshold (default 0.15)
-// or a case present in the baseline is missing. Works on the official runner's output and the shim's.
+// Score drift: a case dropped by more than --threshold, or a baseline case is missing → "regressed".
+// Efficiency drift: median turns / cost / duration of the with-arm moved by more than its threshold →
+// "slower" / "pricier" / "longer" — reported always, red only if listed in --fail-on.
+// Exit 0: nothing red. Exit 1: red drift. Exit 2: every agent run errored (nothing to compare).
 import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { loadConfig, resolveTrack } from './cdc-config.mjs';
 
 const argv = process.argv.slice(2);
 const files = [];
-const opt = { threshold: 0.15, md: null, json: null };
+const opt = { threshold: null, turns: null, cost: null, duration: null, failOn: null, md: null, json: null, config: null };
 for (let i = 0; i < argv.length; i++) {
-  if (argv[i] === '--threshold') opt.threshold = Number(argv[++i]);
-  else if (argv[i] === '--md') opt.md = argv[++i];
-  else if (argv[i] === '--json') opt.json = argv[++i];
-  else if (!argv[i].startsWith('--')) files.push(argv[i]);
+  const a = argv[i];
+  if (a === '--threshold') opt.threshold = Number(argv[++i]);
+  else if (a === '--turns-threshold') opt.turns = Number(argv[++i]);
+  else if (a === '--cost-threshold') opt.cost = Number(argv[++i]);
+  else if (a === '--duration-threshold') opt.duration = Number(argv[++i]);
+  else if (a === '--fail-on') opt.failOn = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
+  else if (a === '--config') opt.config = path.resolve(argv[++i]);
+  else if (a === '--md') opt.md = argv[++i];
+  else if (a === '--json') opt.json = argv[++i];
+  else if (!a.startsWith('--')) files.push(a);
+  else { console.error(`unknown option ${a}`); process.exit(2); }
 }
-if (files.length !== 2) { console.error('usage: eval-diff.mjs <baseline.json> <current.json> [--threshold 0.15] [--md out.md] [--json out.json]'); process.exit(2); }
+if (files.length !== 2) { console.error('usage: eval-diff.mjs <baseline.json> <current.json> [--threshold 0.15] [--config <plugin-dir>] [--fail-on score,turns] [--md out.md] [--json out.json]'); process.exit(2); }
 const [base, cur] = await Promise.all(files.map(async (f) => JSON.parse(await fs.readFile(f, 'utf8'))));
+
+// thresholds: flag > .cdc.yml > default
+const cfg = opt.config ? resolveTrack(loadConfig(opt.config), cur.track ?? 'pinned') : null;
+const th = {
+  score: opt.threshold ?? cfg?.thresholds.score ?? 0.15,
+  turns: opt.turns ?? cfg?.thresholds.turns ?? 0.5,
+  cost: opt.cost ?? cfg?.thresholds.cost ?? 0.5,
+  duration: opt.duration ?? cfg?.thresholds.duration ?? 0.5,
+};
+const failOn = new Set(opt.failOn ?? cfg?.failOn ?? ['score']);
 
 const key = (c) => c.dir ?? c.name;
 const score = (c) => c.summary?.score ?? null;
 const baseline = (c) => c.summary?.baselineScore ?? null;
+const withRuns = (c) => (c.arms?.with ?? []).filter((r) => !r.isError);
 const runs = (c) => (c.arms?.with ?? []).length;
 const failedGraders = (c) => {
   const counts = {};
   for (const r of c.arms?.with ?? []) for (const g of r.graders ?? []) if (g.scored !== false && g.verdict === 'fail') counts[g.name] = (counts[g.name] ?? 0) + 1;
   return Object.entries(counts).map(([n, k]) => `${n}×${k}`).join(', ');
 };
-const model = (r) => { const m = new Set(); for (const c of r.cases ?? []) for (const run of c.arms?.with ?? []) if (run.model) m.add(run.model); return [...m].join(',') || '?'; };
+const models = (r) => { const m = new Set(); for (const c of r.cases ?? []) for (const run of c.arms?.with ?? []) if (run.model) m.add(run.model); return [...m]; };
+const median = (xs) => { const a = xs.filter((x) => typeof x === 'number' && Number.isFinite(x)).sort((p, q) => p - q); if (!a.length) return null; const m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+const EFF = [['turns', 'numTurns', 'slower'], ['cost', 'costUsd', 'pricier'], ['duration', 'durationMs', 'longer']];
+function efficiency(b, c) {
+  const out = {};
+  for (const [name, field] of EFF) {
+    const before = median(withRuns(b).map((r) => r[field])), after = median(withRuns(c).map((r) => r[field]));
+    const rel = before !== null && after !== null && before > 0 ? (after - before) / before : null;
+    out[name] = { before, after, rel, drifted: rel !== null && rel > th[name] };
+  }
+  return out;
+}
 
 const rows = [];
 const baseMap = new Map((base.cases ?? []).map((c) => [key(c), c]));
 const curMap = new Map((cur.cases ?? []).map((c) => [key(c), c]));
 for (const [k, b] of baseMap) {
   const c = curMap.get(k);
-  if (!c) { rows.push({ case: k, status: 'missing', before: score(b), after: null, delta: null }); continue; }
+  if (!c) { rows.push({ case: k, status: 'missing', before: score(b), after: null, delta: null, flags: [] }); continue; }
   const before = score(b), after = score(c);
   const delta = before !== null && after !== null ? after - before : null;
-  const status = delta === null ? 'unknown' : delta < -opt.threshold ? 'regressed' : delta > opt.threshold ? 'improved' : 'stable';
-  rows.push({ case: k, status, before, after, delta, runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c) });
+  const status = delta === null ? 'unknown' : delta < -th.score ? 'regressed' : delta > th.score ? 'improved' : 'stable';
+  const eff = efficiency(b, c);
+  const flags = EFF.filter(([name]) => eff[name].drifted).map(([, , flag]) => flag);
+  rows.push({ case: k, status, before, after, delta, runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c), eff, flags });
 }
-for (const [k, c] of curMap) if (!baseMap.has(k)) rows.push({ case: k, status: 'new', before: null, after: score(c), delta: null, runs: runs(c), failedGraders: failedGraders(c) });
+for (const [k, c] of curMap) if (!baseMap.has(k)) rows.push({ case: k, status: 'new', before: null, after: score(c), delta: null, runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c), flags: [] });
 
 const regressed = rows.filter((r) => r.status === 'regressed' || r.status === 'missing');
+const flagged = rows.filter((r) => r.flags.length);
+const red = rows.filter((r) => (failOn.has('score') && (r.status === 'regressed' || r.status === 'missing')) || r.flags.some((fl) => failOn.has(EFF.find(([, , f]) => f === fl)[0])));
 const errored = cur.aggregates?.erroredRuns ?? 0;
+const allErrored = errored > 0 && errored === (cur.aggregates?.totalRuns ?? -1);
+
+// provenance: did the thing under test move, or the thing testing it?
+const mb = models(base), mc = models(cur);
+const moved = [];
+if (mb.length && mc.length && (mb.join(',') !== mc.join(','))) moved.push(`⚙ model moved: ${mb.join(',')} → ${mc.join(',')}`);
+if (base.harness?.version && cur.harness?.version && base.harness.version !== cur.harness.version) moved.push(`⚙ Claude Code moved: ${base.harness.version} → ${cur.harness.version}`);
+const worth = (() => { const d = (cur.cases ?? []).map((c) => c.summary?.delta).filter((x) => typeof x === 'number'); return d.length ? d.reduce((a, b) => a + b, 0) / d.length : null; })();
+
 const f = (x) => (x === null || x === undefined ? '—' : x.toFixed(2));
 const fd = (x) => (x === null || x === undefined ? '—' : (x >= 0 ? '+' : '') + x.toFixed(2));
+const pct = (x) => (x === null || x === undefined ? '' : ` (${x >= 0 ? '+' : ''}${Math.round(x * 100)}%)`);
+const fmtEff = (e, name, fmtv) => !e ? '—' : e[name].after === null ? '—' : e[name].drifted || (e[name].rel !== null && e[name].rel < -th[name]) ? `${fmtv(e[name].before)} → ${fmtv(e[name].after)}${pct(e[name].rel)}` : fmtv(e[name].after);
+const t = (x) => (x === null ? '—' : String(Math.round(x)));
+const usd = (x) => (x === null ? '—' : '$' + x.toFixed(2));
 const icon = { regressed: '🔴', missing: '🔴', improved: '🟢', stable: '⚪', new: '🆕', unknown: '❔' };
+const headline = allErrored ? `**⚠ ${cur.aggregates.partialReason}**`
+  : errored ? `**⚠ ${cur.aggregates.partialReason}**`
+  : red.length ? `**${red.length} red (${regressed.length} regression${regressed.length === 1 ? '' : 's'}${flagged.length ? `, ${flagged.length} efficiency drift${flagged.length === 1 ? '' : 's'}` : ''})**`
+  : regressed.length ? `**${regressed.length} regression(s)**`
+  : flagged.length ? `no regressions · ⚠ ${flagged.length} efficiency drift${flagged.length === 1 ? '' : 's'} (warning)`
+  : 'no regressions';
+const trackLabel = cur.track ? ` · track **${cur.track}**` : '';
+const budget = cur.aggregates?.budget;
 const md = [
-  `## Agent-config eval: ${errored ? `**⚠ ${cur.aggregates.partialReason}**` : regressed.length ? `**${regressed.length} regression(s)**` : 'no regressions'}`,
+  `## Agent-config eval: ${headline}`,
   '',
-  `Suite \`${cur.suite?.name ?? '?'}\` · model ${model(cur)} (baseline ${model(base)}) · threshold ${opt.threshold} · overall ${f(base.aggregates?.overallScore)} → ${f(cur.aggregates?.overallScore)} · cost $${(cur.aggregates?.costUsd ?? 0).toFixed(2)}`,
+  `Suite \`${cur.suite?.name ?? '?'}\`${trackLabel} · model ${mc.join(',') || '?'} (baseline ${mb.join(',') || '?'}) · Claude Code ${cur.harness?.version ?? '?'}${base.harness?.version && base.harness.version !== cur.harness?.version ? ` (baseline ${base.harness.version})` : ''} · threshold ${th.score} · overall ${f(base.aggregates?.overallScore)} → ${f(cur.aggregates?.overallScore)} · cost $${(cur.aggregates?.costUsd ?? 0).toFixed(2)}`,
+  ...(moved.length ? ['', moved.join(' · ')] : []),
+  ...(worth !== null ? ['', `Setup worth **${fd(worth)}** on this suite (with − without plugin, mean over ${cur.cases.filter((c) => typeof c.summary?.delta === 'number').length} case${cur.cases.length === 1 ? '' : 's'})`] : []),
+  ...(budget?.exceeded ? ['', `■ Budget cap $${budget.capUsd} reached after $${budget.spentUsd.toFixed(2)} — ${budget.skippedRuns} planned run(s) not started; cases without runs show as ❔, not as regressions`] : []),
   '',
-  '| | case | before | after | Δ | runs | failing graders (with-arm) |',
-  '|---|---|---|---|---|---|---|',
-  ...rows.map((r) => `| ${icon[r.status]} | ${r.case} | ${f(r.before)} | ${f(r.after)} | ${fd(r.delta)} | ${r.runs ?? '—'} | ${r.failedGraders || ''} |`),
+  '| | case | before | after | Δ | turns | cost | runs | failing graders (with-arm) |',
+  '|---|---|---|---|---|---|---|---|---|',
+  ...rows.map((r) => `| ${icon[r.status]}${r.flags.length ? ' ⚠' : ''} | ${r.case}${r.flags.length ? ` <sub>${r.flags.join(', ')}</sub>` : ''} | ${f(r.before)} | ${f(r.after)} | ${fd(r.delta)} | ${fmtEff(r.eff, 'turns', t)} | ${fmtEff(r.eff, 'cost', usd)} | ${r.runs ?? '—'} | ${r.failedGraders || ''} |`),
   '',
-  `<sub>baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]}</sub>`,
+  `<sub>baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]} · fail on: ${[...failOn].join(', ')} · efficiency thresholds: turns ${th.turns}, cost ${th.cost}, duration ${th.duration}</sub>`,
 ].join('\n');
 
 console.log(md);
 if (opt.md) await fs.writeFile(opt.md, md + '\n');
-if (opt.json) await fs.writeFile(opt.json, JSON.stringify({ regressed: regressed.length, threshold: opt.threshold, rows, overall: { before: base.aggregates?.overallScore ?? null, after: cur.aggregates?.overallScore ?? null } }, null, 2));
-process.exit(errored && errored === (cur.aggregates?.totalRuns ?? -1) ? 2 : regressed.length ? 1 : 0);
+if (opt.json) await fs.writeFile(opt.json, JSON.stringify({ regressed: regressed.length, red: red.length, flagged: flagged.length, thresholds: th, failOn: [...failOn], moved, worth, rows, overall: { before: base.aggregates?.overallScore ?? null, after: cur.aggregates?.overallScore ?? null }, harness: { before: base.harness?.version ?? null, after: cur.harness?.version ?? null }, models: { before: mb, after: mc } }, null, 2));
+process.exit(allErrored ? 2 : red.length ? 1 : 0);
