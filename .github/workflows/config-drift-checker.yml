@@ -90,4 +90,6 @@ jobs:
             --title komo-stack --spend docs/drift/spend.json --streak "$RUNNER_TEMP/streak.json" --coverage docs/drift/coverage.json --config examples/komo-stack
           if [ -z "$(git status --porcelain docs/drift)" ]; then echo "drift index unchanged"; exit 0; fi
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]" && git push -q origin HEAD:main
+          git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+          # main may have moved during the run (e.g. a release commit): rebase our docs-only commit and retry
+          for i in 1 2 3; do git push -q origin HEAD:main && break; git fetch -q origin main && git rebase -q origin/main || exit 1; sleep 3; done
