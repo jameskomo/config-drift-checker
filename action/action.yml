@@ -3,6 +3,9 @@ description: 'CI for your Claude Code setup: run plugin evals on every release a
 author: 'James Komo'
 branding: { icon: 'check-circle', color: 'orange' }
 
+# Every `run:` step reads inputs, step outputs and github context through `env:` and quoted "$VARS" —
+# never through `${{ … }}` inside the script — so no value can be substituted into bash as code.
+
 inputs:
   plugin-dir:            { description: 'Path to the plugin (contains .claude-plugin/plugin.json, evals/ and optionally .cdc.yml)', required: true }
   track:                 { description: 'pinned (baseline, deterministic) or canary (alias model, latest Claude Code). Empty = .cdc.yml `track`', default: '' }
@@ -39,32 +42,41 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7
       with: { node-version: '22' }
 
     - id: config
       shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        TRACK_INPUT: ${{ inputs.track }}
       run: |
         set -euo pipefail
-        tools="${{ github.action_path }}/../config-drift-checker/tools"; echo "tools=$tools" >> "$GITHUB_OUTPUT"
-        node "$tools/cdc-config.mjs" "${{ inputs.plugin-dir }}" resolve ${{ inputs.track }} --github-output | tee -a "$GITHUB_OUTPUT"
+        tools="$ACTION_PATH/../config-drift-checker/tools"; echo "tools=$tools" >> "$GITHUB_OUTPUT"
+        node "$tools/cdc-config.mjs" "$PLUGIN_DIR" resolve ${TRACK_INPUT:+"$TRACK_INPUT"} --github-output | tee -a "$GITHUB_OUTPUT"
 
     - id: coverage
       shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
       run: |
         # Which rules in CLAUDE.md / skills / hooks have a case. No agent runs, so it runs even when the gate skips.
-        node "${{ steps.config.outputs.tools }}/config-coverage.mjs" "${{ inputs.plugin-dir }}" --json "$RUNNER_TEMP/coverage.json" --md "$RUNNER_TEMP/coverage.md" --badge "$RUNNER_TEMP/coverage.svg" >/dev/null || true
-        node -p "const c=require('$RUNNER_TEMP/coverage.json'); 'pct='+(c.pct===null?'':c.pct)+'\ntotal='+c.total+'\ncovered='+c.covered" >> "$GITHUB_OUTPUT" 2>/dev/null || true
+        node "$TOOLS/config-coverage.mjs" "$PLUGIN_DIR" --json "$RUNNER_TEMP/coverage.json" --md "$RUNNER_TEMP/coverage.md" --badge "$RUNNER_TEMP/coverage.svg" >/dev/null || true
+        node -e 'const c=require(process.env.RUNNER_TEMP+"/coverage.json"); console.log("pct="+(c.pct===null?"":c.pct)+"\ntotal="+c.total+"\ncovered="+c.covered)' >> "$GITHUB_OUTPUT" 2>/dev/null || true
 
     - id: results
       shell: bash
-      env: { GH_TOKEN: '${{ inputs.github-token }}' }
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        BRANCH: ${{ inputs.results-branch }}
       run: |
         set -euo pipefail
-        br="${{ inputs.results-branch }}"; d="$RUNNER_TEMP/results"; mkdir -p "$d/canary"
-        if git fetch --depth=1 origin "$br" 2>/dev/null; then
+        d="$RUNNER_TEMP/results"; mkdir -p "$d/canary"
+        if git fetch --depth=1 origin "$BRANCH" 2>/dev/null; then
           for f in baseline.json spend.json canary/streak.json canary/latest.json .release-watch.json .claude-code-version; do
-            git show "origin/$br:$f" > "$d/$f" 2>/dev/null || rm -f "$d/$f"
+            git show "origin/$BRANCH:$f" > "$d/$f" 2>/dev/null || rm -f "$d/$f"
           done
         fi
         [ -s "$d/baseline.json" ] && echo "baseline=true" >> "$GITHUB_OUTPUT" || echo "baseline=false" >> "$GITHUB_OUTPUT"
@@ -72,12 +84,19 @@ runs:
 
     - id: gate
       shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        TRACK: ${{ steps.config.outputs.track }}
+        RESULTS_DIR: ${{ steps.results.outputs.dir }}
+        EVENT_NAME: ${{ github.event_name }}
+        FORCE: ${{ inputs.force }}
       run: |
         set -euo pipefail
-        force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
-        node "${{ steps.config.outputs.tools }}/cdc-gate.mjs" check --config "${{ inputs.plugin-dir }}" --track "${{ steps.config.outputs.track }}" \
-          --spend "${{ steps.results.outputs.dir }}/spend.json" --streak "${{ steps.results.outputs.dir }}/canary/streak.json" \
-          --event "${{ github.event_name }}" $force | tee "$RUNNER_TEMP/gate.txt" >> "$GITHUB_OUTPUT"
+        force=""; [ "$FORCE" = "true" ] && force="--force"
+        node "$TOOLS/cdc-gate.mjs" check --config "$PLUGIN_DIR" --track "$TRACK" \
+          --spend "$RESULTS_DIR/spend.json" --streak "$RESULTS_DIR/canary/streak.json" \
+          --event "$EVENT_NAME" $force | tee "$RUNNER_TEMP/gate.txt" >> "$GITHUB_OUTPUT"
         if grep -q '^run=false' "$RUNNER_TEMP/gate.txt"; then
           reason=$(grep '^reason=' "$RUNNER_TEMP/gate.txt" | cut -d= -f2); spent=$(grep '^spent_month=' "$RUNNER_TEMP/gate.txt" | cut -d= -f2); cap=$(grep '^cap_month=' "$RUNNER_TEMP/gate.txt" | cut -d= -f2); next=$(grep '^next_allowed=' "$RUNNER_TEMP/gate.txt" | cut -d= -f2)
           echo "skipped=true" >> "$GITHUB_OUTPUT"; echo "skip_reason=$reason" >> "$GITHUB_OUTPUT"
@@ -92,9 +111,13 @@ runs:
     - id: install
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
+      env:
+        VERSION_INPUT: ${{ inputs.claude-code-version }}
+        HARNESS: ${{ steps.config.outputs.harness }}
       run: |
         set -euo pipefail
-        v="${{ inputs.claude-code-version }}"; [ -n "$v" ] || v="${{ steps.config.outputs.harness }}"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
+        v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
+        case "$v" in *[!A-Za-z0-9.-]*) echo "::error::claude-code-version '$v' is not a version"; exit 1;; esac
         npm install -g "@anthropic-ai/claude-code@$v" >/dev/null
         echo "version=$(claude --version | awk '{print $1}')" >> "$GITHUB_OUTPUT"
         echo "requested=$v" >> "$GITHUB_OUTPUT"
@@ -113,64 +136,99 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
         CLAUDE_CODE_OAUTH_TOKEN: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        TRACK: ${{ steps.config.outputs.track }}
+        RUNNER: ${{ steps.runner.outputs.runner }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        MODEL_INPUT: ${{ inputs.model }}
+        CONFIG_MODEL: ${{ steps.config.outputs.model }}
+        JUDGE_INPUT: ${{ inputs.judge-model }}
+        CONFIG_JUDGE: ${{ steps.config.outputs.judge_model }}
+        RUNS_INPUT: ${{ inputs.runs }}
+        SCAFFOLD: ${{ inputs.scaffold }}
+        ABLATION: ${{ inputs.ablation }}
+        BUDGET_PER_RUN: ${{ steps.config.outputs.budget_per_run_usd }}
       run: |
         set -euo pipefail
         test -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" || { echo "::error::Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set (BYOK: agent runs bill to your key or your subscription)"; exit 1; }
         out="$RUNNER_TEMP/eval-out"; mkdir -p "$out"
-        model="${{ inputs.model }}"; [ -n "$model" ] || model="${{ steps.config.outputs.model }}"
-        judge="${{ inputs.judge-model }}"; [ -n "$judge" ] || judge="${{ steps.config.outputs.judge_model }}"
-        runs_flag=""; [ -n "${{ inputs.runs }}" ] && runs_flag="--runs ${{ inputs.runs }}"
-        scaffold_flag=""; [ "${{ inputs.scaffold }}" = "true" ] && scaffold_flag="--scaffold"
-        if [ "${{ steps.runner.outputs.runner }}" = "official" ]; then
-          claude plugin eval "${{ inputs.plugin-dir }}" --ablation "${{ inputs.ablation }}" --model "$model" --judge-model "$judge" \
-            $runs_flag $scaffold_flag --allow-tools Bash Write Edit --no-publish --json "$out/aggregate-result.json" || true
+        model="$MODEL_INPUT"; [ -n "$model" ] || model="$CONFIG_MODEL"
+        judge="$JUDGE_INPUT"; [ -n "$judge" ] || judge="$CONFIG_JUDGE"
+        runs_args=(); [ -n "$RUNS_INPUT" ] && runs_args=(--runs "$RUNS_INPUT")
+        scaffold_args=(); [ "$SCAFFOLD" = "true" ] && scaffold_args=(--scaffold)
+        if [ "$RUNNER" = "official" ]; then
+          claude plugin eval "$PLUGIN_DIR" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
+            "${runs_args[@]}" "${scaffold_args[@]}" --allow-tools Bash Write Edit --no-publish --json "$out/aggregate-result.json" || true
           # the official runner does not know tracks yet: stamp provenance so diff/store/promote can reason about it
-          node -e "const fs=require('fs');const p='$out/aggregate-result.json';if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,'utf8'));j.track=j.track||'${{ steps.config.outputs.track }}';j.harness=j.harness||{name:'claude-code',version:'${{ steps.install.outputs.version }}'};j.judge=j.judge||{model:'$judge'};fs.writeFileSync(p,JSON.stringify(j,null,2));}"
+          OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
         else
-          model_flag=""; [ -n "${{ inputs.model }}" ] && model_flag="--model ${{ inputs.model }}"
-          node "${{ steps.config.outputs.tools }}/eval-shim.mjs" "${{ inputs.plugin-dir }}" --ablation "${{ inputs.ablation }}" --track "${{ steps.config.outputs.track }}" \
-            $model_flag --judge-model "$judge" --budget "${{ steps.config.outputs.budget_per_run_usd }}" $runs_flag $scaffold_flag --output-dir "$out" || true
+          model_args=(); [ -n "$MODEL_INPUT" ] && model_args=(--model "$MODEL_INPUT")
+          node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
+            "${model_args[@]}" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
-        errs=$(node -p "const a=require('$out/aggregate-result.json').aggregates||{}; (a.erroredRuns||0)+'/'+(a.totalRuns||0)+' '+(a.partialReason||'')")
+        errs=$(OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log((a.erroredRuns||0)+"/"+(a.totalRuns||0)+" "+(a.partialReason||""))')
         case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored — $errs. Nothing will be stored as a baseline. Common causes: no prepaid API credit on the key's account (console.anthropic.com → Billing), or a Claude Code startup failure — see the eval-report artifact's stderrTail."; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
-        node -p "const a=require('$out/aggregate-result.json').aggregates||{}; a.budget&&a.budget.exceeded ? 'budget_hit=true' : 'budget_hit=false'" >> "$GITHUB_OUTPUT"
+        OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log(a.budget&&a.budget.exceeded ? "budget_hit=true" : "budget_hit=false")' >> "$GITHUB_OUTPUT"
 
     - id: diff
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        RESULTS_DIR: ${{ steps.results.outputs.dir }}
+        RESULT: ${{ steps.run.outputs.result }}
+        ERRORED: ${{ steps.run.outputs.errored }}
+        BASELINE_EXISTS: ${{ steps.results.outputs.baseline }}
+        PROMOTE: ${{ inputs.promote-baseline }}
+        TRACK: ${{ steps.config.outputs.track }}
+        MODEL_IS_PINNED: ${{ steps.config.outputs.model_is_pinned }}
+        THRESHOLD_INPUT: ${{ inputs.threshold }}
+        RUNNER: ${{ steps.runner.outputs.runner }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        CC_REQUESTED: ${{ steps.install.outputs.requested }}
       run: |
         set +e
-        tools="${{ steps.config.outputs.tools }}"; res="${{ steps.results.outputs.dir }}"
-        thr=""; [ -n "${{ inputs.threshold }}" ] && thr="--threshold ${{ inputs.threshold }}"
-        if [ "${{ steps.run.outputs.errored }}" != "true" ] && [ "${{ steps.results.outputs.baseline }}" = "true" ] && ! { [ "${{ inputs.promote-baseline }}" = "true" ] && [ "${{ steps.config.outputs.track }}" = "pinned" ]; }; then
-          node "$tools/eval-diff.mjs" "$res/baseline.json" "${{ steps.run.outputs.result }}" --config "${{ inputs.plugin-dir }}" $thr --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
-          node -p "const d=require('$RUNNER_TEMP/diff.json'); 'regressed='+d.regressed+'\nred='+d.red+'\nflagged='+d.flagged" >> "$GITHUB_OUTPUT"
+        thr_args=(); [ -n "$THRESHOLD_INPUT" ] && thr_args=(--threshold "$THRESHOLD_INPUT")
+        if [ "$ERRORED" != "true" ] && [ "$BASELINE_EXISTS" = "true" ] && ! { [ "$PROMOTE" = "true" ] && [ "$TRACK" = "pinned" ]; }; then
+          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
+          node -e 'const d=require(process.env.RUNNER_TEMP+"/diff.json"); console.log("regressed="+d.regressed+"\nred="+d.red+"\nflagged="+d.flagged)' >> "$GITHUB_OUTPUT"
         else
-          node "$tools/eval-diff.mjs" "${{ steps.run.outputs.result }}" "${{ steps.run.outputs.result }}" --config "${{ inputs.plugin-dir }}" --md "$RUNNER_TEMP/diff.md" >/dev/null
-          if [ "${{ steps.run.outputs.errored }}" = "true" ]; then sed -i '1s/.*/## Agent-config eval: ⚠ agent runs errored — nothing stored/' "$RUNNER_TEMP/diff.md"
-          elif [ "${{ steps.config.outputs.track }}" = "canary" ]; then sed -i '1s/.*/## Agent-config eval: canary ran, but there is no pinned baseline yet — run the pinned track first/' "$RUNNER_TEMP/diff.md"
+          node "$TOOLS/eval-diff.mjs" "$RESULT" "$RESULT" --config "$PLUGIN_DIR" --md "$RUNNER_TEMP/diff.md" >/dev/null
+          if [ "$ERRORED" = "true" ]; then sed -i '1s/.*/## Agent-config eval: ⚠ agent runs errored — nothing stored/' "$RUNNER_TEMP/diff.md"
+          elif [ "$TRACK" = "canary" ]; then sed -i '1s/.*/## Agent-config eval: canary ran, but there is no pinned baseline yet — run the pinned track first/' "$RUNNER_TEMP/diff.md"
           else sed -i '1s/.*/## Agent-config eval: baseline recorded (no comparison yet)/' "$RUNNER_TEMP/diff.md"; fi
           printf 'regressed=0\nred=0\nflagged=0\n' >> "$GITHUB_OUTPUT"
         fi
-        pinned_note=""; [ "${{ steps.config.outputs.track }}" = "pinned" ] && [ "${{ steps.config.outputs.model_is_pinned }}" != "true" ] && pinned_note=" · ⚠ no \`model.pinned\` in .cdc.yml — the baseline floats on the alias (a pin PR will be opened)"
-        { echo "**Track:** ${{ steps.config.outputs.track }} · **Runner:** ${{ steps.runner.outputs.runner }} · **Claude Code:** ${{ steps.install.outputs.version }} (requested ${{ steps.install.outputs.requested }})$pinned_note"; echo; cat "$RUNNER_TEMP/diff.md"; echo; cat "$RUNNER_TEMP/coverage.md" 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
+        pinned_note=""; [ "$TRACK" = "pinned" ] && [ "$MODEL_IS_PINNED" != "true" ] && pinned_note=" · ⚠ no \`model.pinned\` in .cdc.yml — the baseline floats on the alias (a pin PR will be opened)"
+        { echo "**Track:** $TRACK · **Runner:** $RUNNER · **Claude Code:** $CC_VERSION (requested $CC_REQUESTED)$pinned_note"; echo; cat "$RUNNER_TEMP/diff.md"; echo; cat "$RUNNER_TEMP/coverage.md" 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
         exit 0
 
     - id: report
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        RESULT: ${{ steps.run.outputs.result }}
+        RESULTS_DIR: ${{ steps.results.outputs.dir }}
+        BASELINE_EXISTS: ${{ steps.results.outputs.baseline }}
+        PROMOTE: ${{ inputs.promote-baseline }}
+        THRESHOLD_INPUT: ${{ inputs.threshold }}
+        CONFIG_THRESHOLD: ${{ steps.config.outputs.threshold }}
+        BUDGET_HIT: ${{ steps.run.outputs.budget_hit }}
       run: |
-        base=""; [ "${{ steps.results.outputs.baseline }}" = "true" ] && [ "${{ inputs.promote-baseline }}" != "true" ] && base="--baseline ${{ steps.results.outputs.dir }}/baseline.json"
-        thr="${{ inputs.threshold }}"; [ -n "$thr" ] || thr="${{ steps.config.outputs.threshold }}"
-        node "${{ steps.config.outputs.tools }}/eval-report.mjs" "${{ steps.run.outputs.result }}" $base --threshold "$thr" --out "$RUNNER_TEMP/eval-report.html"
-        cp "${{ steps.run.outputs.result }}" "$RUNNER_TEMP/aggregate-result.json"
+        base_args=(); [ "$BASELINE_EXISTS" = "true" ] && [ "$PROMOTE" != "true" ] && base_args=(--baseline "$RESULTS_DIR/baseline.json")
+        thr="$THRESHOLD_INPUT"; [ -n "$thr" ] || thr="$CONFIG_THRESHOLD"
+        node "$TOOLS/eval-report.mjs" "$RESULT" "${base_args[@]}" --threshold "$thr" --out "$RUNNER_TEMP/eval-report.html"
+        cp "$RESULT" "$RUNNER_TEMP/aggregate-result.json"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
-        [ "${{ steps.run.outputs.budget_hit }}" = "true" ] && echo "■ The per-run budget cap (\`budget.per_run_usd\`) stopped this run early; cases without runs show as ❔." >> "$GITHUB_STEP_SUMMARY"
+        [ "$BUDGET_HIT" = "true" ] && echo "■ The per-run budget cap (\`budget.per_run_usd\`) stopped this run early; cases without runs show as ❔." >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "<sub>Running this on several repos, or want history across Claude Code versions? → <a href=\"https://jameskomo.github.io/config-drift-checker/#hosted\">hosted beta</a> · <a href=\"https://github.com/jameskomo/config-drift-checker\">⭐ repo</a></sub>" >> "$GITHUB_STEP_SUMMARY"
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: steps.gate.outputs.skipped != 'true'
       with:
         name: eval-report
@@ -183,92 +241,123 @@ runs:
       if: steps.gate.outputs.skipped != 'true' && steps.run.outputs.errored != 'true'
       shell: bash
       env:
-        GH_TOKEN: '${{ inputs.github-token }}'
+        GH_TOKEN: ${{ inputs.github-token }}
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
         CDC_MODELS_API_KEY: ${{ env.CDC_MODELS_API_KEY }}   # API key for the free /v1/models listing when agent runs use a subscription token
+        TOOLS: ${{ steps.config.outputs.tools }}
+        TRACK: ${{ steps.config.outputs.track }}
+        BRANCH: ${{ inputs.results-branch }}
+        RESULT: ${{ steps.run.outputs.result }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        RUNNER: ${{ steps.runner.outputs.runner }}
+        BASELINE_EXISTS: ${{ steps.results.outputs.baseline }}
+        PROMOTE: ${{ inputs.promote-baseline }}
+        RED: ${{ steps.diff.outputs.red }}
+        PAGES: ${{ inputs.pages }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        REPO: ${{ github.repository }}
+        SERVER_URL: ${{ github.server_url }}
+        RUN_ID: ${{ github.run_id }}
       run: |
         set -euo pipefail
-        tools="${{ steps.config.outputs.tools }}"; track="${{ steps.config.outputs.track }}"
-        br="${{ inputs.results-branch }}"; wt="$RUNNER_TEMP/results-wt"
-        git fetch origin "$br" 2>/dev/null && git worktree add "$wt" "origin/$br" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$br" && git rm -rfq . 2>/dev/null || true); }
+        wt="$RUNNER_TEMP/results-wt"
+        git fetch origin "$BRANCH" 2>/dev/null && git worktree add "$wt" "origin/$BRANCH" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$BRANCH" && git rm -rfq . 2>/dev/null || true); }
         cd "$wt"; mkdir -p history canary
         stamp=$(date -u +%Y%m%dT%H%M%SZ)
-        name="${stamp}-cc${{ steps.install.outputs.version }}-${{ steps.runner.outputs.runner }}-${track}"
-        cp "${{ steps.run.outputs.result }}" "history/${name}.json"
-        if [ "$track" = "pinned" ]; then
-          if [ "${{ steps.results.outputs.baseline }}" != "true" ] || [ "${{ inputs.promote-baseline }}" = "true" ]; then cp "${{ steps.run.outputs.result }}" baseline.json; fi
+        name="${stamp}-cc${CC_VERSION}-${RUNNER}-${TRACK}"
+        cp "$RESULT" "history/${name}.json"
+        if [ "$TRACK" = "pinned" ]; then
+          if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then cp "$RESULT" baseline.json; fi
         else
-          cp "${{ steps.run.outputs.result }}" canary/latest.json
+          cp "$RESULT" canary/latest.json
         fi
         # spend ledger + release-watch state live here so the next run can gate on them
-        node "$tools/cdc-gate.mjs" record --spend spend.json --result "${{ steps.run.outputs.result }}" --track "$track" --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-        echo "${{ steps.install.outputs.version }}" > .claude-code-version
-        node "$tools/release-watch.mjs" --state .release-watch.json --update --models >/dev/null || true
+        node "$TOOLS/cdc-gate.mjs" record --spend spend.json --result "$RESULT" --track "$TRACK" --run-url "$SERVER_URL/$REPO/actions/runs/$RUN_ID" >> "$GITHUB_OUTPUT"
+        echo "$CC_VERSION" > .claude-code-version
+        node "$TOOLS/release-watch.mjs" --state .release-watch.json --update --models >/dev/null || true
         # streak + bump/pin decision (a PR is opened by the next step, from the main checkout)
-        node "$tools/canary-promote.mjs" --config "$GITHUB_WORKSPACE/${{ inputs.plugin-dir }}" --result "${{ steps.run.outputs.result }}" --streak canary/streak.json \
-          --regressed "${{ steps.diff.outputs.red }}" --diff-md "$RUNNER_TEMP/diff.md" --out "$RUNNER_TEMP/decision/decision.json" | tee -a "$GITHUB_OUTPUT"
-        if [ "${{ inputs.pages }}" = "true" ]; then
+        node "$TOOLS/canary-promote.mjs" --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --result "$RESULT" --streak canary/streak.json \
+          --regressed "$RED" --diff-md "$RUNNER_TEMP/diff.md" --out "$RUNNER_TEMP/decision/decision.json" | tee -a "$GITHUB_OUTPUT"
+        if [ "$PAGES" = "true" ]; then
           mkdir -p docs/history
           cp "$RUNNER_TEMP/eval-report.html" "docs/history/${name}.html"
           cp "$RUNNER_TEMP/eval-report.html" docs/report.html
-          cp "${{ steps.run.outputs.result }}" docs/latest.json
+          cp "$RESULT" docs/latest.json
           cp "$RUNNER_TEMP/coverage.json" coverage.json 2>/dev/null && cp "$RUNNER_TEMP/coverage.svg" docs/coverage.svg && cp coverage.json docs/coverage.json || true
           [ -s baseline.json ] && cp baseline.json docs/baseline.json || true
           [ -s spend.json ] && cp spend.json docs/spend.json || true
           [ -s canary/streak.json ] && cp canary/streak.json docs/streak.json || true
-          node "$tools/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "${{ github.repository }}" >/dev/null
+          node "$TOOLS/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "$REPO" \
+            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" >/dev/null
           touch docs/.nojekyll
-          echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $br, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
+          echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $BRANCH, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
         fi
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
-        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "eval ${stamp} ${track} cc${{ steps.install.outputs.version }} red=${{ steps.diff.outputs.red }}" || true
-        git push -q origin "HEAD:$br"
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "eval ${stamp} ${TRACK} cc${CC_VERSION} red=${RED}" || true
+        git push -q origin "HEAD:$BRANCH"
         cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true
 
     - id: pr
       if: inputs.open-prs == 'true' && steps.store.outputs.kind != '' && steps.store.outputs.kind != 'none'
       shell: bash
-      env: { GH_TOKEN: '${{ inputs.github-token }}' }
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        KIND: ${{ steps.store.outputs.kind }}
+        PR_BRANCH: ${{ steps.store.outputs.branch }}
+        PR_TITLE: ${{ steps.store.outputs.title }}
+        BODY_FILE: ${{ steps.store.outputs.body_file }}
+        PIN_MODEL: ${{ steps.store.outputs.model }}
+        PIN_HARNESS: ${{ steps.store.outputs.harness }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         set -euo pipefail
-        kind="${{ steps.store.outputs.kind }}"; branch="${{ steps.store.outputs.branch }}"
-        echo "kind=$kind" >> "$GITHUB_OUTPUT"
-        if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[0].number' 2>/dev/null)" ]; then
-          echo "::notice::a $kind PR from $branch is already open; not opening another"; echo "url=" >> "$GITHUB_OUTPUT"; exit 0
+        echo "kind=$KIND" >> "$GITHUB_OUTPUT"
+        case "$PR_BRANCH" in cdc/*) ;; *) echo "::error::unexpected branch name '$PR_BRANCH'"; exit 1;; esac
+        if [ -n "$(gh pr list --head "$PR_BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null)" ]; then
+          echo "::notice::a $KIND PR from $PR_BRANCH is already open; not opening another"; echo "url=" >> "$GITHUB_OUTPUT"; exit 0
         fi
-        wt="$RUNNER_TEMP/pr-wt"; base=$(git rev-parse --abbrev-ref HEAD); [ "$base" != "HEAD" ] || base="${{ github.event.repository.default_branch }}"
-        git worktree add -B "$branch" "$wt" HEAD
-        node "${{ steps.config.outputs.tools }}/cdc-config.mjs" "$wt/${{ inputs.plugin-dir }}" set-pins --model "${{ steps.store.outputs.model }}" --harness "${{ steps.store.outputs.harness }}"
+        wt="$RUNNER_TEMP/pr-wt"; base=$(git rev-parse --abbrev-ref HEAD); [ "$base" != "HEAD" ] || base="$DEFAULT_BRANCH"
+        git worktree add -B "$PR_BRANCH" "$wt" HEAD
+        node "$TOOLS/cdc-config.mjs" "$wt/$PLUGIN_DIR" set-pins --model "$PIN_MODEL" --harness "$PIN_HARNESS"
         cd "$wt"
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
-        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "${{ steps.store.outputs.title }}"
-        git push -q --force origin "HEAD:$branch"
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "$PR_TITLE"
+        git push -q --force origin "HEAD:$PR_BRANCH"
         gh label create config-drift-checker --color E36209 --description "Opened by config-drift-checker" --force >/dev/null 2>&1 || true
-        url=$(gh pr create --base "$base" --head "$branch" --title "${{ steps.store.outputs.title }}" --body-file "${{ steps.store.outputs.body_file }}" --label config-drift-checker 2>/dev/null \
-           || gh pr create --base "$base" --head "$branch" --title "${{ steps.store.outputs.title }}" --body-file "${{ steps.store.outputs.body_file }}" 2>"$RUNNER_TEMP/pr-err.txt") \
-           || { echo "::warning::Pushed branch $branch but could not open the $kind PR: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt" | cut -c1-300). Enable 'Allow GitHub Actions to create and approve pull requests' (Settings → Actions → General → Workflow permissions) or pass a PAT as github-token; then open it from the branch."; echo "url=" >> "$GITHUB_OUTPUT"; echo "" >> "$GITHUB_STEP_SUMMARY"; echo "⚠ Could not open the **$kind** PR from \`$branch\` — see the warning in the log." >> "$GITHUB_STEP_SUMMARY"; cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true; exit 0; }
+        url=$(gh pr create --base "$base" --head "$PR_BRANCH" --title "$PR_TITLE" --body-file "$BODY_FILE" --label config-drift-checker 2>/dev/null \
+           || gh pr create --base "$base" --head "$PR_BRANCH" --title "$PR_TITLE" --body-file "$BODY_FILE" 2>"$RUNNER_TEMP/pr-err.txt") \
+           || { echo "::warning::Pushed branch $PR_BRANCH but could not open the $KIND PR: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt" | cut -c1-300). Enable 'Allow GitHub Actions to create and approve pull requests' (Settings → Actions → General → Workflow permissions) or pass a PAT as github-token; then open it from the branch."; echo "url=" >> "$GITHUB_OUTPUT"; echo "" >> "$GITHUB_STEP_SUMMARY"; echo "⚠ Could not open the **$KIND** PR from \`$PR_BRANCH\` — see the warning in the log." >> "$GITHUB_STEP_SUMMARY"; cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true; exit 0; }
         echo "url=$url" >> "$GITHUB_OUTPUT"
-        echo "" >> "$GITHUB_STEP_SUMMARY"; echo "🔀 Opened a **$kind** PR: $url" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"; echo "🔀 Opened a **$KIND** PR: $url" >> "$GITHUB_STEP_SUMMARY"
         cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true
 
     - id: repair
       if: inputs.repair == 'true' && steps.gate.outputs.skipped != 'true' && steps.run.outputs.errored != 'true' && steps.diff.outputs.red != '0'
       shell: bash
       env:
-        GH_TOKEN: '${{ inputs.github-token }}'
+        GH_TOKEN: ${{ inputs.github-token }}
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
         CLAUDE_CODE_OAUTH_TOKEN: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
+        ACTION_PATH: ${{ github.action_path }}
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        RESULTS_DIR: ${{ steps.results.outputs.dir }}
+        BUDGET_MONTH: ${{ steps.config.outputs.budget_per_month_usd }}
+        SPENT_MONTH: ${{ steps.store.outputs.spent_month }}
+        RUN_ID: ${{ github.run_id }}
       run: |
         set +e
-        plugin="${{ github.action_path }}/../config-drift-checker"; tools="${{ steps.config.outputs.tools }}"
-        remaining=$(node -p "Math.max(0, Math.min(2, ${{ steps.config.outputs.budget_per_month_usd }} - (${{ steps.store.outputs.spent_month || 0 }})))")
-        if [ "$(node -p "$remaining <= 0.2")" = "true" ]; then echo "::notice::repair skipped: under \$0.20 of monthly budget left"; exit 0; fi
-        branch="cdc/repair-${{ github.run_id }}"; wt="$RUNNER_TEMP/repair-wt"; git worktree add -B "$branch" "$wt" HEAD
-        prompt="Use the config-drift-checker:repair skill. Plugin under test: $wt/${{ inputs.plugin-dir }}. Failing report: $RUNNER_TEMP/aggregate-result.json. Diff vs baseline: $RUNNER_TEMP/diff.md. Baseline: ${{ steps.results.outputs.dir }}/baseline.json. Shim: $tools/eval-shim.mjs. Budget for verification runs: \$$remaining. Write your summary to $RUNNER_TEMP/repair-summary.md."
+        plugin="$ACTION_PATH/../config-drift-checker"
+        remaining=$(node -e 'console.log(Math.max(0, Math.min(2, Number(process.env.BUDGET_MONTH||0) - Number(process.env.SPENT_MONTH||0))))')
+        if [ "$(REM="$remaining" node -e 'console.log(Number(process.env.REM) <= 0.2)')" = "true" ]; then echo "::notice::repair skipped: under \$0.20 of monthly budget left"; exit 0; fi
+        branch="cdc/repair-$RUN_ID"; wt="$RUNNER_TEMP/repair-wt"; git worktree add -B "$branch" "$wt" HEAD
+        prompt="Use the config-drift-checker:repair skill. Plugin under test: $wt/$PLUGIN_DIR. Failing report: $RUNNER_TEMP/aggregate-result.json. Diff vs baseline: $RUNNER_TEMP/diff.md. Baseline: $RESULTS_DIR/baseline.json. Shim: $TOOLS/eval-shim.mjs. Budget for verification runs: \$$remaining. Write your summary to $RUNNER_TEMP/repair-summary.md."
         (cd "$wt" && claude -p "$prompt" --plugin-dir "$plugin" --permission-mode acceptEdits --max-turns 40 --allowedTools Read Edit Write Bash Glob Grep --output-format json > "$RUNNER_TEMP/repair-out.json" 2> "$RUNNER_TEMP/repair-err.txt")
         cd "$wt"
-        if [ -z "$(git status --porcelain -- "${{ inputs.plugin-dir }}")" ]; then echo "::notice::repair: the agent made no change"; cd "$GITHUB_WORKSPACE"; git worktree remove --force "$wt"; exit 0; fi
-        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A -- "${{ inputs.plugin-dir }}"
+        if [ -z "$(git status --porcelain -- "$PLUGIN_DIR")" ]; then echo "::notice::repair: the agent made no change"; cd "$GITHUB_WORKSPACE"; git worktree remove --force "$wt"; exit 0; fi
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A -- "$PLUGIN_DIR"
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "Repair: restore drifted behaviour (config-drift-checker)"
         git push -q --force origin "HEAD:$branch"
         body="$RUNNER_TEMP/repair-summary.md"; [ -s "$body" ] || { echo "The agent proposed this change after a red run; see the workflow summary for the diff." > "$body"; }
@@ -281,19 +370,34 @@ runs:
     - id: comment
       if: github.event_name == 'pull_request' && steps.gate.outputs.skipped != 'true'
       shell: bash
-      env: { GH_TOKEN: '${{ inputs.github-token }}' }
-      run: gh pr comment "${{ github.event.pull_request.number }}" --body-file "$RUNNER_TEMP/diff.md" || true
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/diff.md" || true
 
     - id: slack
       if: inputs.slack-webhook-url != '' && steps.diff.outputs.red != '0' && steps.diff.outputs.red != ''
       shell: bash
+      env:
+        WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        REPO: ${{ github.repository }}
+        TRACK: ${{ steps.config.outputs.track }}
+        RED: ${{ steps.diff.outputs.red }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        SERVER_URL: ${{ github.server_url }}
+        RUN_ID: ${{ github.run_id }}
       run: |
-        text="🔴 Agent-config drift in *${{ github.repository }}* (${{ steps.config.outputs.track }} track): ${{ steps.diff.outputs.red }} case(s) red after Claude Code ${{ steps.install.outputs.version }}. ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        curl -sS -X POST -H 'Content-type: application/json' --data "$(node -e "console.log(JSON.stringify({text: process.argv[1]}))" "$text")" "${{ inputs.slack-webhook-url }}" >/dev/null || true
+        text="🔴 Agent-config drift in *$REPO* ($TRACK track): $RED case(s) red after Claude Code $CC_VERSION. $SERVER_URL/$REPO/actions/runs/$RUN_ID"
+        curl -sS -X POST -H 'Content-type: application/json' --data "$(TEXT="$text" node -e 'console.log(JSON.stringify({text: process.env.TEXT}))')" "$WEBHOOK_URL" >/dev/null || true
 
     - id: gate-exit
       shell: bash
+      env:
+        SKIPPED: ${{ steps.gate.outputs.skipped }}
+        SKIP_REASON: ${{ steps.gate.outputs.skip_reason }}
+        ERRORED: ${{ steps.run.outputs.errored }}
+        RED: ${{ steps.diff.outputs.red }}
       run: |
-        if [ "${{ steps.gate.outputs.skipped }}" = "true" ]; then echo "skipped (${{ steps.gate.outputs.skip_reason }}) — not a failure"; exit 0; fi
-        if [ "${{ steps.run.outputs.errored }}" = "true" ]; then echo "::error::agent runs errored; see the eval-report artifact (stderrTail per run)"; exit 1; fi
-        if [ "${{ steps.diff.outputs.red }}" != "0" ]; then echo "::error::${{ steps.diff.outputs.red }} case(s) red vs baseline (regressions or fail_on efficiency drift)"; exit 1; fi
+        if [ "$SKIPPED" = "true" ]; then echo "skipped ($SKIP_REASON) — not a failure"; exit 0; fi
+        if [ "$ERRORED" = "true" ]; then echo "::error::agent runs errored; see the eval-report artifact (stderrTail per run)"; exit 1; fi
+        if [ "$RED" != "0" ]; then echo "::error::$RED case(s) red vs baseline (regressions or fail_on efficiency drift)"; exit 1; fi
