@@ -59,6 +59,9 @@ jobs:
       # Pro/Max/Team/Enterprise) bills nothing beyond the subscription. If both are set, the API key wins.
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      # Running on the subscription token? Remove ANTHROPIC_API_KEY above and pass the key here instead:
+      # it then only lists /v1/models for release-watch and never bills a run.
+      # CDC_MODELS_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v7
       - uses: jameskomo/config-drift-checker/action@v0

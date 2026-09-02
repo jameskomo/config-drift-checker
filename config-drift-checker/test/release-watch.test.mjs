@@ -25,7 +25,7 @@ test('compare: harness only, model only, both, none, first snapshot, pin retired
 });
 
 test('fetchModels: no key → skipped; server → sorted ids; HTTP error → error', async () => {
-  assert.deepEqual(await fetchModels('http://127.0.0.1:1/', undefined), { models: null, error: 'ANTHROPIC_API_KEY not set' });
+  assert.deepEqual(await fetchModels('http://127.0.0.1:1/', undefined), { models: null, error: 'ANTHROPIC_API_KEY / CDC_MODELS_API_KEY not set' });
   const srv = http.createServer((req, res) => {
     if (req.url.startsWith('/ok')) { assert.equal(req.headers['x-api-key'], 'k'); res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ data: [{ id: 'claude-sonnet-5' }, { id: 'claude-haiku-4-5' }] })); }
     else { res.statusCode = 500; res.end('nope'); }

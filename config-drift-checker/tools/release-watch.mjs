@@ -36,8 +36,10 @@ export function compare(prev, latest, pin = null) {
   };
 }
 
-export async function fetchModels(url = process.env.CDC_MODELS_URL ?? 'https://api.anthropic.com/v1/models?limit=1000', key = process.env.ANTHROPIC_API_KEY) {
-  if (!key) return { models: null, error: 'ANTHROPIC_API_KEY not set' };
+// The key may also arrive as CDC_MODELS_API_KEY: a name the claude CLI ignores, so a job can list models
+// with an API key while its agent runs authenticate with a subscription token.
+export async function fetchModels(url = process.env.CDC_MODELS_URL ?? 'https://api.anthropic.com/v1/models?limit=1000', key = process.env.ANTHROPIC_API_KEY || process.env.CDC_MODELS_API_KEY) {
+  if (!key) return { models: null, error: 'ANTHROPIC_API_KEY / CDC_MODELS_API_KEY not set' };
   try {
     const res = await fetch(url, { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' }, signal: AbortSignal.timeout(15_000) });
     if (!res.ok) return { models: null, error: `HTTP ${res.status}` };

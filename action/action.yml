@@ -185,6 +185,7 @@ runs:
       env:
         GH_TOKEN: '${{ inputs.github-token }}'
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
+        CDC_MODELS_API_KEY: ${{ env.CDC_MODELS_API_KEY }}   # API key for the free /v1/models listing when agent runs use a subscription token
       run: |
         set -euo pipefail
         tools="${{ steps.config.outputs.tools }}"; track="${{ steps.config.outputs.track }}"
