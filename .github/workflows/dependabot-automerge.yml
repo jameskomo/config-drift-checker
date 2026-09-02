@@ -1,0 +1,60 @@
+name: dependabot-automerge
+# Merge Dependabot PRs that are safe by construction: semver patch/minor only (majors stay open for a
+# human), and only after every check on the PR has finished green. Squash-merges with the workflow token;
+# when the merge touched the plugin or the Action, cuts a patch release (merges by the token do not
+# trigger the bump workflow on their own).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions: { contents: write, pull-requests: write, actions: write }
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+        with: { github-token: '${{ secrets.GITHUB_TOKEN }}' }
+      - name: Decide
+        id: decide
+        env:
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEPS: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          case "$UPDATE_TYPE" in
+            version-update:semver-patch|version-update:semver-minor) echo "ok=true" >> "$GITHUB_OUTPUT"; echo "✅ $DEPS: $UPDATE_TYPE — will auto-merge once checks are green";;
+            *) echo "ok=false" >> "$GITHUB_OUTPUT"; echo "⏸ $DEPS: $UPDATE_TYPE — left for a human";;
+          esac
+      - name: Wait for every other check, then merge
+        if: steps.decide.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 40); do   # up to ~20 min
+            # every check run on this commit except this workflow's own job
+            state=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs?per_page=100" --jq '[.check_runs[] | select(.name != "automerge")] | map(if .status != "completed" then "pending" elif .conclusion == "success" or .conclusion == "skipped" or .conclusion == "neutral" then "ok" else "bad" end) | if length == 0 then "none" elif any(. == "bad") then "bad" elif any(. == "pending") then "pending" else "ok" end')
+            echo "checks: $state"
+            case "$state" in
+              ok|none) break;;
+              bad) echo "::warning::a check failed on #$PR — not merging"; exit 0;;
+              pending) sleep 30;;
+            esac
+          done
+          [ "$state" = "ok" ] || [ "$state" = "none" ] || { echo "::warning::checks still pending after 20 min — not merging"; exit 0; }
+          gh pr merge "$PR" --squash --delete-branch --repo "$REPO"
+          echo "merged #$PR" >> "$GITHUB_STEP_SUMMARY"
+      - name: Release if the plugin or Action changed
+        if: steps.decide.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$(gh pr view "$PR" --repo "$REPO" --json state --jq .state)" != "MERGED" ]; then exit 0; fi
+          if gh pr view "$PR" --repo "$REPO" --json files --jq '.files[].path' | grep -qE '^(action/|config-drift-checker/(tools|skills|ci|\.claude-plugin)/)'; then
+            gh workflow run bump.yml --repo "$REPO" -f level=patch && echo "patch release dispatched" >> "$GITHUB_STEP_SUMMARY"
+          fi
