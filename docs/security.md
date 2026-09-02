@@ -1,5 +1,18 @@
 # Security & privacy
 
+## Scanning
+
+- **Zero runtime dependencies.** `config-drift-checker/tools/*.mjs` import only Node builtins
+  (`node:fs`, `node:child_process`, `node:path`, …) — nothing from npm ships with the plugin, so
+  there's no third-party package to be compromised via a supply-chain attack.
+- **CodeQL** static analysis runs on every push/PR to `main` and weekly
+  ([`.github/workflows/codeql.yml`](../.github/workflows/codeql.yml)); results are in this repo's
+  Security tab.
+- **Dependabot** watches GitHub Actions pins (and npm, if dependencies are ever added) for known
+  CVEs ([`.github/dependabot.yml`](../.github/dependabot.yml)).
+- The code itself is public — read `tools/`, `action/`, and `skills/` directly rather than taking
+  our word for it.
+
 ## What runs where — and what we see (nothing)
 
 - The agent runs in **your** GitHub runner with **your** API key
