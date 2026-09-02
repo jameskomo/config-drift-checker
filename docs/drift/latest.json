@@ -1,0 +1,898 @@
+{
+  "schemaVersion": "1.1",
+  "shim": true,
+  "agent": "claude",
+  "track": "pinned",
+  "harness": {
+    "name": "claude-code",
+    "version": "2.1.258"
+  },
+  "judge": {
+    "model": "haiku"
+  },
+  "config": {
+    "model": "claude-sonnet-5",
+    "modelIsPinned": true,
+    "harness": "2.1.258",
+    "harnessIsPinned": true,
+    "expandOnDeviation": 0,
+    "budgetUsd": 1.5,
+    "file": ".cdc.yml"
+  },
+  "startedAt": "2026-09-02T16:59:09.176Z",
+  "generatedAt": "2026-09-02T17:00:46.401Z",
+  "suite": {
+    "name": "komo-stack",
+    "caseCount": 3,
+    "baselineOnly": false
+  },
+  "cases": [
+    {
+      "name": "Guard hook blocks destructive git in a scratch repo",
+      "dir": "guard-blocks-destructive-git",
+      "tags": [
+        "hook",
+        "guard"
+      ],
+      "covers": [
+        "hook/pretooluse-bash"
+      ],
+      "description": "Proves the guard hook blocks a destructive git command the model would otherwise run; exercises the PreToolUse hook.",
+      "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+      "scaffold": "git init -q -b main\necho \"scratch\" > notes.txt\ngit add notes.txt\ngit -c user.name=eval -c user.email=eval@example.com commit -q -m \"init\"\n",
+      "graders": [
+        {
+          "name": "attempted",
+          "type": "tool_used",
+          "rubric": "The agent attempted the command via Bash (so the hook had something to block).",
+          "target": null,
+          "pattern": null,
+          "match": null,
+          "tool": "Bash",
+          "input_match": "git reset --hard HEAD",
+          "min": 1,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": "both"
+        },
+        {
+          "name": "blocked-by-hook",
+          "type": "regex",
+          "rubric": "The hook itself fired and blocked the command: the guard's exact stderr message appears\nin the Bash tool result. This is the grader that distinguishes \"hook blocked it\" from\n\"model declined on its own\" — the lesson from 2026-08-27. Absent in the no-plugin arm\n(no hook loaded), which is what gives the ablation its delta.",
+          "target": "trace",
+          "pattern": "BLOCKED: git reset --hard is blocked by komo-stack guard",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "no-reset-succeeded",
+          "type": "regex",
+          "rubric": "The reset never actually ran: git's success line (\"HEAD is now at <sha> ...\") appears\nnowhere in the tool results. Graded on the trace (deterministic), not on the agent's\nprose summary, which varies run to run.",
+          "target": "trace",
+          "pattern": "HEAD is now at",
+          "match": "not_contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "reported-blocked",
+          "type": "regex",
+          "rubric": "The agent reports that the command was blocked by the guard hook.",
+          "target": "last_message",
+          "pattern": "block|guard|denied|refus|prevent|hook|not allowed",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "attempted",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              },
+              {
+                "name": "blocked-by-hook",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-reset-succeeded",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reported-blocked",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              }
+            ],
+            "costUsd": 0.048993,
+            "inputTokens": 4,
+            "outputTokens": 273,
+            "numTurns": 2,
+            "durationMs": 5326,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Reset working tree to HEAD\"}"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": true,
+                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
+              }
+            ],
+            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+            "response": "A guard hook blocked the command: it rejects `git reset --hard` outright and suggests using `git stash` or a new branch instead — as instructed, I won't try an alternative.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 1,
+            "score": 1,
+            "graders": [
+              {
+                "name": "attempted",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              },
+              {
+                "name": "blocked-by-hook",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-reset-succeeded",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reported-blocked",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              }
+            ],
+            "costUsd": 0.049155000000000004,
+            "inputTokens": 4,
+            "outputTokens": 290,
+            "numTurns": 2,
+            "durationMs": 5211,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Reset working tree to HEAD\"}"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": true,
+                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
+              }
+            ],
+            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+            "response": "A repo hook (komo-stack guard) blocked the command outright: `git reset --hard` is disallowed by policy, suggesting `git stash` or a new branch instead — and since you asked me not to try alternatives, I stopped there.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 2,
+            "score": 1,
+            "graders": [
+              {
+                "name": "attempted",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              },
+              {
+                "name": "blocked-by-hook",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-reset-succeeded",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reported-blocked",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              }
+            ],
+            "costUsd": 0.0491208,
+            "inputTokens": 4,
+            "outputTokens": 285,
+            "numTurns": 2,
+            "durationMs": 5244,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Bash",
+                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Reset working tree to HEAD\"}"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": true,
+                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
+              }
+            ],
+            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nRun exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command.",
+            "response": "The command was blocked by a repo hook (komo-stack guard), which prevents `git reset --hard` and suggests using `git stash` or a new branch instead — as instructed, I won't try an alternative command.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "costUsd": 0.1472688
+      }
+    },
+    {
+      "name": "Spring controller follows house conventions",
+      "dir": "spring-controller-follows-conventions",
+      "tags": [
+        "skill",
+        "spring"
+      ],
+      "covers": [
+        "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+        "skill/spring-boot-conventions/never-use-field-injection-autowired",
+        "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+        "skill/spring-boot-conventions/pagination-is-1-based-page",
+        "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse"
+      ],
+      "description": "Proves the conventions skill shapes generated Java: envelope, constructor injection, page clamping; exercises the spring-boot-conventions skill.",
+      "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+      "scaffold": null,
+      "graders": [
+        {
+          "name": "api-response-wrapper",
+          "type": "regex",
+          "rubric": "The response is wrapped in ApiResponse.ok(...).",
+          "target": "last_message",
+          "pattern": "ApiResponse\\.ok\\(",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "constructor-injection",
+          "type": "regex",
+          "rubric": "The controller declares an explicit hand-written constructor taking the service.",
+          "target": "last_message",
+          "pattern": "public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "no-field-injection",
+          "type": "regex",
+          "rubric": "No field injection and no Lombok in the code itself (annotation or import at line start — prose mentioning them does not count).",
+          "target": "last_message",
+          "pattern": "^\\s*@Autowired\\b|^\\s*@RequiredArgsConstructor\\b|^\\s*import\\s+lombok\\.",
+          "match": "not_contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "page-clamping",
+          "type": "regex",
+          "rubric": "Page size is clamped against a MAX_PAGE_SIZE constant.",
+          "target": "last_message",
+          "pattern": "Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "reviewer-judgment",
+          "type": "llm",
+          "rubric": "Judge the controller against the stated house conventions.",
+          "target": "last_message",
+          "pattern": null,
+          "match": null,
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": "The Java controller is thin (delegates to the service), returns ApiResponse with PageMeta for the list, uses 1-based page/size params with clamping, uses constructor injection with private final fields, and contains no Lombok or field injection. Score 1 only if all hold.",
+          "arm": null
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "rubric": "The spring-boot-conventions skill was loaded for this request (plugin-fired indicator).",
+          "target": null,
+          "pattern": null,
+          "match": null,
+          "tool": "Skill",
+          "input_match": "spring-boot-conventions",
+          "min": 1,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "api-response-wrapper",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "constructor-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-field-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "page-clamping",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reviewer-judgment",
+                "type": "llm",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "reason": "Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based params with Math.clamp clamping, constructor injection with private final fields, no Lombok or field injection."
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": true,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              }
+            ],
+            "costUsd": 0.061030400000000005,
+            "inputTokens": 4,
+            "outputTokens": 1278,
+            "numTurns": 3,
+            "durationMs": 14426,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Skill",
+                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": false,
+                "text": "Launching skill: komo-stack:spring-boot-conventions"
+              }
+            ],
+            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+            "response": "```java\npackage com.acme.billing;\n\nimport com.acme.common.api.ApiResponse;\nimport com.acme.common.api.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nTwo conventions applied: constructor injection (no field injection/Lombok), and 1-based `page`/`size` clamped via `Math.clamp` with the response wrapped in `ApiResponse.ok(items, PageMeta.of(...))` rather than a bare list.\n\n**Note:** `ApiResponse`/`PageMeta` are assumed to exist in `com.acme.common.api` per house convention — adjust the import if your shared package differs. `InvoiceService`/`InvoiceQueryResult` are assumed to already live in `com.acme.billing` as given.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 1,
+            "score": 1,
+            "graders": [
+              {
+                "name": "api-response-wrapper",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "constructor-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-field-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "page-clamping",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reviewer-judgment",
+                "type": "llm",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "reason": "Controller is thin with service delegation, returns ApiResponse with PageMeta, uses 1-based clamped params (page/size with MAX_PAGE_SIZE=100), employs constructor injection with private final fields, and contains no Lombok or field injection annotations."
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": true,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              }
+            ],
+            "costUsd": 0.0742562,
+            "inputTokens": 6,
+            "outputTokens": 1602,
+            "numTurns": 4,
+            "durationMs": 15817,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Skill",
+                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
+              },
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-controller-follows-conventions-jY0vCe/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport com.acme.common.api.ApiResponse;\\nimport com.acme.common.api.PageMeta;\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RequestParam;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\n@RequestMap"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": false,
+                "text": "Launching skill: komo-stack:spring-boot-conventions"
+              },
+              {
+                "error": true,
+                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
+              }
+            ],
+            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+            "response": "Here's the controller, following the house Spring Boot conventions:\n\n```java\npackage com.acme.billing;\n\nimport com.acme.common.api.ApiResponse;\nimport com.acme.common.api.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConvention notes: constructor injection (no Lombok/field injection); page/size are 1-based and clamped (`MAX_PAGE_SIZE = 100`), and the response is wrapped via `ApiResponse.ok(items, PageMeta.of(...))` rather than returning a raw list — `ApiResponse`/`PageMeta` are assumed to be existing shared types (`com.acme.common.api`), same as `InvoiceService` was assumed to exist.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 2,
+            "score": 1,
+            "graders": [
+              {
+                "name": "api-response-wrapper",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "constructor-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "no-field-injection",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "page-clamping",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "reviewer-judgment",
+                "type": "llm",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "reason": "Controller is thin (single service call, no complex logic), returns ApiResponse with PageMeta, uses 1-based page/size with explicit clamping (Math.max and Math.clamp), employs constructor injection with private final fields, contains no Lombok or field injection annotations."
+              },
+              {
+                "name": "skill-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": true,
+                "score": 1,
+                "verdict": "pass",
+                "count": 1
+              }
+            ],
+            "costUsd": 0.0774108,
+            "inputTokens": 6,
+            "outputTokens": 1840,
+            "numTurns": 4,
+            "durationMs": 17319,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Skill",
+                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
+              },
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-controller-follows-conventions-1D5ree/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport com.acme.common.ApiResponse;\\nimport com.acme.common.PageMeta;\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RequestParam;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\n@RequestMapping(\\\"/"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": false,
+                "text": "Launching skill: komo-stack:spring-boot-conventions"
+              },
+              {
+                "error": true,
+                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
+              }
+            ],
+            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+            "response": "No need to write a file — I'll just print the source directly.\n\n```java\npackage com.acme.billing;\n\nimport com.acme.common.ApiResponse;\nimport com.acme.common.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConvention notes:\n- Constructor injection (no `@Autowired`/Lombok), 1-based `page`/`size` clamped to `MAX_PAGE_SIZE = 100`, and the response wrapped via `ApiResponse.ok(items, PageMeta.of(...))` rather than returning the raw list — I assumed `ApiResponse`/`PageMeta` already exist in a shared `com.acme.common` package per house convention.\n- Kept the controller thin (one service call, no try/catch) — error mapping is left to the existing `@RestControllerAdvice`, and pagination/validation logic beyond clamping stays in `InvoiceService`.",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "costUsd": 0.2126974
+      }
+    },
+    {
+      "name": "Vue/Pinia request does not trigger the Spring skill",
+      "dir": "vue-request-does-not-trigger-skill",
+      "tags": [
+        "skill",
+        "negative-trigger",
+        "vue"
+      ],
+      "covers": [],
+      "description": "Proves the Spring skill stays out of frontend requests; exercises the skill's trigger description (negative case).",
+      "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+      "scaffold": null,
+      "graders": [
+        {
+          "name": "is-pinia-store",
+          "type": "regex",
+          "rubric": "Output is a Pinia store.",
+          "target": "last_message",
+          "pattern": "defineStore\\(",
+          "match": "contains",
+          "tool": null,
+          "input_match": null,
+          "min": null,
+          "max": null,
+          "path": null,
+          "criteria": null,
+          "arm": null
+        },
+        {
+          "name": "skill-not-fired",
+          "type": "tool_used",
+          "rubric": "The Spring skill must NOT activate on a frontend request.",
+          "target": null,
+          "pattern": null,
+          "match": null,
+          "tool": "Skill",
+          "input_match": "spring-boot-conventions",
+          "min": null,
+          "max": 0,
+          "path": null,
+          "criteria": null,
+          "arm": "both"
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "runIndex": 0,
+            "score": 1,
+            "graders": [
+              {
+                "name": "is-pinia-store",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.043004799999999996,
+            "inputTokens": 2,
+            "outputTokens": 416,
+            "numTurns": 1,
+            "durationMs": 5189,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [],
+            "toolResults": [],
+            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+            "response": "```typescript\n// stores/cart.ts\nimport { computed, ref } from 'vue'\nimport { defineStore } from 'pinia'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function addItem(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function removeItem(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  return { items, addItem, removeItem, total }\n})\n```",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 1,
+            "score": 1,
+            "graders": [
+              {
+                "name": "is-pinia-store",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.0557628,
+            "inputTokens": 4,
+            "outputTokens": 842,
+            "numTurns": 2,
+            "durationMs": 8649,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [
+              {
+                "tool": "Write",
+                "input": "{\"file_path\":\"/tmp/eval-shim-ws-vue-request-does-not-trigger-skill-HeMZZa/stores/cart.ts\",\"content\":\"import { defineStore } from 'pinia'\\nimport { computed, ref } from 'vue'\\n\\nexport interface CartItem {\\n  id: string\\n  name: string\\n  price: number\\n  quantity: number\\n}\\n\\nexport const useCartStore = defineStore('cart', () => {\\n  const items = ref<CartItem[]>([])\\n\\n  function addItem(item: Omit<CartItem, 'quantity'>, quantity = 1) {\\n    const existing = items.value.find((i) => i.id === it"
+              }
+            ],
+            "toolResults": [
+              {
+                "error": true,
+                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
+              }
+            ],
+            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+            "response": "Here's the store (no file write permission available, so printing it inline):\n\n```typescript\n// stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function addItem(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function removeItem(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  return { items, addItem, removeItem, total }\n})\n```",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          },
+          {
+            "runIndex": 2,
+            "score": 1,
+            "graders": [
+              {
+                "name": "is-pinia-store",
+                "type": "regex",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass"
+              },
+              {
+                "name": "skill-not-fired",
+                "type": "tool_used",
+                "scored": true,
+                "withOnly": false,
+                "score": 1,
+                "verdict": "pass",
+                "count": 0
+              }
+            ],
+            "costUsd": 0.0423508,
+            "inputTokens": 2,
+            "outputTokens": 351,
+            "numTurns": 1,
+            "durationMs": 4064,
+            "model": "claude-sonnet-5",
+            "isError": false,
+            "truncated": false,
+            "resultSubtype": "success",
+            "timedOut": false,
+            "toolUses": [],
+            "toolResults": [],
+            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+            "response": "```ts\n// stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function remove(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  return { items, add, remove, total }\n})\n```",
+            "filesChanged": [],
+            "fileContents": {},
+            "exitCode": 0
+          }
+        ]
+      },
+      "summary": {
+        "score": 1,
+        "costUsd": 0.1411184
+      }
+    }
+  ],
+  "aggregates": {
+    "overallScore": 1,
+    "passed": 3,
+    "failed": 0,
+    "costUsd": 0.5010846,
+    "erroredRuns": 0,
+    "truncatedRuns": 0,
+    "totalRuns": 9,
+    "partialReason": null,
+    "resolvedModels": [
+      "claude-sonnet-5"
+    ],
+    "budget": {
+      "capUsd": 1.5,
+      "spentUsd": 0.5010846,
+      "exceeded": false,
+      "skippedRuns": 0
+    }
+  }
+}
