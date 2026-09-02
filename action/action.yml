@@ -244,7 +244,8 @@ runs:
         git push -q --force origin "HEAD:$branch"
         gh label create config-drift-checker --color E36209 --description "Opened by config-drift-checker" --force >/dev/null 2>&1 || true
         url=$(gh pr create --base "$base" --head "$branch" --title "${{ steps.store.outputs.title }}" --body-file "${{ steps.store.outputs.body_file }}" --label config-drift-checker 2>/dev/null \
-           || gh pr create --base "$base" --head "$branch" --title "${{ steps.store.outputs.title }}" --body-file "${{ steps.store.outputs.body_file }}")
+           || gh pr create --base "$base" --head "$branch" --title "${{ steps.store.outputs.title }}" --body-file "${{ steps.store.outputs.body_file }}" 2>"$RUNNER_TEMP/pr-err.txt") \
+           || { echo "::warning::Pushed branch $branch but could not open the $kind PR: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt" | cut -c1-300). Enable 'Allow GitHub Actions to create and approve pull requests' (Settings → Actions → General → Workflow permissions) or pass a PAT as github-token; then open it from the branch."; echo "url=" >> "$GITHUB_OUTPUT"; echo "" >> "$GITHUB_STEP_SUMMARY"; echo "⚠ Could not open the **$kind** PR from \`$branch\` — see the warning in the log." >> "$GITHUB_STEP_SUMMARY"; cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true; exit 0; }
         echo "url=$url" >> "$GITHUB_OUTPUT"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "🔀 Opened a **$kind** PR: $url" >> "$GITHUB_STEP_SUMMARY"
         cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true
@@ -271,8 +272,9 @@ runs:
         git push -q --force origin "HEAD:$branch"
         body="$RUNNER_TEMP/repair-summary.md"; [ -s "$body" ] || { echo "The agent proposed this change after a red run; see the workflow summary for the diff." > "$body"; }
         { echo; echo "---"; echo "<sub>Opened by [config-drift-checker](https://github.com/jameskomo/config-drift-checker) \`repair\`. Review the re-run evidence above before merging; never auto-merged.</sub>"; } >> "$body"
-        url=$(gh pr create --head "$branch" --title "Repair: restore drifted agent behaviour" --body-file "$body" --label config-drift-checker 2>/dev/null || gh pr create --head "$branch" --title "Repair: restore drifted agent behaviour" --body-file "$body")
-        echo "" >> "$GITHUB_STEP_SUMMARY"; echo "🩹 Opened a **repair** PR: $url" >> "$GITHUB_STEP_SUMMARY"
+        url=$(gh pr create --head "$branch" --title "Repair: restore drifted agent behaviour" --body-file "$body" --label config-drift-checker 2>/dev/null || gh pr create --head "$branch" --title "Repair: restore drifted agent behaviour" --body-file "$body" 2>"$RUNNER_TEMP/pr-err.txt") \
+          || { echo "::warning::Pushed $branch but could not open the repair PR: $(tr '\n' ' ' < "$RUNNER_TEMP/pr-err.txt" | cut -c1-300). Enable 'Allow GitHub Actions to create and approve pull requests' or pass a PAT as github-token."; url=""; }
+        echo "" >> "$GITHUB_STEP_SUMMARY"; [ -n "$url" ] && echo "🩹 Opened a **repair** PR: $url" >> "$GITHUB_STEP_SUMMARY" || echo "🩹 Repair pushed to \`$branch\`; open the PR by hand (see the warning in the log)." >> "$GITHUB_STEP_SUMMARY"
         cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true
 
     - id: comment
