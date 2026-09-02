@@ -5,6 +5,7 @@
 ```
 <plugin>/
   .claude-plugin/plugin.json            # name, version, skills[], hooks
+  .cdc.yml                              # ours: tracks, pins, thresholds, budget (see §2b)
   evals/                                 # override: plugin.json experimental.evals or --eval-dir
     <case-dir>/
       prompt.md                          # frontmatter + prompt body
@@ -17,7 +18,8 @@
 
 **prompt.md frontmatter** (all optional): `name`, `tags[]`, `runs` (default 3), `max_turns`,
 `timeout_seconds`, `allowed_tools[]` (tools the agent may use; Bash/Write/Edit are gated),
-`model`, `append_system_prompt`, `env` (`EVAL_*` only).
+`model`, `append_system_prompt`, `env` (`EVAL_*` only), and — ours, ignored by the official runner —
+`covers[]`: ids of the rules this case exercises (`config-coverage.mjs --list` prints them).
 
 **case.yaml**: `schema_version: "1.1"`, `context.scaffold_script` (bash run in the workspace,
 gated by `--scaffold`), `context.history_file` (replay a transcript, evaluate next turn),
@@ -48,7 +50,7 @@ cfg = mkdtemp(eval-shim-cfg-) + credentials copy   # fresh CLAUDE_CONFIG_DIR ⇒
 [scaffold_script in ws if --scaffold]
 claude -p <prompt> --output-format stream-json --verbose
        --setting-sources "" --permission-mode dontAsk
-       --max-turns N --model M
+       --max-turns N --model M                 # M: --model > case frontmatter > .cdc.yml track > sonnet
        [--plugin-dir <plugin>]            # "with" arm only
        [--allowedTools <case.allowed_tools>]
 env: CLAUDE_CONFIG_DIR=cfg, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1, ANTHROPIC_MODEL unset
@@ -56,13 +58,22 @@ env: CLAUDE_CONFIG_DIR=cfg, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1, ANTHROPI
 
 Trace parsing (stream-json): `assistant` events → text blocks (last = `last_message` unless the
 `result` event carries `result`) and `tool_use` blocks (`name`, `input`); `result` event →
-`total_cost_usd`, `usage`, `num_turns`, `is_error`, `modelUsage`. Files created = walk(ws) minus
-`.git`. Temp dirs removed after grading.
+`total_cost_usd`, `usage`, `num_turns`, `is_error`, `modelUsage` (the **resolved model id**). Files
+created = walk(ws) minus `.git`. Temp dirs removed after grading. `claude --version` is captured once
+per invocation as the harness version.
 
 Arms: `with` (plugin loaded) and, under `--ablation with-without`, `without` (identical run, no
 plugin). Case score = mean over scored graders; arm score = mean over runs; delta = with − without.
 Any grader may carry `arm: with|without` to be scored in that arm only (e.g. "attempted" belongs
 to the without arm); `tool_used: Skill` graders are with-only indicators under ablation.
+
+**Tracks** (`--track pinned|canary`, default from `.cdc.yml`): the track supplies model, harness,
+runs, expansion and budget unless a flag overrides them. **Sequential testing**
+(`--expand-on-deviation n`): after the configured runs of an arm, `n` more run only if a run scored
+below 1.00 — the cheap first look buys more evidence only when it matters. **Budget** (`--budget usd`):
+before starting any run, if the invocation's spend has reached the cap, no further runs start; what
+already ran is kept and scored, `aggregates.budget` records the cap, spend and skipped runs, and a
+case with no runs scores `null` (❔ in the diff, never a regression). `--budget 0` disables the cap.
 
 Safety net (both arms): the isolated config's `settings.json` carries a PreToolUse(Bash) hook
 (`tools/safety-net.mjs`) and the run uses `--setting-sources user` so it applies. It blocks
@@ -74,88 +85,160 @@ or modified (snapshot after scaffold vs after run).
 Judge: `claude -p` with the judge model, tools disallowed, single turn, strict JSON reply
 `{"pass": bool, "reason": str}`; parse defensively.
 
-Exit codes: 0 always for the shim (the Action gates on the diff), matching "report, don't judge".
+Exit codes: 0 always for the shim (the Action gates on the diff), matching "report, don't judge";
+2 when every run errored. `--agent` other than `claude` exits 1 (adapters are on the roadmap).
 
 **Regrade.** `--regrade <aggregate-result.json>` re-scores the saved runs of that file with the
 *current* grader definitions and no agent calls (responses, tool calls and changed-file contents
 are stored per run for this purpose); `llm` graders keep their saved verdict unless `--regrade-llm`.
-Output is a new results dir with `regradeOf` set. This is how a grader bug is fixed without re-spending the suite.
+Output is a new results dir with `regradeOf` set and the source's harness version carried through.
+This is how a grader bug is fixed without re-spending the suite.
 
-## 3. Output — `aggregate-result.json` (schemaVersion "1", additive)
+## 2b. `.cdc.yml` (`tools/cdc-config.mjs`)
+
+Zero-dependency YAML subset (nested maps, scalars, `[a, b]`, `{ a: 1 }`, `- item`, comments).
+Defaults in `DEFAULTS`; `resolveTrack(cfg, track)` yields `{ model, harness, modelIsPinned,
+harnessIsPinned, judgeModel, runs, expandOnDeviation, promoteAfter, minIntervalHours, thresholds,
+failOn, budget }`. Precedence everywhere: CLI flag / Action input > case frontmatter (model only) >
+`.cdc.yml` track > built-in default. The pinned track with no `model.pinned` falls back to the canary
+alias and says so (`modelIsPinned: false`), which is what triggers the *pin PR*.
+
+CLI: `get <dotted.key>` · `resolve <track> [--github-output]` · `set-pins --model id --harness ver`
+(rewrites the two `pinned:` lines in place, comments and order preserved; appends the block when
+missing) · `init` (starter file with comments). The user guide documents every key.
+
+## 3. Output — `aggregate-result.json` (schemaVersion "1.1", additive to "1")
 
 ```jsonc
 {
-  "schemaVersion": "1", "shim": true, "generatedAt": "...",
+  "schemaVersion": "1.1", "shim": true, "agent": "claude", "track": "pinned",
+  "harness": { "name": "claude-code", "version": "2.1.258" }, "judge": { "model": "haiku" },
+  "config": { "model": "claude-sonnet-5", "modelIsPinned": true, "harness": "2.1.258", "harnessIsPinned": true, "expandOnDeviation": 0, "budgetUsd": 2, "file": ".cdc.yml" },
+  "startedAt": "...", "generatedAt": "...",
   "suite": { "name": "komo-stack", "caseCount": 3, "baselineOnly": false },
   "cases": [{
-    "name": "...", "dir": "guard-blocks-destructive-git", "tags": ["hook"],
+    "name": "...", "dir": "guard-blocks-destructive-git", "tags": ["hook"], "covers": ["hook/pretooluse-bash"],
     "arms": { "with": [ { "runIndex": 0, "score": 1, "graders": [{ "name": "attempted", "type": "tool_used", "score": 1, "verdict": "pass", "scored": true, "withOnly": false }],
-                          "costUsd": 0.05, "inputTokens": 0, "outputTokens": 382, "numTurns": 2, "durationMs": 0, "model": "claude-sonnet-5",
-                          "toolUses": [{ "tool": "Bash", "input": "{...}" }], "prompt": "...", "response": "...", "filesChanged": [] } ],
+                          "costUsd": 0.05, "inputTokens": 0, "outputTokens": 382, "numTurns": 2, "durationMs": 6768, "model": "claude-sonnet-5",
+                          "isError": false, "truncated": false, "toolUses": [{ "tool": "Bash", "input": "{...}" }], "prompt": "...", "response": "...", "filesChanged": [] } ],
               "without": [ /* same shape */ ] },
     "summary": { "score": 1, "baselineScore": 0.33, "delta": 0.67, "costUsd": 0.30 }
   }],
-  "aggregates": { "overallScore": 1, "passed": 3, "failed": 0, "costUsd": 1.0, "partialReason": null }
+  "aggregates": { "overallScore": 1, "passed": 3, "failed": 0, "costUsd": 1.0, "erroredRuns": 0, "truncatedRuns": 0, "totalRuns": 9, "partialReason": null,
+                  "resolvedModels": ["claude-sonnet-5"], "budget": { "capUsd": 2, "spentUsd": 1.0, "exceeded": false, "skippedRuns": 0 } }
 }
 ```
 
-The official runner's JSON has the same top-level keys and per-run/per-grader shape (v1); the
-shim adds `shim`, `generatedAt`, `dir`, `durationMs`, `filesChanged` (files the agent created or modified; the scaffolded source is excluded). `eval-diff` reads only the
-shared fields.
+The official runner's JSON has the same top-level keys and per-run/per-grader shape (v1); the shim
+adds the provenance block (`agent`, `track`, `harness`, `judge`, `config`), `covers`, `durationMs`,
+`truncated`, `resolvedModels` and `budget`. The Action stamps `track`/`harness`/`judge` onto official
+output so the diff, store and promote steps can reason about it. Readers treat missing fields as unknown.
 
 ## 4. Diff (`tools/eval-diff.mjs`)
 
 Key = `dir ?? name`. For each baseline case: `after − before`; status `regressed` if
-`< −threshold` (default 0.15), `improved` if `> +threshold`, else `stable`; `missing` if absent
-in current; `new` if absent in baseline. Exit 1 if any `regressed` or `missing`. Emits a markdown
-table with per-case failing graders (with-arm, counts across runs) and a JSON summary.
+`< −thresholds.score` (default 0.15), `improved` if `> +threshold`, else `stable`; `missing` if absent
+in current; `new` if absent in baseline; `unknown` when either score is null (budget-skipped, all
+errored). **Efficiency drift**: median `numTurns`, `costUsd`, `durationMs` over non-errored with-arm
+runs; relative change above `thresholds.turns|cost|duration` (default 0.5) flags the row *slower* /
+*pricier* / *longer*. Exit 1 only for what `fail_on` lists (default `[score]` → regressed/missing);
+efficiency flags are warnings unless listed. Exit 2 when every run errored. `--config <plugin-dir>`
+reads thresholds and `fail_on` from `.cdc.yml`; flags override.
+
+The markdown header carries the track, model and Claude Code version of both sides and a
+`⚙ model moved` / `⚙ Claude Code moved` note when they differ, plus *setup worth* (mean with−without
+delta) when the run was an ablation and a budget note when the cap stopped the run. The JSON summary
+has `regressed`, `red`, `flagged`, `thresholds`, `failOn`, `moved`, `worth`, `rows[].eff`.
 
 Threshold reasoning: with 3 runs a single flaky run moves a case by 0.33 → below-threshold noise
-must be handled by *more runs*, not a looser threshold. v0.2 adds sequential testing (1 run; expand
-to 5 on deviation) and a per-case `min_runs`.
+must be handled by *more runs*, not a looser threshold. The canary track's sequential testing
+(1 run; +N on deviation) is the cost-side answer.
 
 ## 5. Release watch (`tools/release-watch.mjs`)
 
-`npm view @anthropic-ai/claude-code version` vs `.claude-code-version` (stored on the results
-branch). Prints `changed=`, `version=`, `previous=` in GitHub-output form. The workflow's `watch`
-job skips the eval job on schedule when unchanged, always runs on push/PR/dispatch.
+Two axes. `npm view @anthropic-ai/claude-code version` vs the stored harness, and — with `--models`
+and an API key — `GET /v1/models` vs the stored id list. State is JSON `{ harness, models[] }`
+(`.release-watch.json` on the results branch; a legacy plain-text `.claude-code-version` is read as
+`{ harness }`). Prints `changed=`, `reason=harness|model|both|none`, `version=`, `previous=`,
+`new_models=`, `retired_models=`, and with `--pin <id>` `pin_retired=true|false`. The first model
+snapshot is not a change. The workflow's `watch` job runs the canary on schedule only when `changed`.
 
-## 5b. HTML report (`tools/eval-report.mjs`)
+## 5a. Gate and ledger (`tools/cdc-gate.mjs`)
 
-`renderReport(current, baseline?)` → one self-contained HTML file: summary strip (overall,
-regressions vs baseline, passed, cost, model, runner, timestamp), the score table (baseline / score /
-Δ / without-plugin / Δ-plugin / runs / cost per case, regressed rows tinted), and per-case run
-cards: grader chips (hover = type + judge reason; indicators marked), judge reasons, tool calls,
-changed files, full response — all as `<details>`, plus a "failing runs only" toggle. No script
-dependencies, theme-aware. The shim writes `report.html` beside every `aggregate-result.json`
-(including regrades) - the JSON is the source of truth, the HTML is derived and reproducible; the
-Action uploads it as the `eval-report` workflow artifact and links it from the job summary. CLI: `node tools/eval-report.mjs current.json [--baseline b.json] [--out r.html]`.
+`check`: refuse (`run=false reason=budget`) when `spend.json`'s current-month total has reached
+`budget.per_month_usd`; refuse (`reason=interval`) when a *scheduled canary* is sooner than
+`canary.min_interval_hours` after `streak.lastRunAt`. `--force` on a `workflow_dispatch` bypasses both.
+`record`: adds a run's cost, track, harness, resolved models and URL to the ledger (per-month totals,
+last 200 runs). A skip is a notice in the job summary and exit 0 — never a red check.
 
-## 5c. Dashboard (`tools/eval-dashboard.mjs`)
+## 5b. Canary promotion (`tools/canary-promote.mjs`)
 
-Reads a history directory (the results branch's `history/*.json`, or a local `evals/results/`),
-optionally a baseline, and writes one HTML file: latest status, a card per case (score, delta vs
-baseline, sparkline, description), an SVG line chart of score per case over runs with the Claude
-Code version on the x-axis (fixed categorical colours, direct labels and a legend, validated for
-colour-vision deficiency on both themes), and the run list with cost and links to each run's report.
+Pure `advance(streak, run, track, pins)`: a green canary on the same model+harness as the streak
+increments `greens`; a red resets it; a different pair restarts at 1. When `greens ≥ promote_after` and
+the pair differs from the pins → decision `bump`. On the pinned track, a green run with no declared
+pin → decision `pin`. Either sets `openedAt`, resets `greens`, and yields a branch name
+(`cdc/bump-<model>-cc<version>`), title and a body with before/after pins and the recent runs table.
+The Action edits `.cdc.yml` with `cdc-config set-pins` in a worktree, pushes the branch and opens the
+PR if none is open for that branch. Green = zero red rows, zero errored runs, no budget stop, no
+failed case.
+
+## 5c. Coverage (`tools/config-coverage.mjs`)
+
+Rules = bullets and numbered items (outside code fences) in `CLAUDE.md` and every `SKILL.md`, plus one
+rule per hook event/matcher. Ids are `<scope>/<first-six-words>` (`claude-md/…`, `skill/<name>/…`,
+`hook/<event>-<matcher>`), deduplicated. Cases claim rules with `covers:`; the tool reports
+covered/uncovered/unknown ids, writes `coverage.json`, a markdown block (in the job summary) and an
+SVG badge (`docs/coverage.svg` on the results branch). No agent runs.
+
+## 5d. HTML report (`tools/eval-report.mjs`)
+
+`renderReport(current, baseline?, { threshold, thresholds })` → one self-contained HTML file: the
+**verdict** (what happened, what to do) and a **provenance stamp** (overall with the baseline's,
+cases at 1.00, model + pinned/alias and *moved from*, Claude Code and *moved from*, track, runner and
+judge, cost vs cap, setup worth), *what moved* cards (regressed / improved / new / efficiency),
+the score table (baseline / score / Δ / without-plugin / Δ-plugin / turns / cost / runs, with
+`→` and % when a median moved), and per-case sections: tags and `covers` chips, what the case
+evaluates, and run cards in three states (green pass, amber truncated-but-passed, red failed, grey
+errored) with grader chips (hover = type + reason), judge reasons (open on failed runs), tool calls,
+changed files, full response. "Failing and flagged runs only" toggle. No script dependencies,
+theme-aware. The shim writes `report.html` beside every `aggregate-result.json`; the Action uploads it
+as the `eval-report` artifact. CLI: `node tools/eval-report.mjs current.json [--baseline b.json] [--config <plugin>] [--out r.html]`.
+
+## 5e. Drift index (`tools/eval-dashboard.mjs`)
+
+Reads a history directory (the results branch's `history/*.json`, or a local `evals/results/`) and
+optionally `--baseline`, `--spend`, `--streak`, `--coverage`, `--config`. Writes one HTML file: the
+verdict across tracks (*holding at baseline*, *baseline holding · canary red*, *canary regressed*,
+*latest run errored*), the stamp (latest run, baseline model/version/date, latest canary and streak,
+Claude Code versions seen, budget spent vs cap with a meter, coverage, total cost), the **ribbon** —
+one row per case, one cell per run, filled for pinned runs and outlined for canaries, coloured by
+verdict — the SVG line chart of score per case over Claude Code versions with canary runs shaded,
+and the run list with track, version, model, per-case scores, cost and a link to each run's report.
 The Action writes it as `docs/index.html` on the results branch when `pages` is true.
 
 ## 6. Results branch layout
 
 ```
 eval-results (orphan)
-  baseline.json                         # promoted result
-  history/<UTC stamp>-cc<version>-<official|shim>.json
-  .claude-code-version
-  docs/index.html                       # dashboard (GitHub Pages: source = this branch, /docs)
+  baseline.json                         # the pinned baseline (promoted result)
+  canary/latest.json                    # the latest canary run
+  canary/streak.json                    # greens on the current model+version; drives bump PRs
+  spend.json                            # ledger: per-month USD and runs, last 200 runs with provenance
+  coverage.json
+  history/<UTC stamp>-cc<version>-<official|shim>-<track>.json
+  .release-watch.json                   # { harness, models[] } for the watch job
+  .claude-code-version                  # legacy, still written
+  docs/index.html                       # drift index (GitHub Pages: source = this branch, /docs)
   docs/report.html                      # latest run's report
   docs/history/<run>.html               # every run's report
+  docs/latest.json · docs/baseline.json · docs/streak.json · docs/spend.json · docs/coverage.json · docs/coverage.svg
 ```
 
 Written by the Action with a bot identity; one commit per run. The branch is plain JSON, so any tool can read it.
 
-## 7. Known limitations (v0.1)
+## 7. Known limitations
 
 `tool_order`, `baseline`, `history_file`, `add_dirs`, MCP mocks not implemented in the shim; LLM
-grader single vote; no parallelism (sequential runs — ~30 s each for short cases); the Action is
-untested on GitHub until first push.
+grader single vote; no parallelism (sequential runs — ~30 s each for short cases); `repair` and the
+official-runner path are exercised on real accounts only, not by the test suite (which drives the shim
+with a fake `claude`); Claude-only (`agent:` is reserved for Codex/Gemini adapters).

@@ -84,7 +84,7 @@ const ribbonAxis = runs.length ? `<div class="raxis"><span>${esc(when(runs[0].at
 
 // ---- chart (SVG, one line per case) ----
 const PAL = ['#2E5BD7', '#D9622B', '#1E9A6A', '#C58A00', '#6B4FD8', '#C9407A', '#0E8A8A', '#8A5A1A'];
-const W = 900, H = 280, L = 44, R = 160, T = 16, B = 42, n = Math.max(runs.length, 1);
+const W = 900, H = 280, L = 44, R = 215, T = 16, B = 42, n = Math.max(runs.length, 1);
 const x = (i) => L + (n === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (n - 1));
 const y = (v) => T + (1 - v) * (H - T - B);
 const series = caseNames.map((nm) => ({ name: nm, points: runs.map((r, i) => { const c = r.json.cases.find((c) => key(c) === nm); return { i, score: c?.summary?.score ?? null }; }) }));
@@ -99,7 +99,7 @@ const svg = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="S
   ${ticks.map((t) => `<text x="${x(t.i)}" y="${H - B + 18}" class="tick" text-anchor="middle">${esc(t.label)}</text>`).join('')}
   <text x="${L}" y="${H - 6}" class="tick">x = Claude Code version${runs.some((r) => !r.cc) ? ' or date' : ''} · shaded = canary</text>
   ${paths.map((p) => `<path d="${p.d}" class="line" style="stroke:${PAL[p.si % 8]}"/>${p.pts.map((pt) => `<circle cx="${x(pt.i)}" cy="${y(pt.score)}" r="4" class="pt" style="fill:${PAL[p.si % 8]}"><title>${esc(p.name)} · ${esc(runs[pt.i].cc ?? runs[pt.i].at)} · ${pt.score.toFixed(2)}</title></circle>`).join('')}`).join('')}
-  ${labels.map(({ p, yy }) => `<text x="${W - R + 10}" y="${yy + 4}" class="lbl">${esc(p.name.length > 24 ? p.name.slice(0, 23) + '…' : p.name)}</text>`).join('')}
+  ${labels.map(({ p, yy }) => `<text x="${W - R + 10}" y="${yy + 4}" class="lbl">${esc(p.name.length > 30 ? p.name.slice(0, 29) + '…' : p.name)}</text>`).join('')}
 </svg>`;
 
 // ---- runs table ----
@@ -128,7 +128,7 @@ h2{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
 .rval{text-align:right;font-size:14px;font-weight:600}.rval small{display:block;font-weight:400;font-size:11px;color:var(--muted)}.rval.fail small{color:var(--fail)}.rval.pass small{color:var(--pass)}
 .raxis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:8px}
 .chart{width:100%;height:auto;display:block}.grid{stroke:var(--rule)}.band{fill:var(--track-bg)}.tick{fill:var(--muted);font-size:11px}.line{stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}.pt{stroke:var(--surface);stroke-width:2}.lbl{font-size:12px;font-weight:600;fill:var(--ink)}
-.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);box-shadow:var(--shadow)}table{border-collapse:collapse;width:100%;font-size:13.5px}th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);white-space:nowrap;font-weight:600}td{padding:8px 10px;border-bottom:1px solid var(--rule)}tr:last-child td{border-bottom:0}td.num{text-align:right}td.mono{font-size:12.5px}td.small{font-size:11.5px;color:var(--muted)}td.num.regressed,td.num.errored{color:var(--fail);font-weight:600}td.num.below,td.num.warn{color:var(--warn)}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);box-shadow:var(--shadow)}table{border-collapse:collapse;width:100%;font-size:13.5px}th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);white-space:nowrap;font-weight:600}td{padding:8px 10px;border-bottom:1px solid var(--rule)}tr:last-child td{border-bottom:0}td.num{text-align:right}td.mono{font-size:12.5px;white-space:nowrap}td.small{font-size:11.5px;color:var(--muted);white-space:nowrap}td.num{white-space:nowrap}td.num.regressed,td.num.errored{color:var(--fail);font-weight:600}td.num.below,td.num.warn{color:var(--warn)}
 .trk{font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:var(--code);color:var(--muted)}.trk.canary{background:var(--track-bg);color:var(--track)}.trk.pinned{background:var(--code);color:var(--ink)}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--muted)}.dot.pass{background:var(--pass)}.dot.warn,.dot.below{background:var(--warn)}.dot.regressed,.dot.errored{background:var(--fail)}tr.st-regressed td,tr.st-errored td{background:var(--fail-bg)}
 .foot{color:var(--muted);font-size:12px;margin-top:22px}:focus-visible{outline:2px solid var(--track);outline-offset:2px}

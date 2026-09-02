@@ -66,10 +66,10 @@ footer{border-top:1px solid var(--rule);padding:28px 0 60px;color:var(--muted);f
 <div class="wrap"><div class="open">
   <div>
     <h1 class="h">Your Claude Code setup is code. Nobody tests it.</h1>
-    <p class="lede">config-drift-checker tests your CLAUDE.md, skills and hooks every time Claude Code ships a release, and tells you as soon as one of them stops working.</p>
-    <p class="sub">Open source. It runs in your own GitHub Actions with your own API key, and nothing leaves your repository.</p>
+    <p class="lede">config-drift-checker tests your CLAUDE.md, skills and hooks against a pinned baseline on every PR, canaries the latest model and Claude Code on every release, and opens a PR when the canary has earned it.</p>
+    <p class="sub">Open source. It runs in your own GitHub Actions with your own API key, inside a budget you set, and nothing leaves your repository.</p>
     <a class="cta" href="https://github.com/jameskomo/config-drift-checker">Get it on GitHub</a>
-    <a class="cta quiet" href="https://jameskomo.github.io/config-drift-checker-demo/">Open the demo dashboard</a>
+    <a class="cta quiet" href="drift/">See the drift index</a>
   </div>
   <div class="artifact" aria-label="Example of a failed check and PR comment">
     <div class="bar"><b>config-drift-checker</b> <span>· pull request #14 · after Claude Code 2.1.248</span></div>
@@ -95,8 +95,9 @@ claude
   <div class="steps">
     <div><b>It reads what you already have</b><p>Your CLAUDE.md, your skills and your hooks. From those it writes the first test cases: a real change to your code, a request that must not trigger a skill, and a command the guard hook must block.</p></div>
     <div><b>It runs the real agent</b><p>Each case runs several times in a throwaway copy of your repository, with your plugin loaded. Every grader records a verdict and a reason, and a judge model explains what it saw.</p></div>
-    <div><b>It watches releases for you</b><p>A small job checks npm every six hours. When Claude Code ships, the suite runs against the new version, compares the result with your baseline, and turns the check red if something has moved. It can post to Slack as well.</p></div>
+    <div><b>It watches releases for you</b><p>Your baseline is pinned to an exact model and Claude Code version. On a schedule a small job checks npm and Anthropic's model list; when something ships, a canary runs your suite on the alias your developers actually get, never more often than you allow and never past your monthly budget. Two green canaries on a new model become a pull request that moves your pins.</p></div>
   </div>
+  <p style="margin-top:22px">We run it on our own suite: the <a href="drift/">drift index</a> shows every case over every Claude Code release, the pinned baseline against the latest canary, and what it cost.</p>
   <p style="margin-top:22px">If you already have cases, or only want the check in an existing pipeline, it is one step: <span class="mono">uses: jameskomo/config-drift-checker/action@v0</span>. The cases use Anthropic's own <span class="mono">claude plugin eval</span> format, so there is nothing of ours to learn and nothing to migrate away from later.</p>
 </div></div></section>
 

@@ -29,7 +29,10 @@ edits several files and writes a test), `12` for single-file or prose cases, `6`
 run that hits `max_turns` is scored as-is and flagged TRUNCATED — treat that as "raise the budget".
 Give every case a `description:` line in `prompt.md` frontmatter, one sentence stating what the
 case proves and which part of the setup (skill, hook, CLAUDE.md rule) it exercises; the HTML report
-shows it under the case heading. Write them under `<plugin>/evals/<case>/` using the official layout (prompt.md + graders/*.md,
+shows it under the case heading. Also give it `covers: [..]` — the ids of the rules it exercises,
+from `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list` (run it after step 1;
+a negative-trigger case covers nothing, which is correct). The coverage number in every report
+comes from these. Write them under `<plugin>/evals/<case>/` using the official layout (prompt.md + graders/*.md,
 optional case.yaml). Use `${CLAUDE_PLUGIN_ROOT}/../examples/komo-stack/evals/` as the reference if present,
 or the format section of the `write-case` skill.
 
@@ -57,7 +60,18 @@ node ${CLAUDE_PLUGIN_ROOT}/tools/eval-shim.mjs <plugin> --runs 1 --ablation none
 Read the per-grader verdicts. Fix graders that fail for the wrong reason (prose match, missing
 scaffold, unsatisfiable negative). Re-run once. Show the user the table.
 
-## 4. Wire CI
+## 4. Pin and budget — `.cdc.yml`
+
+Write `<plugin>/.cdc.yml` from what the smoke run resolved:
+```
+node ${CLAUDE_PLUGIN_ROOT}/tools/cdc-config.mjs <plugin> init --model <aggregates.resolvedModels[0] of the smoke run> --harness <claude --version, first token>
+```
+Then **ask the user one question only**: how much they are willing to spend per month on this suite,
+and set `budget.per_month_usd` to it (default 10). Explain in two sentences: the pinned track is the
+baseline every PR is checked against; the canary runs the alias model on the latest Claude Code when
+a release ships, at most every 72 h, never past the budget, and opens a bump PR after two greens.
+
+## 5. Wire CI
 
 Copy `${CLAUDE_PLUGIN_ROOT}/ci/config-drift-checker.yml` to `.github/workflows/config-drift-checker.yml`
 **as is** — it is generic: it checks out the published `jameskomo/config-drift-checker` for the watch job
@@ -67,8 +81,12 @@ in-repo tool paths. If `gh` is available and authenticated, offer to run
 `gh secret set ANTHROPIC_API_KEY` (the user pastes the key; never echo it) and
 `gh secret set SLACK_WEBHOOK_URL`.
 
-## 5. Hand-off checklist (print exactly)
+## 6. Hand-off checklist (print exactly)
 
-1. Push. 2. Actions → config-drift-checker → Run workflow (records the baseline). 3. Next Claude Code
-release triggers the first real run; regressions appear as a red check, a PR comment, and Slack.
-4. After intentional changes: Run workflow with `promote-baseline: true`.
+1. Push. 2. Settings → Actions → General: workflow permissions *Read and write*, and tick *Allow
+GitHub Actions to create and approve pull requests* (for bump/pin PRs). 3. Actions →
+config-drift-checker → Run workflow (records the baseline; merge the pin PR it opens if `.cdc.yml`
+had no pin). 4. The next Claude Code or model release runs the canary; regressions appear as a red
+check, a PR comment, Slack and the drift index (`eval-results` branch → Pages). 5. After intentional
+changes: Run workflow with `promote-baseline: true`. 6. Spend never passes `budget.per_month_usd`
+in `.cdc.yml`; a skipped run says so in the job summary.

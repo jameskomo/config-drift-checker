@@ -33,3 +33,15 @@
   run such a command stub the binary in `.eval-bin/`. `--no-safety-net` exists and is dangerous.
 - Hook cases must be harmless when the command *succeeds* (the without-arm has no guard by
   design): scratch git repos, stubbed binaries, never the real service.
+- **Spend is capped by you.** `.cdc.yml` `budget.per_run_usd` stops the runner mid-suite;
+  `budget.per_month_usd` makes the Action refuse to start (a notice, not a red check) from the ledger
+  on your results branch; scheduled canaries are throttled by `canary.min_interval_hours`. The only
+  network calls the tools make themselves are `npm view` and `GET /v1/models` with your key.
+- **PRs the Action opens** (bump, pin, repair) come from a bot identity on a `cdc/*` branch, carry
+  their evidence in the body, and are never merged by us. They need *Allow GitHub Actions to create
+  and approve pull requests* (Settings → Actions → General); without it the branch is pushed and the
+  job warns. The `repair` skill may edit `CLAUDE.md`, skills and hooks only — never `evals/` — and runs
+  under the remaining monthly budget with a hard cap of $2 per incident.
+- `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) is accepted as an alternative to an API key
+  and passed straight to the official CLI; whether your subscription's terms allow CI use is between
+  you and Anthropic.
