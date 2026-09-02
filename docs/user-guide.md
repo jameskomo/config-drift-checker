@@ -54,7 +54,7 @@ Review the diff like any PR. Commit.
 
 | What | Where | Why |
 |---|---|---|
-| `ANTHROPIC_API_KEY` secret | repo → Settings → Secrets → Actions (or `gh secret set ANTHROPIC_API_KEY`) | agent runs bill to **your** key (BYOK). Use an API key from console.anthropic.com and **add prepaid credit first** (a few dollars; see §8). With no credit, runs fail with "Credit balance is too low" and nothing is stored. *Alternative:* `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` runs the official CLI under your subscription — check Anthropic's current terms for CI use before relying on it. |
+| **One** auth secret: `ANTHROPIC_API_KEY` **or** `CLAUDE_CODE_OAUTH_TOKEN` | repo → Settings → Secrets → Actions (or `gh secret set …`) | *API key* (console.anthropic.com): runs bill prepaid API credit — **add a few dollars first** (see §8); with none, runs fail with "Credit balance is too low" and nothing is stored. *Subscription token*: run `claude setup-token` in a terminal (Pro, Max, Team, Enterprise), paste the token as `CLAUDE_CODE_OAUTH_TOKEN`; runs then use your subscription instead of API billing — [Anthropic's documented CI path](https://code.claude.com/docs/en/github-actions#manual-setup). It is tied to the person who generated it, so use an API key for an org-wide secret. If both are set, the API key wins. |
 | `SLACK_WEBHOOK_URL` secret (optional) | Slack → Apps → Incoming Webhooks | regression alerts |
 | Workflow permissions **Read and write** | repo → Settings → Actions → General | the run stores results on an `eval-results` branch and comments on PRs |
 | **Allow GitHub Actions to create and approve pull requests** | same page | the Action opens *bump*, *pin* and *repair* PRs. Without this it pushes the branch and warns; you open the PR by hand |

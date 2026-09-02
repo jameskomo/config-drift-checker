@@ -42,6 +42,8 @@
   and approve pull requests* (Settings → Actions → General); without it the branch is pushed and the
   job warns. The `repair` skill may edit `CLAUDE.md`, skills and hooks only — never `evals/` — and runs
   under the remaining monthly budget with a hard cap of $2 per incident.
-- `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) is accepted as an alternative to an API key
-  and passed straight to the official CLI; whether your subscription's terms allow CI use is between
-  you and Anthropic.
+- `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`; Pro/Max/Team/Enterprise) is accepted as an
+  alternative to an API key and passed straight to the official CLI — the same mechanism Anthropic
+  documents for its own GitHub Action. It is a long-lived credential tied to one person's
+  subscription: store it only as an Actions secret, rotate it by running `setup-token` again, and
+  prefer an API key for anything shared across an organisation.
