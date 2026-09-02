@@ -1,0 +1,25 @@
+# config-drift-checker — tracks, budgets, thresholds for the komo-stack example suite.
+# This suite is also the public Drift Index: its canary runs on every Claude Code release.
+# Docs: https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#cdcyml
+track: pinned
+model:
+  pinned: claude-sonnet-5   # what the stored baseline was measured on (aggregates.resolvedModels)
+  canary: sonnet            # the alias developers actually get; resolved at run time
+harness:
+  pinned: 2.1.258           # @anthropic-ai/claude-code version the baseline is measured on
+  canary: latest
+judge_model: haiku
+canary:
+  runs: 1                   # one run per case; two more only if a grader failed
+  expand_on_deviation: 2
+  promote_after: 2          # two green canaries on the same model+version → bump PR
+  min_interval_hours: 72    # a scheduled canary at most every three days, whatever npm publishes
+thresholds:
+  score: 0.15
+  turns: 0.5
+  cost: 0.5
+  duration: 0.5
+fail_on: [score]
+budget:
+  per_run_usd: 1.5          # the shim stops starting runs past this
+  per_month_usd: 5          # the Action refuses to start a run past this (ledger on eval-results)

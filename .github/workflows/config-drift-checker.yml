@@ -1,7 +1,12 @@
 name: config-drift-checker
+# Two tracks, one key, a hard budget.
+#   pinned  — on push/PR to the setup: the baseline check, on the model + Claude Code version .cdc.yml pins.
+#   canary  — on a schedule: release-watch looks for a new Claude Code or model; if one shipped, the suite runs
+#             on the `sonnet` alias + latest Claude Code. That result is the public Drift Index. The Action's
+#             gate refuses to run past `budget.per_month_usd` or more often than `canary.min_interval_hours`.
 on:
   schedule:
-    - cron: '17 */6 * * *'        # release-watch: every 6h, runs only if Claude Code published a new version
+    - cron: '17 */6 * * *'
   push:
     branches: [main]
     paths: ['examples/**', 'action/**', 'config-drift-checker/tools/**', 'config-drift-checker/skills/**', 'config-drift-checker/.claude-plugin/**']
@@ -9,8 +14,10 @@ on:
     paths: ['examples/**', 'action/**', 'config-drift-checker/tools/**', 'config-drift-checker/skills/**', 'config-drift-checker/.claude-plugin/**']
   workflow_dispatch:
     inputs:
-      promote-baseline: { description: 'Overwrite baseline with this run', type: boolean, default: false }
+      track:            { description: 'pinned | canary', default: 'pinned' }
+      promote-baseline: { description: 'Overwrite baseline with this run (pinned track)', type: boolean, default: false }
       ablation:         { description: 'with-without | none', default: 'none' }
+      force:            { description: 'Skip the budget and interval gates', type: boolean, default: false }
 
 permissions: { contents: write, pull-requests: write }
 concurrency: { group: config-drift-checker, cancel-in-progress: false }
@@ -18,22 +25,26 @@ concurrency: { group: config-drift-checker, cancel-in-progress: false }
 jobs:
   watch:
     runs-on: ubuntu-latest
-    outputs: { run: '${{ steps.decide.outputs.run }}', version: '${{ steps.rw.outputs.version }}' }
+    outputs: { run: '${{ steps.decide.outputs.run }}', track: '${{ steps.decide.outputs.track }}', version: '${{ steps.rw.outputs.version }}' }
+    env: { ANTHROPIC_API_KEY: '${{ secrets.ANTHROPIC_API_KEY }}' }   # only for the free /v1/models listing
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with: { node-version: '22' }
       - id: rw
         run: |
-          git fetch --depth=1 origin eval-results 2>/dev/null && git show origin/eval-results:.claude-code-version > .claude-code-version 2>/dev/null || true
-          node config-drift-checker/tools/release-watch.mjs --state .claude-code-version >> "$GITHUB_OUTPUT"
+          git fetch --depth=1 origin eval-results 2>/dev/null && git show origin/eval-results:.release-watch.json > .release-watch.json 2>/dev/null || true
+          node config-drift-checker/tools/release-watch.mjs --state .release-watch.json --models --pin "$(node config-drift-checker/tools/cdc-config.mjs examples/komo-stack get model.pinned)" | tee -a "$GITHUB_OUTPUT"
       - id: decide
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ steps.rw.outputs.changed }}" != "true" ]; then
-            echo "run=false" >> "$GITHUB_OUTPUT"; echo "No new Claude Code release (still ${{ steps.rw.outputs.version }}); skipping."
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"; echo "Running: event=${{ github.event_name }} claude-code=${{ steps.rw.outputs.version }} (was ${{ steps.rw.outputs.previous }})"
-          fi
+          case "${{ github.event_name }}" in
+            schedule)
+              if [ "${{ steps.rw.outputs.changed }}" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Canary: ${{ steps.rw.outputs.reason }} moved (Claude Code ${{ steps.rw.outputs.previous }} → ${{ steps.rw.outputs.version }}; new models: ${{ steps.rw.outputs.new_models }})"
+              else echo "run=false" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Nothing new (Claude Code ${{ steps.rw.outputs.version }}); skipping."; fi ;;
+            workflow_dispatch) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=${{ inputs.track || 'pinned' }}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=pinned" >> "$GITHUB_OUTPUT" ;;
+          esac
+          [ "${{ steps.rw.outputs.pin_retired }}" = "true" ] && echo "::warning::model.pinned is no longer listed by /v1/models — merge the next bump PR or pin a current id" || true
 
   eval:
     needs: watch
@@ -41,13 +52,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}     # BYOK — agent runs bill to your key
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}     # BYOK — agent runs bill to this key, within .cdc.yml budget
+    outputs: { skipped: '${{ steps.cdc.outputs.skipped }}' }
     steps:
       - uses: actions/checkout@v7
-      - uses: ./action
+      - id: cdc
+        uses: ./action
         with:
           plugin-dir: examples/komo-stack
-          claude-code-version: ${{ needs.watch.outputs.version }}
+          track: ${{ needs.watch.outputs.track }}
           ablation: ${{ inputs.ablation || 'none' }}
           promote-baseline: ${{ inputs.promote-baseline || 'false' }}
+          force: ${{ inputs.force || 'false' }}
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # The Drift Index: publish the results-branch dashboard under the landing site (main /docs is what Pages serves here).
+  publish:
+    needs: eval
+    if: always() && needs.eval.result != 'skipped' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          set -e
+          git fetch --depth=1 origin eval-results 2>/dev/null || { echo "no results branch yet"; exit 0; }
+          mkdir -p docs/drift
+          for f in index.html latest.json baseline.json streak.json spend.json coverage.json coverage.svg; do git show "origin/eval-results:docs/$f" > "docs/drift/$f" 2>/dev/null || rm -f "docs/drift/$f"; done
+          git show origin/eval-results:canary/latest.json > docs/drift/canary.json 2>/dev/null || rm -f docs/drift/canary.json
+          if [ -z "$(git status --porcelain docs/drift)" ]; then echo "drift index unchanged"; exit 0; fi
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]" && git push -q origin HEAD:main
