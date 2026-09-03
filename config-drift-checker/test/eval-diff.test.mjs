@@ -13,16 +13,22 @@ function report({ cases, harness = '2.1.200', track = 'pinned', extra = {} }) {
     schemaVersion: '1.1', track, harness: { name: 'claude-code', version: harness }, generatedAt: '2026-09-02T00:00:00Z', suite: { name: 'fixture' },
     cases: Object.entries(cases).map(([dir, runs]) => ({
       dir, name: dir,
-      arms: { with: runs.map((r, i) => ({ runIndex: i, score: r.score ?? 1, numTurns: r.numTurns ?? 4, costUsd: r.costUsd ?? 0.1, durationMs: r.durationMs ?? 5000, model: r.model ?? 'claude-sonnet-5', isError: !!r.isError, graders: r.graders ?? [] })) },
+      arms: { with: runs.map((r, i) => ({ runIndex: i, score: r.score ?? 1, numTurns: r.numTurns ?? 4, costUsd: r.costUsd ?? 0.1, durationMs: r.durationMs ?? 5000, model: r.model ?? 'claude-sonnet-5', isError: !!r.isError, toolUses: r.toolUses, graders: r.graders ?? [] })) },
       summary: { score: (() => { const s = runs.filter((r) => !r.isError).map((r) => r.score ?? 1); return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null; })(), delta: runs[0]?.delta },
     })),
     aggregates: { overallScore: 1, erroredRuns: 0, totalRuns: Object.values(cases).flat().length, costUsd: 0.3, ...extra },
   };
 }
-async function run(baseObj, curObj, args = []) {
+async function run(baseObj, curObj, args = [], histObjs = []) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'diff-'));
   const b = path.join(dir, 'base.json'), c = path.join(dir, 'cur.json'), j = path.join(dir, 'out.json');
   await fs.writeFile(b, JSON.stringify(baseObj)); await fs.writeFile(c, JSON.stringify(curObj));
+  if (histObjs.length) {
+    const h = path.join(dir, 'history');
+    await fs.mkdir(h);
+    for (let i = 0; i < histObjs.length; i++) await fs.writeFile(path.join(h, `2026090${i}T000000Z-shim-pinned.json`), JSON.stringify(histObjs[i]));
+    args = [...args, '--history', h];
+  }
   const r = spawnSync('node', [DIFF, b, c, '--json', j, ...args], { encoding: 'utf8' });
   return { status: r.status, md: r.stdout, json: JSON.parse(await fs.readFile(j, 'utf8')), dir };
 }
@@ -51,7 +57,7 @@ test('efficiency drift: turns doubled → warning only by default, red with --fa
   const warn = await run(base, cur);
   assert.equal(warn.status, 0);
   assert.match(warn.md, /no regressions · ⚠ 1 efficiency drift \(warning\)/);
-  assert.match(warn.md, /\| ⚪ ⚠ \| a <sub>slower<\/sub> \| 1\.00 \| 1\.00 \| \+0\.00 \| 4 → 9 \(\+125%\) \| \$0\.10 \|/);
+  assert.match(warn.md, /\| ⚪ ⚠ \| a <sub>slower<\/sub> \| 1\.00 \| 1\.00 \| \+0\.00 \| — \| 4 → 9 \(\+125%\) \| \$0\.10 \|/);
   assert.deepEqual(warn.json.rows[0].flags, ['slower']);
   const red = await run(base, cur, ['--fail-on', 'score,turns']);
   assert.equal(red.status, 1);
@@ -109,4 +115,104 @@ test('all runs errored → exit 2 with the partial reason as the headline', asyn
   const { status, md } = await run(report({ cases: { a: three() } }), cur);
   assert.equal(status, 2);
   assert.match(md, /\*\*⚠ 1 of 1 agent runs errored: Credit balance is too low\*\*/);
+});
+
+test('noise: a flake-shaped drop inside the historical noise band is a ⚠ warning, never red', async () => {
+  const base = report({ cases: { a: three() } });
+  // Δ = −0.20 past the flat 0.15, but flake-shaped: two runs still reach the baseline score
+  const cur = report({ cases: { a: [{ score: 1 }, { score: 0.4 }, { score: 1 }] } });
+  const hist = [
+    report({ cases: { a: [{ score: 0.5 }, { score: 1 }] } }),
+    report({ cases: { a: three() } }),
+    report({ cases: { a: [{ score: 0 }] }, track: 'canary' }), // other track: must not count
+  ];
+  const { status, md, json } = await run(base, cur, [], hist);
+  assert.equal(status, 0);
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.equal(row.status, 'noisy');
+  assert.equal(row.noise, 0.5);            // 1 − 0.5 across baseline + pinned history runs
+  assert.equal(row.effThreshold, 0.5);     // max(threshold, noise)
+  assert.equal(row.historyRuns, 2, 'the canary file is filtered out');
+  assert.equal(json.red, 0); assert.equal(json.regressed, 0);
+  assert.match(md, /no regressions · ⚠ 1 noisy \(warning\)/);
+  assert.match(md, /\| ⚠ \| a \| 1\.00 \| 0\.80 \| -0\.20 \| ±0\.50 \|/);
+  assert.match(md, /_1 case dropped past 0\.15 but within historical noise \(±0\.50 over the last 2 runs\) — warning, not a regression_/);
+});
+
+test('noise: a quiet history keeps the same delta red', async () => {
+  const base = report({ cases: { a: three() } });
+  const cur = report({ cases: { a: three({ score: 0.8 }) } });
+  const hist = [report({ cases: { a: three() } }), report({ cases: { a: three() } })];
+  const { status, json } = await run(base, cur, [], hist);
+  assert.equal(status, 1);
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.equal(row.status, 'regressed');
+  assert.equal(row.noise, 0); assert.equal(row.effThreshold, 0.15);
+});
+
+test('noise: without --history the flat threshold decides, as before', async () => {
+  const base = report({ cases: { a: three() } });
+  const cur = report({ cases: { a: three({ score: 0.8 }) } });
+  const { status, md, json } = await run(base, cur);
+  assert.equal(status, 1);
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.equal(row.status, 'regressed');
+  assert.equal(row.noise, null); assert.equal(row.effThreshold, 0.15); assert.equal(row.historyRuns, 0);
+  assert.match(md, /\| 🔴 \| a \| 1\.00 \| 0\.80 \| -0\.20 \| — \|/);
+});
+
+test('baseline quality: thin and unstable baselines warn, never red', async () => {
+  const runs = [{ score: 1 }, { score: 0.5 }]; // 2 runs (< min_runs 3) and spread 0.5
+  const { status, md, json } = await run(report({ cases: { a: runs, b: three() } }), report({ cases: { a: runs, b: three() } }));
+  assert.equal(status, 0);
+  assert.deepEqual(json.rows.find((r) => r.case === 'a').warnings, ['thin baseline (n=2)', 'unstable baseline (±0.50)']);
+  assert.deepEqual(json.rows.find((r) => r.case === 'b').warnings, []);
+  assert.match(md, /\*\*⚠ baseline quality \(never red\):\*\* `a` — thin baseline \(n=2\), unstable baseline/);
+});
+
+test('noise guard: a uniform in-band drop (no run reaches baseline) is a consistent shift → red', async () => {
+  const base = report({ cases: { a: three() } });
+  const cur = report({ cases: { a: three({ score: 0.8 }) } }); // every run 0.8 — nothing reaches 1.0
+  const hist = [report({ cases: { a: [{ score: 0.5 }, { score: 1 }] } })];
+  const { status, md, json } = await run(base, cur, [], hist);
+  assert.equal(status, 1);
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.equal(row.status, 'regressed');
+  assert.match(row.escalated, /consistent shift, not a flake/);
+  assert.match(md, /within its ±0\.50 noise band but red anyway: no current run reached the baseline score/);
+});
+
+test('noise guard: a drop that persisted across the last two runs is no longer noise → red', async () => {
+  const base = report({ cases: { a: three() } });
+  const cur = report({ cases: { a: [{ score: 1 }, { score: 0.4 }, { score: 1 }] } }); // flake-shaped, would be noisy
+  const hist = [
+    report({ cases: { a: [{ score: 1 }, { score: 0.4 }] } }), // oldest: widens the band
+    report({ cases: { a: three({ score: 0.8 }) } }),          // already down
+    report({ cases: { a: three({ score: 0.8 }) } }),          // newest: still down
+  ];
+  const { status, md, json } = await run(base, cur, [], hist);
+  assert.equal(status, 1);
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.equal(row.status, 'regressed');
+  assert.match(row.escalated, /persisted/);
+  assert.match(md, /the drop persisted across the last runs/);
+});
+
+test('refusals: 1-turn no-tool low runs on a case whose baseline acts are flagged; a tool-less baseline is not', async () => {
+  const acts = { toolUses: [{ tool: 'Bash', input: '{}' }] };
+  const base = report({ cases: { a: three(acts), b: three() } }); // b's baseline never uses tools
+  const refuse = { score: 0.25, numTurns: 1, toolUses: [] };
+  const cur = report({ cases: { a: [refuse, refuse, refuse], b: [refuse, refuse, refuse] } });
+  const { status, md, json } = await run(base, cur);
+  assert.equal(status, 1); // both regressed
+  assert.equal(json.rows.find((r) => r.case === 'a').refusedRuns, 3);
+  assert.equal(json.rows.find((r) => r.case === 'b').refusedRuns, 0);
+  assert.match(md, /`a`: 3 of 3 run\(s\) look like refusals \(≤1 turn, no tool use\)/);
+  assert.doesNotMatch(md, /`b`: \d+ of \d+ run\(s\) look like refusals/);
+});
+
+test('baseline quality: a small judge-level spread (≤ threshold/2) does not warn', async () => {
+  const runs = [{ score: 1 }, { score: 0.95 }, { score: 1 }]; // spread 0.05 < 0.075
+  const { json } = await run(report({ cases: { a: runs } }), report({ cases: { a: runs } }));
+  assert.deepEqual(json.rows.find((r) => r.case === 'a').warnings, []);
 });

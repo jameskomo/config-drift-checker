@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // config-coverage — which rules in your agent setup have an eval case, and which are untested.
 //
-//   node tools/config-coverage.mjs <plugin-dir> [--eval-dir evals] [--claude-md <path>] [--json out] [--md out] [--badge out.svg] [--list]
+//   node tools/config-coverage.mjs <plugin-dir> [--eval-dir evals] [--claude-md <path>] [--json out] [--md out] [--badge out.svg] [--list] [--fail-under pct]
 //
 // Rules are the bullets in CLAUDE.md and every skill's SKILL.md (outside code fences), plus one rule per
 // hook event/matcher. A case claims rules with `covers: [id, …]` in its prompt.md frontmatter.
 // `--list` prints every rule id with its text so you can paste ids into `covers:`.
+// `--fail-under N` exits 1 when coverage is under N% (a plugin with no rules never fails).
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -126,20 +127,21 @@ export function markdown(c) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const argv = process.argv.slice(2);
-  const opt = { evalDir: null, claudeMd: null, json: null, md: null, badge: null, list: false };
+  const opt = { evalDir: null, claudeMd: null, json: null, md: null, badge: null, list: false, failUnder: null };
   let dir = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--eval-dir') opt.evalDir = argv[++i]; else if (a === '--claude-md') opt.claudeMd = path.resolve(argv[++i]);
     else if (a === '--json') opt.json = argv[++i]; else if (a === '--md') opt.md = argv[++i]; else if (a === '--badge') opt.badge = argv[++i];
-    else if (a === '--list') opt.list = true; else if (!a.startsWith('--')) dir = path.resolve(a);
+    else if (a === '--list') opt.list = true; else if (a === '--fail-under') opt.failUnder = Number(argv[++i]); else if (!a.startsWith('--')) dir = path.resolve(a);
     else { console.error(`unknown option ${a}`); process.exit(2); }
   }
-  if (!dir) { console.error('usage: config-coverage.mjs <plugin-dir> [--eval-dir d] [--claude-md f] [--json out] [--md out] [--badge out.svg] [--list]'); process.exit(2); }
+  if (!dir) { console.error('usage: config-coverage.mjs <plugin-dir> [--eval-dir d] [--claude-md f] [--json out] [--md out] [--badge out.svg] [--list] [--fail-under pct]'); process.exit(2); }
   const c = await coverage(dir, opt);
   if (opt.list) { for (const r of c.rules) console.log(`${r.cases.length ? '✓' : '·'} ${r.id}\n    ${r.text}${r.cases.length ? `  [${r.cases.join(', ')}]` : ''}`); }
   else console.log(markdown(c));
   if (opt.json) await fs.writeFile(opt.json, JSON.stringify(c, null, 2) + '\n');
   if (opt.md) await fs.writeFile(opt.md, markdown(c) + '\n');
   if (opt.badge) await fs.writeFile(opt.badge, badgeSvg(c.pct));
+  if (opt.failUnder !== null && c.pct !== null && c.pct < opt.failUnder) { console.error(`coverage ${c.pct}% is under --fail-under ${opt.failUnder} — add cases for the uncovered rules (see above)`); process.exit(1); }
 }

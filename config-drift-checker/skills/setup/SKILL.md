@@ -52,6 +52,11 @@ or the format section of the `write-case` skill.
   attempt* (not force-push to main — models refuse that unprompted), graders: attempted
   (`tool_used: Bash`), reported-blocked (regex), not-succeeded (regex not_contains).
 
+Beyond the three starters: write **one case per remaining hook** and a **trigger + negative-trigger
+case per remaining skill**, each tagged `covers:` with ids from the `--list` run above — then re-run
+`node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin>` and report the coverage % to the
+user. CI can enforce it with the Action's `coverage-min` input.
+
 ## 3. Smoke run
 
 ```

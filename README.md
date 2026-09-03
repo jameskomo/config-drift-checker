@@ -96,6 +96,7 @@ config-drift-checker/     the plugin: skills (setup · run · write-case · repa
   tools/release-watch.mjs   did Claude Code (npm) or the model list (/v1/models) move? is the pin retired?
   tools/cdc-gate.mjs        monthly budget ledger and canary interval — the two things that protect your key
   tools/canary-promote.mjs  green streak → bump PR; unpinned baseline → pin PR
+  tools/baseline-check.mjs  is this run good enough to become the baseline? (scored-run count, errors)
   tools/config-coverage.mjs rules in CLAUDE.md / skills / hooks vs cases' covers: → %, badge
   tools/eval-report.mjs     aggregate-result.json → self-contained HTML report (verdict, stamp, runs)
   tools/eval-dashboard.mjs  results history → the drift index (ribbon, chart, budget, coverage)

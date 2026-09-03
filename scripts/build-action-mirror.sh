@@ -42,6 +42,7 @@ jobs:
 | `claude-code-version` | `latest` | pin the Claude Code version under test |
 | `results-branch` | `eval-results` | where `baseline.json` and `history/` are stored |
 | `promote-baseline` | `false` | overwrite the baseline with this run |
+| `coverage-min` | — | fail the check when agent-config coverage is under this percent (empty = report only) |
 | `slack-webhook-url` | — | incoming-webhook URL for regression alerts |
 
 Outputs: `regressed`, `runner` (official or shim), `claude-version`, `result-path`.

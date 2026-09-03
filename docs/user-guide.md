@@ -107,7 +107,9 @@ add `eval`. A setup regression then blocks the PR that caused it.
 **Inputs you may want:** `runs: 1` and `model: haiku` for cheap PR smoke; `ablation: with-without`
 once, to measure what a skill is worth; `promote-baseline: true` after an intentional change;
 `repair: true` to let the agent propose a fix PR on red (spends credit, budget-capped);
-`open-prs: false` to keep bump/pin PRs off; `claude-code-version: 2.1.258` to override the pin.
+`open-prs: false` to keep bump/pin PRs off; `claude-code-version: 2.1.258` to override the pin;
+`coverage-min: 80` to fail the check when fewer than 80% of the rules in your CLAUDE.md, skills and
+hooks have an eval case (empty = report only).
 
 **Which path is for me?**
 
@@ -146,6 +148,10 @@ fail_on: [score]            # which drifts turn the check red; the rest are warn
 budget:
   per_run_usd: 2            # the runner stops starting agent runs past this
   per_month_usd: 10         # the Action refuses to start a run past this (ledger on eval-results)
+noise:
+  history_runs: 10          # past runs that set each case's noise band in the diff
+baseline:
+  min_runs: 3               # a run with fewer scored runs per case is refused as a baseline
 ```
 
 **Two tracks.** *Pinned* is your baseline: same model id, same Claude Code version, only your setup
@@ -163,6 +169,20 @@ Neither is ever auto-merged. Close one to keep your pins; it proposes again afte
 skipped cases show as ❔, not red). `per_month_usd` is enforced before a run starts, from
 `spend.json` on your results branch; a run past the cap is *skipped with a notice*, not failed.
 A manual *Run workflow* with `force: true` overrides both — the person clicking is the budget.
+
+**Noise.** A single model refusal can swing a 3-run case score by 0.33 — well past the flat 0.15
+threshold. So the diff measures each case's *noise band*: the spread (max − min) of its with-arm run
+scores across the baseline and the last `noise.history_runs` runs (kept on the results branch under
+`history/`). A drop past the threshold but inside that band is reported **noisy** (⚠, a warning —
+never red); only a drop past `max(threshold, noise)` is a regression. Two escalations keep the band
+honest: an in-band drop where *no current run reaches the baseline score* (every run uniformly lower —
+a shift, not a flake), or one that was *already down in the last two runs*, is red anyway — so one old
+flake can never widen the band into a blind spot. When the low runs took ≤1 turn and used no tools on
+a case whose baseline runs act, the diff adds a *likely refusals* note: that pattern is a model
+guardrail change, not setup drift — read the transcript before touching your setup. More runs per
+case shrink the band; never loosen the threshold. A baseline with fewer scored runs per case than `baseline.min_runs`
+gets a *thin baseline* warning in the diff and is **refused** when the Action would store it as the
+new baseline (re-run with more runs, or lower `baseline.min_runs`).
 
 ## 5. What happens from now on (automatic)
 
@@ -196,6 +216,9 @@ model and Claude Code version ran and whether either *moved* since the baseline.
 | ↳ *grader wrong* (matched prose instead of code, a negation, nested parentheses) | fix the grader, then `--regrade` the saved run — do not re-spend the suite |
 | ↳ *flaky* (mixed verdicts across runs) | raise `runs` for that case. Never loosen the threshold |
 | **efficiency drift** (*slower*, *pricier*, *longer*) | every case still passes but the median turns / cost / time moved past its threshold. A warning by default; add it to `fail_on` to make it red. The postmortem-class regressions (verbosity, effort) show up here first |
+| **⚠ noisy** | the case dropped past the threshold but stayed within its historical noise band, and at least one run still hit the baseline score — a warning, not a regression. More runs per case shrink the band (`noise.history_runs` sets how much history counts). An in-band drop still goes red when no run recovers or it persisted over the last two runs |
+| *likely refusals* note on a red/noisy case | the low runs took ≤1 turn with no tool use while the baseline acted — the model declined the task (guardrail change), your setup did not break. Read the run transcript; consider rewording the case prompt |
+| **⚠ baseline quality** (*thin* / *unstable baseline*) | the baseline itself has too few scored runs, or its run scores vary — treat its diffs with suspicion and re-baseline with more runs. Never red |
 | **⚠ agent runs errored** | read the first error text — usually no prepaid API credit on the key's account, or a Claude Code startup failure. Nothing was stored; fix and re-run |
 | a run shows the **max_turns** badge (amber card) | it was cut short and scored as-is — raise that case's `max_turns` (real-code cases need ~20) |
 | **skipped: budget / interval** | not a failure. Raise `budget.per_month_usd`, wait, or re-run manually with `force` |
@@ -229,9 +252,12 @@ node <plugin-root>/tools/eval-shim.mjs <plugin> --scaffold                  # ev
 node <plugin-root>/tools/eval-shim.mjs <plugin> --track canary --scaffold   # what developers get today
 node <plugin-root>/tools/eval-shim.mjs <plugin> --case 'guard*' --runs 1 --ablation none --scaffold --budget 0.5
 node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --config <plugin>   # exit 1 on red
+node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --history evals/results --config <plugin>   # + per-case noise band
+node <plugin-root>/tools/baseline-check.mjs aggregate-result.json --config <plugin>   # exit 1 if not baseline material
 node <plugin-root>/tools/eval-report.mjs current.json --baseline baseline.json --config <plugin>
 node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html
 node <plugin-root>/tools/config-coverage.mjs <plugin> --list       # rule ids to put in a case's covers:
+node <plugin-root>/tools/config-coverage.mjs <plugin> --fail-under 80   # exit 1 under 80% coverage
 node <plugin-root>/tools/cdc-config.mjs <plugin> init              # write .cdc.yml; set-pins --model … --harness …
 node <plugin-root>/tools/release-watch.mjs --state .release-watch.json --models --pin claude-sonnet-5
 ```

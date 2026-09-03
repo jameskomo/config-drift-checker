@@ -65,6 +65,14 @@ test('resolveTrack: canary uses aliases, sequential defaults, thresholds and bud
   assert.throws(() => resolveTrack(cfg, 'nightly'), /pinned or canary/);
 });
 
+test('resolveTrack: noise and baseline defaults merge like budget', () => {
+  assert.equal(DEFAULTS.noise.history_runs, 10);
+  assert.equal(DEFAULTS.baseline.min_runs, 3);
+  const r = resolveTrack(mergeConfig(DEFAULTS, { noise: { history_runs: 5 } }), 'pinned');
+  assert.equal(r.noise.history_runs, 5);
+  assert.equal(r.baseline.min_runs, 3);
+});
+
 test('setPins: rewrites in place, keeps comments and order, appends when missing', () => {
   const src = `track: pinned\nmodel:\n  pinned: old-model   # keep me\n  canary: sonnet\nharness:\n  canary: latest\nbudget:\n  per_month_usd: 10\n`;
   const out = setPins(src, { model: 'claude-sonnet-5-1', harness: '2.2.0' });
@@ -92,6 +100,7 @@ test('CLI: init → resolve --github-output → set-pins → get', async () => {
   execFileSync('node', [TOOL, dir, 'init'], { stdio: 'pipe' });
   const out = execFileSync('node', [TOOL, dir, 'resolve', 'canary', '--github-output'], { encoding: 'utf8' });
   assert.match(out, /^track=canary$/m); assert.match(out, /^model=sonnet$/m); assert.match(out, /^budget_per_month_usd=10$/m); assert.match(out, /^config_exists=true$/m);
+  assert.match(out, /^noise_history_runs=10$/m); assert.match(out, /^baseline_min_runs=3$/m);
   execFileSync('node', [TOOL, dir, 'set-pins', '--model', 'claude-sonnet-5', '--harness', '2.1.258'], { stdio: 'pipe' });
   assert.equal(execFileSync('node', [TOOL, dir, 'get', 'model.pinned'], { encoding: 'utf8' }).trim(), 'claude-sonnet-5');
   assert.equal(execFileSync('node', [TOOL, dir, 'get', 'harness.pinned'], { encoding: 'utf8' }).trim(), '2.1.258');

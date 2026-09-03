@@ -24,6 +24,8 @@ export const DEFAULTS = Object.freeze({
   thresholds: { score: 0.15, turns: 0.5, cost: 0.5, duration: 0.5 },
   fail_on: ['score'],
   budget: { per_run_usd: 2, per_month_usd: 10 },
+  noise: { history_runs: 10 },
+  baseline: { min_runs: 3 },
 });
 
 // ---------- YAML subset ----------
@@ -129,6 +131,8 @@ export function resolveTrack(cfg, track = cfg.track) {
     thresholds: { ...DEFAULTS.thresholds, ...(cfg.thresholds ?? {}) },
     failOn: cfg.fail_on ?? DEFAULTS.fail_on,
     budget: { ...DEFAULTS.budget, ...(cfg.budget ?? {}) },
+    noise: { ...DEFAULTS.noise, ...(cfg.noise ?? {}) },
+    baseline: { ...DEFAULTS.baseline, ...(cfg.baseline ?? {}) },
   };
 }
 
@@ -175,6 +179,10 @@ fail_on: [score]         # which drifts turn the check red; the rest are warning
 budget:
   per_run_usd: 2         # the shim stops starting new runs past this
   per_month_usd: 10      # the Action refuses to start a run past this (ledger on the results branch)
+noise:
+  history_runs: 10       # past runs that set each case's noise band in the diff (widen the threshold, never red)
+baseline:
+  min_runs: 3            # a run with fewer scored runs per case is refused as a baseline
 `;
 }
 
@@ -188,7 +196,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   else if (cmd === 'resolve') {
     const r = resolveTrack(loadConfig(pluginDir), rest[0] && !rest[0].startsWith('--') ? rest[0] : undefined);
     if (rest.includes('--github-output')) {
-      const flat = { track: r.track, agent: r.agent, model: r.model, harness: r.harness, model_is_pinned: r.modelIsPinned, harness_is_pinned: r.harnessIsPinned, judge_model: r.judgeModel, runs: r.runs ?? '', expand_on_deviation: r.expandOnDeviation, promote_after: r.promoteAfter, min_interval_hours: r.minIntervalHours, threshold: r.thresholds.score, fail_on: r.failOn.join(','), budget_per_run_usd: r.budget.per_run_usd, budget_per_month_usd: r.budget.per_month_usd, config_exists: existsSync(path.join(pluginDir, CONFIG_FILE)) };
+      const flat = { track: r.track, agent: r.agent, model: r.model, harness: r.harness, model_is_pinned: r.modelIsPinned, harness_is_pinned: r.harnessIsPinned, judge_model: r.judgeModel, runs: r.runs ?? '', expand_on_deviation: r.expandOnDeviation, promote_after: r.promoteAfter, min_interval_hours: r.minIntervalHours, threshold: r.thresholds.score, fail_on: r.failOn.join(','), budget_per_run_usd: r.budget.per_run_usd, budget_per_month_usd: r.budget.per_month_usd, noise_history_runs: r.noise.history_runs, baseline_min_runs: r.baseline.min_runs, config_exists: existsSync(path.join(pluginDir, CONFIG_FILE)) };
       process.stdout.write(Object.entries(flat).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
     } else process.stdout.write(JSON.stringify(r, null, 2) + '\n');
   }

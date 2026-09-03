@@ -99,7 +99,7 @@ This is how a grader bug is fixed without re-spending the suite.
 Zero-dependency YAML subset (nested maps, scalars, `[a, b]`, `{ a: 1 }`, `- item`, comments).
 Defaults in `DEFAULTS`; `resolveTrack(cfg, track)` yields `{ model, harness, modelIsPinned,
 harnessIsPinned, judgeModel, runs, expandOnDeviation, promoteAfter, minIntervalHours, thresholds,
-failOn, budget }`. Precedence everywhere: CLI flag / Action input > case frontmatter (model only) >
+failOn, budget, noise, baseline }`. Precedence everywhere: CLI flag / Action input > case frontmatter (model only) >
 `.cdc.yml` track > built-in default. The pinned track with no `model.pinned` falls back to the canary
 alias and says so (`modelIsPinned: false`), which is what triggers the *pin PR*.
 
@@ -145,6 +145,28 @@ runs; relative change above `thresholds.turns|cost|duration` (default 0.5) flags
 efficiency flags are warnings unless listed. Exit 2 when every run errored. `--config <plugin-dir>`
 reads thresholds and `fail_on` from `.cdc.yml`; flags override.
 
+**Noise band** (`--history <dir>` — the results branch's `history/`: newest `noise.history_runs`
+timestamped `*.json`, same track only, the current file excluded): per case, `noise` = max − min of
+all with-arm run scores across the baseline and history runs (null under 2 samples). A drop past
+`thresholds.score` but not past `max(threshold, noise)` is **noisy** (⚠): it shows in the table with
+a `±x.xx` noise column and a footer line, never counts as regressed or red, and never changes the
+exit code. Two escalations make an in-band drop red anyway (footer says which): no current run
+reaches the baseline score (a consistent shift, not a flake), or the newest two same-track history
+scores for the case were already below `baseline − threshold` (persisted). Runs with ≤1 turn, no
+tool use and a below-baseline score — on a case whose baseline runs have a nonzero median tool
+count — are counted as likely refusals and noted on red/noisy rows. Without `--history` the
+threshold is flat, as before. JSON rows carry `noise`, `effThreshold`, `historyRuns`, `escalated`
+(the escalation reason or null) and `refusedRuns`.
+
+**Baseline quality** (never red): a case whose baseline has fewer scored with-arm runs than
+`baseline.min_runs` (default 3) gets a `thin baseline (n=k)` warning; one whose baseline run-score
+spread exceeds half the score threshold gets `unstable baseline (±x.xx)` (smaller spread is normal
+LLM-judge variance and stays quiet). They render as a warnings block after the table and as `warnings[]`
+per JSON row. `tools/baseline-check.mjs <result.json> [--min-runs n] [--config <plugin-dir>]`
+enforces the same bar at promotion time — exit 1 when any case is under min-runs or
+`aggregates.erroredRuns > 0`; the Action runs it before overwriting `baseline.json` and keeps the
+old baseline on failure.
+
 The markdown header carries the track, model and Claude Code version of both sides and a
 `⚙ model moved` / `⚙ Claude Code moved` note when they differ, plus *setup worth* (mean with−without
 delta) when the run was an ablation and a budget note when the cap stopped the run. The JSON summary
@@ -188,7 +210,9 @@ Rules = bullets and numbered items (outside code fences) in `CLAUDE.md` and ever
 rule per hook event/matcher. Ids are `<scope>/<first-six-words>` (`claude-md/…`, `skill/<name>/…`,
 `hook/<event>-<matcher>`), deduplicated. Cases claim rules with `covers:`; the tool reports
 covered/uncovered/unknown ids, writes `coverage.json`, a markdown block (in the job summary) and an
-SVG badge (`docs/coverage.svg` on the results branch). No agent runs.
+SVG badge (`docs/coverage.svg` on the results branch). No agent runs. `--fail-under N` exits 1 when
+coverage is under N% (null pct — a plugin with no rules — never fails); the Action's `coverage-min`
+input wires it into the check.
 
 ## 5d. HTML report (`tools/eval-report.mjs`)
 

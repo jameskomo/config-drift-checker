@@ -10,7 +10,9 @@ Layout: `<plugin>/evals/<case-dir>/prompt.md`, `graders/<name>.md`, optional `ca
 **prompt.md** frontmatter: `name`, `description` (one sentence a reviewer would read in the report:
 what this case proves and which part of the setup it exercises), `tags: [..]`, `covers: [..]` (the
 rule ids this case exercises — `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list`
-prints them; a negative-trigger case covers nothing, that is correct), `runs` (3), `max_turns`,
+prints them; a negative-trigger case covers nothing, that is correct). Target ids the `--list`
+output marks `·` (uncovered) before adding a second case for a `✓` one — every new case should move
+the coverage %, which the Action reports and can enforce with `coverage-min`. `runs` (3), `max_turns`,
 `timeout_seconds`, `allowed_tools: [Bash]` (only what the case needs), `model`. Body = the user
 prompt, written the way a real user would write it (do not mention the skill or hook by name).
 

@@ -15,6 +15,7 @@ inputs:
   ablation:              { description: 'with-without (baseline proof) or none (cheaper regression runs)', default: 'none' }
   scaffold:              { description: 'Run case.yaml scaffold_script (only for suites you authored)', default: 'true' }
   threshold:             { description: 'Score drop that counts as a regression (overrides .cdc.yml thresholds.score)', default: '' }
+  coverage-min:          { description: 'Fail the check when agent-config coverage (rules with an eval case) is under this percent. Empty = report only', default: '' }
   claude-code-version:   { description: 'Claude Code version to install (overrides the track''s harness pin), or "latest"', default: '' }
   results-branch:        { description: 'Orphan branch that stores baseline.json, canary/, history/, spend.json and the release-watch state', default: 'eval-results' }
   promote-baseline:      { description: 'Overwrite baseline.json with this run (first run, or after an intentional change). Pinned track only', default: 'false' }
@@ -61,10 +62,18 @@ runs:
       env:
         TOOLS: ${{ steps.config.outputs.tools }}
         PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        COVERAGE_MIN: ${{ inputs.coverage-min }}
       run: |
         # Which rules in CLAUDE.md / skills / hooks have a case. No agent runs, so it runs even when the gate skips.
-        node "$TOOLS/config-coverage.mjs" "$PLUGIN_DIR" --json "$RUNNER_TEMP/coverage.json" --md "$RUNNER_TEMP/coverage.md" --badge "$RUNNER_TEMP/coverage.svg" >/dev/null || true
-        node -e 'const c=require(process.env.RUNNER_TEMP+"/coverage.json"); console.log("pct="+(c.pct===null?"":c.pct)+"\ntotal="+c.total+"\ncovered="+c.covered)' >> "$GITHUB_OUTPUT" 2>/dev/null || true
+        fail_args=(); [ -n "$COVERAGE_MIN" ] && fail_args=(--fail-under "$COVERAGE_MIN")
+        cov_ok=true
+        node "$TOOLS/config-coverage.mjs" "$PLUGIN_DIR" --json "$RUNNER_TEMP/coverage.json" --md "$RUNNER_TEMP/coverage.md" --badge "$RUNNER_TEMP/coverage.svg" "${fail_args[@]}" >/dev/null || cov_ok=false
+        node -e 'const c=require(process.env.RUNNER_TEMP+"/coverage.json"); console.log("pct="+(c.pct===null?"":c.pct)+"\ntotal="+c.total+"\ncovered="+c.covered+"\ncoverage-pct="+(c.pct===null?"":c.pct))' >> "$GITHUB_OUTPUT" 2>/dev/null || true
+        if [ -n "$COVERAGE_MIN" ] && [ "$cov_ok" = "false" ]; then
+          echo "under_min=true" >> "$GITHUB_OUTPUT"
+          echo "::error::agent-config coverage is under the required ${COVERAGE_MIN}% — add cases for the untested rules (covers: ids from config-coverage.mjs --list)"
+        else echo "under_min=false" >> "$GITHUB_OUTPUT"; fi
+        cat "$RUNNER_TEMP/coverage.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
 
     - id: results
       shell: bash
@@ -73,9 +82,13 @@ runs:
         BRANCH: ${{ inputs.results-branch }}
       run: |
         set -euo pipefail
-        d="$RUNNER_TEMP/results"; mkdir -p "$d/canary"
+        d="$RUNNER_TEMP/results"; mkdir -p "$d/canary" "$d/history"
         if git fetch --depth=1 origin "$BRANCH" 2>/dev/null; then
           for f in baseline.json spend.json canary/streak.json canary/latest.json .release-watch.json .claude-code-version; do
+            git show "origin/$BRANCH:$f" > "$d/$f" 2>/dev/null || rm -f "$d/$f"
+          done
+          # the newest ~12 runs feed eval-diff's per-case noise band (names are UTC-stamped, so they sort)
+          for f in $(git ls-tree --name-only "origin/$BRANCH" history/ 2>/dev/null | grep '\.json$' | sort | tail -12 || true); do
             git show "origin/$BRANCH:$f" > "$d/$f" 2>/dev/null || rm -f "$d/$f"
           done
         fi
@@ -193,8 +206,9 @@ runs:
       run: |
         set +e
         thr_args=(); [ -n "$THRESHOLD_INPUT" ] && thr_args=(--threshold "$THRESHOLD_INPUT")
+        hist_args=(); [ -n "$(ls -A "$RESULTS_DIR/history" 2>/dev/null)" ] && hist_args=(--history "$RESULTS_DIR/history")
         if [ "$ERRORED" != "true" ] && [ "$BASELINE_EXISTS" = "true" ] && ! { [ "$PROMOTE" = "true" ] && [ "$TRACK" = "pinned" ]; }; then
-          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
+          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" "${hist_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
           node -e 'const d=require(process.env.RUNNER_TEMP+"/diff.json"); console.log("regressed="+d.regressed+"\nred="+d.red+"\nflagged="+d.flagged)' >> "$GITHUB_OUTPUT"
         else
           node "$TOOLS/eval-diff.mjs" "$RESULT" "$RESULT" --config "$PLUGIN_DIR" --md "$RUNNER_TEMP/diff.md" >/dev/null
@@ -267,7 +281,13 @@ runs:
         name="${stamp}-cc${CC_VERSION}-${RUNNER}-${TRACK}"
         cp "$RESULT" "history/${name}.json"
         if [ "$TRACK" = "pinned" ]; then
-          if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then cp "$RESULT" baseline.json; fi
+          if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then
+            if node "$TOOLS/baseline-check.mjs" "$RESULT" --config "$GITHUB_WORKSPACE/$PLUGIN_DIR"; then
+              cp "$RESULT" baseline.json
+            else
+              echo "::error::this run is not baseline material (too few scored runs per case, or errored runs) — baseline.json was NOT promoted; any existing baseline was kept. Re-run with more runs, or lower baseline.min_runs in .cdc.yml"
+            fi
+          fi
         else
           cp "$RESULT" canary/latest.json
         fi
@@ -373,7 +393,12 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/diff.md" || true
+        COVERAGE_UNDER_MIN: ${{ steps.coverage.outputs.under_min }}
+      run: |
+        # coverage joins the PR comment only when it is failing the check — it is always in the job summary
+        cp "$RUNNER_TEMP/diff.md" "$RUNNER_TEMP/comment.md"
+        if [ "$COVERAGE_UNDER_MIN" = "true" ]; then { echo; cat "$RUNNER_TEMP/coverage.md"; } >> "$RUNNER_TEMP/comment.md" 2>/dev/null || true; fi
+        gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/comment.md" || true
 
     - id: slack
       if: inputs.slack-webhook-url != '' && steps.diff.outputs.red != '0' && steps.diff.outputs.red != ''
@@ -397,7 +422,9 @@ runs:
         SKIP_REASON: ${{ steps.gate.outputs.skip_reason }}
         ERRORED: ${{ steps.run.outputs.errored }}
         RED: ${{ steps.diff.outputs.red }}
+        COVERAGE_UNDER_MIN: ${{ steps.coverage.outputs.under_min }}
       run: |
+        if [ "$COVERAGE_UNDER_MIN" = "true" ]; then echo "::error::agent-config coverage is under the required minimum (input coverage-min) — add cases for the untested rules listed in the job summary"; exit 1; fi
         if [ "$SKIPPED" = "true" ]; then echo "skipped ($SKIP_REASON) — not a failure"; exit 0; fi
         if [ "$ERRORED" = "true" ]; then echo "::error::agent runs errored; see the eval-report artifact (stderrTail per run)"; exit 1; fi
         if [ "$RED" != "0" ]; then echo "::error::$RED case(s) red vs baseline (regressions or fail_on efficiency drift)"; exit 1; fi

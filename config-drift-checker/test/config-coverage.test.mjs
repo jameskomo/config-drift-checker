@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { coverage, rulesFromMarkdown, rulesFromHooks, assignIds, badgeSvg, markdown } from '../tools/config-coverage.mjs';
 
 const TOOL = new URL('../tools/config-coverage.mjs', import.meta.url).pathname;
@@ -67,4 +67,15 @@ test('CLI: --list, --json, --md, --badge', async () => {
   assert.equal(JSON.parse(await fs.readFile(path.join(out, 'c.json'), 'utf8')).pct, 50);
   assert.match(await fs.readFile(path.join(out, 'b.svg'), 'utf8'), /50%/);
   assert.match(await fs.readFile(path.join(out, 'c.md'), 'utf8'), /^### Agent-config coverage: \*\*50%\*\*/);
+});
+
+test('CLI: --fail-under exits 1 under the bar, 0 at/above it, never on a rule-less plugin', async () => {
+  const dir = await fixture(); // 50%
+  assert.equal(spawnSync('node', [TOOL, dir, '--fail-under', '80'], { encoding: 'utf8' }).status, 1);
+  assert.equal(spawnSync('node', [TOOL, dir, '--fail-under', '50'], { encoding: 'utf8' }).status, 0);
+  const r = spawnSync('node', [TOOL, dir, '--fail-under', '80'], { encoding: 'utf8' });
+  assert.match(r.stderr, /coverage 50% is under --fail-under 80/);
+  const empty = await fs.mkdtemp(path.join(os.tmpdir(), 'cov-empty-'));
+  assert.equal(spawnSync('node', [TOOL, empty, '--fail-under', '80'], { encoding: 'utf8' }).status, 0, 'null pct = no rules = exit 0');
+  assert.equal(spawnSync('node', [TOOL, dir], { encoding: 'utf8' }).status, 0, 'no flag, no enforcement');
 });
