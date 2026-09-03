@@ -36,15 +36,25 @@ jobs:
           git fetch --depth=1 origin eval-results 2>/dev/null && git show origin/eval-results:.release-watch.json > .release-watch.json 2>/dev/null || true
           node config-drift-checker/tools/release-watch.mjs --state .release-watch.json --models --pin "$(node config-drift-checker/tools/cdc-config.mjs examples/komo-stack get model.pinned)" | tee -a "$GITHUB_OUTPUT"
       - id: decide
+        # env: + quoted "$VARS", never ${{ }} inside run: — new_models carries third-party API strings
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RW_CHANGED: ${{ steps.rw.outputs.changed }}
+          RW_REASON: ${{ steps.rw.outputs.reason }}
+          RW_PREVIOUS: ${{ steps.rw.outputs.previous }}
+          RW_VERSION: ${{ steps.rw.outputs.version }}
+          RW_NEW_MODELS: ${{ steps.rw.outputs.new_models }}
+          RW_PIN_RETIRED: ${{ steps.rw.outputs.pin_retired }}
+          INPUT_TRACK: ${{ inputs.track }}
         run: |
-          case "${{ github.event_name }}" in
+          case "$EVENT_NAME" in
             schedule)
-              if [ "${{ steps.rw.outputs.changed }}" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Canary: ${{ steps.rw.outputs.reason }} moved (Claude Code ${{ steps.rw.outputs.previous }} → ${{ steps.rw.outputs.version }}; new models: ${{ steps.rw.outputs.new_models }})"
-              else echo "run=false" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Nothing new (Claude Code ${{ steps.rw.outputs.version }}); skipping."; fi ;;
-            workflow_dispatch) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=${{ inputs.track || 'pinned' }}" >> "$GITHUB_OUTPUT" ;;
+              if [ "$RW_CHANGED" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Canary: $RW_REASON moved (Claude Code $RW_PREVIOUS → $RW_VERSION; new models: $RW_NEW_MODELS)"
+              else echo "run=false" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Nothing new (Claude Code $RW_VERSION); skipping."; fi ;;
+            workflow_dispatch) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=${INPUT_TRACK:-pinned}" >> "$GITHUB_OUTPUT" ;;
             *) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=pinned" >> "$GITHUB_OUTPUT" ;;
           esac
-          [ "${{ steps.rw.outputs.pin_retired }}" = "true" ] && echo "::warning::model.pinned is no longer listed by /v1/models — merge the next bump PR or pin a current id" || true
+          [ "$RW_PIN_RETIRED" = "true" ] && echo "::warning::model.pinned is no longer listed by /v1/models — merge the next bump PR or pin a current id" || true
 
   eval:
     needs: watch

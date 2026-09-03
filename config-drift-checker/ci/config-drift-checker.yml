@@ -28,10 +28,13 @@ jobs:
     outputs: { run: '${{ steps.decide.outputs.run }}', track: '${{ steps.decide.outputs.track }}', version: '${{ steps.rw.outputs.version }}' }
     env: { ANTHROPIC_API_KEY: '${{ secrets.ANTHROPIC_API_KEY }}' }   # only for the free /v1/models listing
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
+      # Third-party actions are pinned to the commit SHA of their release tag (a tag can be silently
+      # repointed by its owner; a SHA cannot). jameskomo/config-drift-checker stays on @v0 on purpose:
+      # tracking its releases is what this workflow is for, and it is the code under test's own vendor.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { repository: jameskomo/config-drift-checker, ref: v0, path: cdc }
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: '22' }
       - id: rw
         run: |
@@ -39,15 +42,26 @@ jobs:
           pin=$(node cdc/config-drift-checker/tools/cdc-config.mjs . get model.pinned)
           node cdc/config-drift-checker/tools/release-watch.mjs --state .release-watch.json --models ${pin:+--pin "$pin"} | tee -a "$GITHUB_OUTPUT"
       - id: decide
+        # Everything reaches the script through env: + quoted "$VARS", never ${{ }} inside run: —
+        # new_models carries strings from a third-party API response.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RW_CHANGED: ${{ steps.rw.outputs.changed }}
+          RW_REASON: ${{ steps.rw.outputs.reason }}
+          RW_PREVIOUS: ${{ steps.rw.outputs.previous }}
+          RW_VERSION: ${{ steps.rw.outputs.version }}
+          RW_NEW_MODELS: ${{ steps.rw.outputs.new_models }}
+          RW_PIN_RETIRED: ${{ steps.rw.outputs.pin_retired }}
+          INPUT_TRACK: ${{ inputs.track }}
         run: |
-          case "${{ github.event_name }}" in
+          case "$EVENT_NAME" in
             schedule)
-              if [ "${{ steps.rw.outputs.changed }}" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Canary: ${{ steps.rw.outputs.reason }} moved (Claude Code ${{ steps.rw.outputs.previous }} → ${{ steps.rw.outputs.version }}; new models: ${{ steps.rw.outputs.new_models }})"
-              else echo "run=false" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Nothing new (Claude Code ${{ steps.rw.outputs.version }}); skipping."; fi ;;
-            workflow_dispatch) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=${{ inputs.track || 'pinned' }}" >> "$GITHUB_OUTPUT" ;;
+              if [ "$RW_CHANGED" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Canary: $RW_REASON moved (Claude Code $RW_PREVIOUS → $RW_VERSION; new models: $RW_NEW_MODELS)"
+              else echo "run=false" >> "$GITHUB_OUTPUT"; echo "track=canary" >> "$GITHUB_OUTPUT"; echo "Nothing new (Claude Code $RW_VERSION); skipping."; fi ;;
+            workflow_dispatch) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=${INPUT_TRACK:-pinned}" >> "$GITHUB_OUTPUT" ;;
             *) echo "run=true" >> "$GITHUB_OUTPUT"; echo "track=pinned" >> "$GITHUB_OUTPUT" ;;
           esac
-          [ "${{ steps.rw.outputs.pin_retired }}" = "true" ] && echo "::warning::model.pinned is no longer listed by /v1/models — merge the next bump PR or pin a current id" || true
+          [ "$RW_PIN_RETIRED" = "true" ] && echo "::warning::model.pinned is no longer listed by /v1/models — merge the next bump PR or pin a current id" || true
 
   eval:
     needs: watch
@@ -63,8 +77,8 @@ jobs:
       # it then only lists /v1/models for release-watch and never bills a run.
       # CDC_MODELS_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: jameskomo/config-drift-checker/action@v0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: jameskomo/config-drift-checker/action@v0   # deliberately floating — see the note above
         with:
           plugin-dir: .                      # the repo root is the plugin (.claude-plugin/plugin.json)
           track: ${{ needs.watch.outputs.track }}
