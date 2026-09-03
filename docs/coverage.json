@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "pluginDir": "komo-stack",
   "total": 11,
-  "covered": 6,
-  "pct": 55,
+  "covered": 11,
+  "pct": 100,
   "rules": [
     {
       "scope": "skill/spring-boot-conventions",
@@ -34,7 +34,9 @@
       "heading": "DTOs",
       "text": "Request and response shapes are Java `record`s, grouped in a `<Feature>Dtos` holder class (e.g. `ModerationDtos.ListingQueueItem`).",
       "id": "skill/spring-boot-conventions/request-and-response-shapes-are-java",
-      "cases": []
+      "cases": [
+        "spring-request-dtos-are-validated-records"
+      ]
     },
     {
       "scope": "skill/spring-boot-conventions",
@@ -43,7 +45,9 @@
       "heading": "DTOs",
       "text": "Validate request bodies with `jakarta.validation` (`@Valid`, `@NotBlank`, `@Positive`).",
       "id": "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
-      "cases": []
+      "cases": [
+        "spring-request-dtos-are-validated-records"
+      ]
     },
     {
       "scope": "skill/spring-boot-conventions",
@@ -85,7 +89,9 @@
       "heading": "Services",
       "text": "Business rules and authorization checks live in the service, even when `SecurityConfig` already gates the route (\"two locks on the door\").",
       "id": "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
-      "cases": []
+      "cases": [
+        "spring-service-owns-rules-and-errors"
+      ]
     },
     {
       "scope": "skill/spring-boot-conventions",
@@ -94,7 +100,9 @@
       "heading": "Services",
       "text": "Services return records or small result types, never `Map<String, Object>`.",
       "id": "skill/spring-boot-conventions/services-return-records-or-small-result",
-      "cases": []
+      "cases": [
+        "spring-service-owns-rules-and-errors"
+      ]
     },
     {
       "scope": "skill/spring-boot-conventions",
@@ -103,7 +111,9 @@
       "heading": "Errors",
       "text": "Throw domain exceptions; a `@RestControllerAdvice` handler maps them to `ApiResponse.error(...)`. Do not try/catch in controllers.",
       "id": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
-      "cases": []
+      "cases": [
+        "spring-service-owns-rules-and-errors"
+      ]
     },
     {
       "scope": "hook",
@@ -118,13 +128,7 @@
       ]
     }
   ],
-  "uncovered": [
-    "skill/spring-boot-conventions/request-and-response-shapes-are-java",
-    "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
-    "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
-    "skill/spring-boot-conventions/services-return-records-or-small-result",
-    "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler"
-  ],
+  "uncovered": [],
   "unknownCovers": [],
   "cases": [
     {
@@ -142,6 +146,25 @@
         "skill/spring-boot-conventions/pagination-is-1-based-page",
         "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse"
       ]
+    },
+    {
+      "dir": "spring-request-dtos-are-validated-records",
+      "covers": [
+        "skill/spring-boot-conventions/request-and-response-shapes-are-java",
+        "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation"
+      ]
+    },
+    {
+      "dir": "spring-service-owns-rules-and-errors",
+      "covers": [
+        "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
+        "skill/spring-boot-conventions/services-return-records-or-small-result",
+        "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler"
+      ]
+    },
+    {
+      "dir": "spring-work-triggers-skill",
+      "covers": []
     },
     {
       "dir": "vue-request-does-not-trigger-skill",
