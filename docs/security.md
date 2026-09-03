@@ -9,7 +9,13 @@
   ([`.github/workflows/codeql.yml`](../.github/workflows/codeql.yml)); results are in this repo's
   Security tab.
 - **Dependabot** watches GitHub Actions pins (and npm, if dependencies are ever added) for known
-  CVEs ([`.github/dependabot.yml`](../.github/dependabot.yml)).
+  CVEs ([`.github/dependabot.yml`](../.github/dependabot.yml)) — including the composite action's
+  own pins (`/action` directory entry).
+- **Every third-party action is pinned to a verified commit SHA**, in `action/action.yml` (what runs
+  in *your* CI) and in this repo's own workflows. A tag like `@v7` can be silently repointed by the
+  action owner — the trivy-action compromise worked exactly that way; a SHA cannot. Each SHA was
+  resolved from the official tag via the GitHub API before pinning, and Dependabot keeps them
+  updated. (Hardening prompted by community PR #8.)
 - The code itself is public — read `tools/`, `action/`, and `skills/` directly rather than taking
   our word for it.
 

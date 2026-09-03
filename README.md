@@ -1,11 +1,19 @@
 # config-drift-checker
 
-**CI for your agent setup.** · [site](https://jameskomo.github.io/config-drift-checker/) · [drift index — our own suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) · [demo: interactive report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/) · [demo: trend](https://jameskomo.github.io/config-drift-checker-demo/)
+**CI for your agent setup.** Your `CLAUDE.md`, skills and hooks are how your code gets written now —
+and everything underneath them moves without asking you. Claude Code shipped ~25 releases in a month;
+the model behind `sonnet` changes server-side with no changelog — [it has, silently, for weeks](https://www.anthropic.com/engineering/april-23-postmortem).
+This runs the real agent against what your setup *must do*, on every PR and every release, and tells
+you the moment it stops — **when**, **why**, and **what moved**.
 
-A tool that tells your team **when** its coding-agent setup — `CLAUDE.md`, skills, hooks — stopped
-doing what it should, **why**, and **what changed**: a model change behind an alias, a Claude Code
-release, or a teammate's edit. Pinned baseline, canary on the latest, a PR when the canary has proven
-a new model, and a budget you set.
+[![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
+[![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
+
+[site](https://jameskomo.github.io/config-drift-checker/) · [drift index — our own suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) · [demo: interactive report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/) · [demo: trend](https://jameskomo.github.io/config-drift-checker-demo/)
+
+Pinned baseline, canary on the latest, a bump PR when the canary has proven a new model, a budget
+your key cannot exceed — and a diff engineered not to cry wolf, because a checker that pages you
+for flakes gets uninstalled in a week.
 
 ## What it is
 
@@ -32,6 +40,10 @@ them, and keeps score over time:
 4. **Diff against your baseline** → red or green check, PR comment, Slack alert, an HTML report that
    opens with the verdict and stamps *which* model and Claude Code version ran (and whether either
    moved), and a **drift index** of every case over every version — served from your results branch by GitHub Pages.
+   The diff knows each case's **historical noise band**: a dip within a case's own observed wobble is
+   a warning, not a red build — but a drop where *no run recovers*, or one that persists, stays red,
+   so the allowance can never hide a real break. Runs where the model *refused* the task (≤1 turn,
+   no tools) are labelled as such: a guardrail change is not your setup breaking.
 5. **Bump PRs.** Two green canaries on a new model or version → a PR moving your pins there, with the
    runs as evidence. Never auto-merged. Renovate did this for packages; nobody did it for models.
 6. **A budget.** `.cdc.yml` caps spend per run and per month; the Action refuses to start past the
@@ -44,7 +56,8 @@ Three things ride on top of that core:
   a destructive command, and a conventions skill turned out to add nothing the codebase and
   CLAUDE.md didn't already carry.
 - **Coverage** — which rules in your CLAUDE.md, skills and hooks have a case, and which are untested.
-  A number, a badge, and the list of what to write next.
+  A number, a badge, the list of what to write next — and a `coverage-min` input that fails the check
+  when your setup grows faster than its tests.
 - **Repair** — on a red run, a skill proposes the smallest change to your setup that restores the
   behaviour, re-runs the failing cases to prove it, and hands you a PR with the evidence. Fixes the
   setup, never the test.
@@ -55,7 +68,11 @@ machine and your CI with your key; nothing is sent anywhere).
 
 Works with any codebase — it tests the agent's behaviour, not your app. Uses the official runner
 automatically where `claude plugin eval` is enabled, a bundled runner otherwise. Zero npm
-dependencies; 42 tests run against a fake `claude`, so the suite needs no API key.
+dependencies; 56 tests run against a fake `claude`, so the suite needs no API key.
+
+**What it costs to run:** on a Claude Pro/Max plan, nothing extra — `claude setup-token` gives CI a
+subscription token and eval runs spend no API credit. On an API key, `.cdc.yml` caps spend per run
+and per month in the product, not by discipline; a typical 3-case suite is cents per run.
 
 ## Install
 
@@ -71,8 +88,9 @@ claude
 > /config-drift-checker:setup
 ```
 
-It finds your CLAUDE.md, skills and hooks, writes starter eval cases from them, smoke-runs them,
-writes `.cdc.yml` and the GitHub workflow. You add one secret (`ANTHROPIC_API_KEY`), two repo
+Five minutes: it finds your CLAUDE.md, skills and hooks, writes starter eval cases from them,
+smoke-runs them, writes `.cdc.yml` and the GitHub workflow. You add one secret (`ANTHROPIC_API_KEY`,
+or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` to run on your subscription), two repo
 settings, and push. From then on the suite runs on every PR that touches your setup and canaries
 every Claude Code release: red check, PR comment, Slack alert, bump PRs, and an HTML report with
 every grader's reason.
