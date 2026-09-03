@@ -43,6 +43,7 @@ jobs:
 | `results-branch` | `eval-results` | where `baseline.json` and `history/` are stored |
 | `promote-baseline` | `false` | overwrite the baseline with this run |
 | `coverage-min` | — | fail the check when agent-config coverage is under this percent (empty = report only) |
+| `report-base-url` | — | Pages URL of the results-branch history folder; PR-comment cases deep-link into the run's report |
 | `slack-webhook-url` | — | incoming-webhook URL for regression alerts |
 
 Outputs: `regressed`, `runner` (official or shim), `claude-version`, `result-path`.

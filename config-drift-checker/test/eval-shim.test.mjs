@@ -130,3 +130,22 @@ test('--regrade keeps working and carries the source harness version through', a
   assert.equal(re.report.cases[0].arms.with.length, 2);
   assert.equal(re.report.regradeOf, src);
 });
+
+test('--regrade inherits the saved run ablation mode — tool_used Skill graders stay scored (no CLI flag)', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  await fs.writeFile(path.join(plugin, 'evals/case-a/graders/fired.md'), `---\ntype: tool_used\ntool: Skill\ninput_match: fixture\nmin: 1\n---\nSkill fired.\n`);
+  const first = await runShim(plugin); // ablation none via the helper
+  const src = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'regrade-abl-')), 'aggregate-result.json');
+  await fs.writeFile(src, JSON.stringify(first.report));
+  // regrade WITHOUT any --ablation flag: the CLI default (with-without) must not demote the grader
+  const bin = await fs.mkdtemp(path.join(os.tmpdir(), 'fake-bin-'));
+  await fs.writeFile(path.join(bin, 'claude'), `#!/bin/sh\nexec node "${FAKE}" "$@"\n`, { mode: 0o755 });
+  const out = await fs.mkdtemp(path.join(os.tmpdir(), 'shim-out-'));
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, FAKE_CLAUDE_STATE: await fs.mkdtemp(path.join(os.tmpdir(), 'fake-state-')), CLAUDE_CONFIG_DIR: await fs.mkdtemp(path.join(os.tmpdir(), 'cfg-')) };
+  const r = spawnSync('node', [SHIM, plugin, '--regrade', src, '--no-isolate', '--output-dir', out], { env, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const report = JSON.parse(await fs.readFile(path.join(out, 'aggregate-result.json'), 'utf8'));
+  const g = report.cases[0].arms.with[0].graders.find((x) => x.name === 'fired');
+  assert.equal(g.scored, true, 'tool_used grader must stay scored on an ablation-none regrade');
+  assert.notEqual(report.cases[0].summary.score, null, 'the case score must not collapse to null');
+});

@@ -9,7 +9,7 @@ you the moment it stops — **when**, **why**, and **what moved**.
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
 
-[site](https://jameskomo.github.io/config-drift-checker/) · [drift index — our own suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) · [demo: interactive report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/) · [demo: trend](https://jameskomo.github.io/config-drift-checker-demo/)
+[site](https://jameskomo.github.io/config-drift-checker/) · [drift index — our own suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) · [**what a break looks like** — a deliberately sabotaged skill, 1.00 → 0.36](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [demo: interactive report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/) · [demo: trend](https://jameskomo.github.io/config-drift-checker-demo/)
 
 Pinned baseline, canary on the latest, a bump PR when the canary has proven a new model, a budget
 your key cannot exceed — and a diff engineered not to cry wolf, because a checker that pages you
@@ -103,6 +103,10 @@ Already have a suite, or just want the stage? One step:
 ```
 
 See it end to end on a small Spring Boot service: **[config-drift-checker-demo](https://github.com/jameskomo/config-drift-checker-demo)**.
+And see it *fail* on purpose: we rewrote a skill's trigger description the way a careless PR would and
+re-ran the suite — [the red report](https://jameskomo.github.io/config-drift-checker/example-break/report.html)
+is self-diagnosing: the skill-trigger tripwire case drops to 0.00 ("the skill stopped firing") while the
+content cases sag partway (the agent still writes decent code — just not *your* conventions).
 
 ## What's here
 
@@ -111,6 +115,7 @@ config-drift-checker/     the plugin: skills (setup · run · write-case · repa
   tools/eval-shim.mjs       runs a suite via `claude -p`: tracks, sequential runs, per-run budget, provenance
   tools/cdc-config.mjs      .cdc.yml: pins, canary, thresholds, budget; set-pins rewrites in place
   tools/eval-diff.mjs       baseline vs current → score + efficiency drift, exit by fail_on
+  tools/eval-classify.mjs   the shared per-case verdict (noise band, escalations): diff, report, dashboard
   tools/release-watch.mjs   did Claude Code (npm) or the model list (/v1/models) move? is the pin retired?
   tools/cdc-gate.mjs        monthly budget ledger and canary interval — the two things that protect your key
   tools/canary-promote.mjs  green streak → bump PR; unpinned baseline → pin PR

@@ -136,6 +136,10 @@ output so the diff, store and promote steps can reason about it. Readers treat m
 
 ## 4. Diff (`tools/eval-diff.mjs`)
 
+The per-case verdict (status, noise band, escalations, threshold/config resolution, history loading)
+lives in `tools/eval-classify.mjs` and is shared with `eval-report` and `eval-dashboard`, so the PR
+comment, the HTML report and the drift index always agree on the same run.
+
 Key = `dir ?? name`. For each baseline case: `after − before`; status `regressed` if
 `< −thresholds.score` (default 0.15), `improved` if `> +threshold`, else `stable`; `missing` if absent
 in current; `new` if absent in baseline; `unknown` when either score is null (budget-skipped, all
@@ -153,8 +157,9 @@ a `±x.xx` noise column and a footer line, never counts as regressed or red, and
 exit code. Two escalations make an in-band drop red anyway (footer says which): no current run
 reaches the baseline score (a consistent shift, not a flake), or the newest two same-track history
 scores for the case were already below `baseline − threshold` (persisted). Runs with ≤1 turn, no
-tool use and a below-baseline score — on a case whose baseline runs have a nonzero median tool
-count — are counted as likely refusals and noted on red/noisy rows. Without `--history` the
+tool use, a short reply (under ~600 chars) and a below-baseline score — on a case whose baseline
+runs have a nonzero median tool count — are counted as likely refusals and noted on red/noisy rows;
+a *full-length* no-tool answer is the setup being skipped (drift), not a refusal, and gets no excuse. Without `--history` the
 threshold is flat, as before. JSON rows carry `noise`, `effThreshold`, `historyRuns`, `escalated`
 (the escalation reason or null) and `refusedRuns`.
 
@@ -169,7 +174,10 @@ old baseline on failure.
 
 The markdown header carries the track, model and Claude Code version of both sides and a
 `⚙ model moved` / `⚙ Claude Code moved` note when they differ, plus *setup worth* (mean with−without
-delta) when the run was an ablation and a budget note when the cap stopped the run. The JSON summary
+delta) when the run was an ablation and a budget note when the cap stopped the run. With
+`--report-url <url>` the case names in the table link to `<url>#case-<dir>` (the Action wires this
+from its `report-base-url` input, pointing at the run's report on the results-branch Pages site).
+The JSON summary
 has `regressed`, `red`, `flagged`, `thresholds`, `failOn`, `moved`, `worth`, `rows[].eff`.
 
 Threshold reasoning: with 3 runs a single flaky run moves a case by 0.33 → below-threshold noise
@@ -216,29 +224,38 @@ input wires it into the check.
 
 ## 5d. HTML report (`tools/eval-report.mjs`)
 
-`renderReport(current, baseline?, { threshold, thresholds })` → one self-contained HTML file: the
+`renderReport(current, baseline?, { threshold, thresholds, history, minBaselineRuns })` → one
+self-contained HTML file: the
 **verdict** (what happened, what to do) and a **provenance stamp** (overall with the baseline's,
 cases at 1.00, model + pinned/alias and *moved from*, Claude Code and *moved from*, track, runner and
-judge, cost vs cap, setup worth), *what moved* cards (regressed / improved / new / efficiency),
-the score table (baseline / score / Δ / without-plugin / Δ-plugin / turns / cost / runs, with
+judge, cost vs cap, setup worth), *what moved* cards (regressed / noisy / improved / new / efficiency),
+the score table (baseline / score / Δ / noise / without-plugin / Δ-plugin / turns / cost / runs, with
 `→` and % when a median moved), and per-case sections: tags and `covers` chips, what the case
 evaluates, and run cards in three states (green pass, amber truncated-but-passed, red failed, grey
 errored) with grader chips (hover = type + reason), judge reasons (open on failed runs), tool calls,
 changed files, full response. "Failing and flagged runs only" toggle. No script dependencies,
-theme-aware. The shim writes `report.html` beside every `aggregate-result.json`; the Action uploads it
-as the `eval-report` artifact. CLI: `node tools/eval-report.mjs current.json [--baseline b.json] [--config <plugin>] [--out r.html]`.
+theme-aware. Cases are classified by `eval-classify.mjs` — with `--history <dir>` (the results
+branch's `history/`, newest `noise.history_runs` same-track runs older than this run) a drop inside
+the case's noise band is **noisy** (amber ⚠, never red), with the noise column, footer notes and the
+baseline-quality block mirroring the PR-comment markdown; each case header carries a sparkline of its
+with-arm run scores. Without `--history` the threshold is flat, as before. The shim writes
+`report.html` beside every `aggregate-result.json`; the Action uploads it
+as the `eval-report` artifact. CLI: `node tools/eval-report.mjs current.json [--baseline b.json] [--config <plugin>] [--history dir] [--out r.html]`.
 
 ## 5e. Drift index (`tools/eval-dashboard.mjs`)
 
 Reads a history directory (the results branch's `history/*.json`, or a local `evals/results/`) and
 optionally `--baseline`, `--spend`, `--streak`, `--coverage`, `--config`. Writes one HTML file: the
 verdict across tracks (*holding at baseline*, *baseline holding · canary red*, *canary regressed*,
-*latest run errored*), the stamp (latest run, baseline model/version/date, latest canary and streak,
+*latest run errored*, *noisy — within the historical band*), the stamp (latest run, baseline model/version/date, latest canary and streak,
 Claude Code versions seen, budget spent vs cap with a meter, coverage, total cost), the **ribbon** —
 one row per case, one cell per run, filled for pinned runs and outlined for canaries, coloured by
 verdict — the SVG line chart of score per case over Claude Code versions with canary runs shaded,
 and the run list with track, version, model, per-case scores, cost and a link to each run's report.
-The Action writes it as `docs/index.html` on the results branch when `pages` is true.
+Every run's cases are classified by `eval-classify.mjs` with the baseline + the preceding same-track
+runs as the noise evidence, so a cell the diff would call noisy is amber here too, never red. Chart
+x labels are thinned so they never overlap; the series legend wraps below the chart with full case
+names. The Action writes it as `docs/index.html` on the results branch when `pages` is true.
 
 ## 6. Results branch layout
 

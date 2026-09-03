@@ -13,7 +13,7 @@ function report({ cases, harness = '2.1.200', track = 'pinned', extra = {} }) {
     schemaVersion: '1.1', track, harness: { name: 'claude-code', version: harness }, generatedAt: '2026-09-02T00:00:00Z', suite: { name: 'fixture' },
     cases: Object.entries(cases).map(([dir, runs]) => ({
       dir, name: dir,
-      arms: { with: runs.map((r, i) => ({ runIndex: i, score: r.score ?? 1, numTurns: r.numTurns ?? 4, costUsd: r.costUsd ?? 0.1, durationMs: r.durationMs ?? 5000, model: r.model ?? 'claude-sonnet-5', isError: !!r.isError, toolUses: r.toolUses, graders: r.graders ?? [] })) },
+      arms: { with: runs.map((r, i) => ({ runIndex: i, score: r.score ?? 1, numTurns: r.numTurns ?? 4, costUsd: r.costUsd ?? 0.1, durationMs: r.durationMs ?? 5000, model: r.model ?? 'claude-sonnet-5', isError: !!r.isError, toolUses: r.toolUses, response: r.response, graders: r.graders ?? [] })) },
       summary: { score: (() => { const s = runs.filter((r) => !r.isError).map((r) => r.score ?? 1); return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null; })(), delta: runs[0]?.delta },
     })),
     aggregates: { overallScore: 1, erroredRuns: 0, totalRuns: Object.values(cases).flat().length, costUsd: 0.3, ...extra },
@@ -215,4 +215,15 @@ test('baseline quality: a small judge-level spread (≤ threshold/2) does not wa
   const runs = [{ score: 1 }, { score: 0.95 }, { score: 1 }]; // spread 0.05 < 0.075
   const { json } = await run(report({ cases: { a: runs } }), report({ cases: { a: runs } }));
   assert.deepEqual(json.rows.find((r) => r.case === 'a').warnings, []);
+});
+
+test('refusals: a full-length reply with no tools is drift, not a refusal — no note', async () => {
+  const acts = { toolUses: [{ tool: 'Bash', input: '{}' }] };
+  const base = report({ cases: { a: three(acts) } });
+  // 1 turn, no tools, low score — but a complete answer (the skill simply did not fire)
+  const full = { score: 0.25, numTurns: 1, toolUses: [], response: 'public class InvoiceController { '.repeat(40) };
+  const { status, md, json } = await run(base, report({ cases: { a: [full, full, full] } }));
+  assert.equal(status, 1);
+  assert.equal(json.rows.find((r) => r.case === 'a').refusedRuns, 0);
+  assert.doesNotMatch(md, /look like refusals/);
 });

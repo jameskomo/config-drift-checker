@@ -109,7 +109,9 @@ once, to measure what a skill is worth; `promote-baseline: true` after an intent
 `repair: true` to let the agent propose a fix PR on red (spends credit, budget-capped);
 `open-prs: false` to keep bump/pin PRs off; `claude-code-version: 2.1.258` to override the pin;
 `coverage-min: 80` to fail the check when fewer than 80% of the rules in your CLAUDE.md, skills and
-hooks have an eval case (empty = report only).
+hooks have an eval case (empty = report only); `report-base-url: https://<you>.github.io/<repo>/history`
+to turn the case names in the PR comment into deep links into that run's HTML report (needs the
+results branch served by GitHub Pages: source = branch `eval-results`, folder `/docs`).
 
 **Which path is for me?**
 
@@ -217,7 +219,7 @@ model and Claude Code version ran and whether either *moved* since the baseline.
 | ↳ *flaky* (mixed verdicts across runs) | raise `runs` for that case. Never loosen the threshold |
 | **efficiency drift** (*slower*, *pricier*, *longer*) | every case still passes but the median turns / cost / time moved past its threshold. A warning by default; add it to `fail_on` to make it red. The postmortem-class regressions (verbosity, effort) show up here first |
 | **⚠ noisy** | the case dropped past the threshold but stayed within its historical noise band, and at least one run still hit the baseline score — a warning, not a regression. More runs per case shrink the band (`noise.history_runs` sets how much history counts). An in-band drop still goes red when no run recovers or it persisted over the last two runs |
-| *likely refusals* note on a red/noisy case | the low runs took ≤1 turn with no tool use while the baseline acted — the model declined the task (guardrail change), your setup did not break. Read the run transcript; consider rewording the case prompt |
+| *likely refusals* note on a red/noisy case | the low runs took ≤1 turn with no tool use and only a brief reply while the baseline acted — the model declined the task (guardrail change), your setup did not break. Read the run transcript; consider rewording the case prompt. (A *full* answer without tools is the opposite: the setup was skipped — treat as real drift) |
 | **⚠ baseline quality** (*thin* / *unstable baseline*) | the baseline itself has too few scored runs, or its run scores vary — treat its diffs with suspicion and re-baseline with more runs. Never red |
 | **⚠ agent runs errored** | read the first error text — usually no prepaid API credit on the key's account, or a Claude Code startup failure. Nothing was stored; fix and re-run |
 | a run shows the **max_turns** badge (amber card) | it was cut short and scored as-is — raise that case's `max_turns` (real-code cases need ~20) |

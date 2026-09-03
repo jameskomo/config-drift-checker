@@ -3,16 +3,16 @@
 //
 //   node tools/eval-report.mjs <current.json> [--baseline <baseline.json>] [--out report.html] [--threshold 0.15]
 //        [--config <plugin-dir>]   thresholds (score/turns/cost/duration) from <plugin-dir>/.cdc.yml
+//        [--history <dir>]   newest N past results → per-case noise band (drops inside it are ⚠ noisy, not red)
 //
 // Verdict first (what happened, what to do), then provenance (track, model, Claude Code, judge, cost),
 // what moved vs the baseline, the full table, and a per-case / per-run drill-down (grader verdicts and
 // reasons, tool calls, response, changed files). No server, no login, no external scripts. Also exported
-// as renderReport().
+// as renderReport(). Cases are classified by eval-classify.mjs — the same verdicts as eval-diff.
 import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const median = (xs) => { const a = xs.filter((x) => typeof x === 'number' && Number.isFinite(x)).sort((p, q) => p - q); if (!a.length) return null; const m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+import { key, median, caseMap, classifyCase, baselineWarnings, resolveThresholds, loadHistory } from './eval-classify.mjs';
 
 export function renderReport(cur, base = null, opt = {}) {
   const th = { score: opt.threshold ?? opt.thresholds?.score ?? 0.15, turns: opt.thresholds?.turns ?? 0.5, cost: opt.thresholds?.cost ?? 0.5, duration: opt.thresholds?.duration ?? 0.5 };
@@ -21,7 +21,6 @@ export function renderReport(cur, base = null, opt = {}) {
   const fd = (x) => (x === null || x === undefined ? '—' : (x >= 0 ? '+' : '') + Number(x).toFixed(2));
   const money = (x) => (x === null || x === undefined ? '—' : '$' + Number(x).toFixed(2));
   const pct = (x) => (x === null || x === undefined ? '' : `${x >= 0 ? '+' : ''}${Math.round(x * 100)}%`);
-  const key = (c) => c.dir ?? c.name;
   const runsOf = (c, arm) => c.arms?.[arm] ?? [];
   const okRuns = (c) => runsOf(c, 'with').filter((r) => !r.isError);
   const a = cur.aggregates ?? {};
@@ -30,17 +29,20 @@ export function renderReport(cur, base = null, opt = {}) {
   const ablating = cases.some((c) => runsOf(c, 'without').length);
   const baseMap = new Map((base?.cases ?? []).map((c) => [key(c), c]));
   const baseModels = base ? [...new Set((base.cases ?? []).flatMap((c) => runsOf(c, 'with').map((r) => r.model)).filter(Boolean))] : [];
+  const histCases = opt.history ? opt.history.map(caseMap) : null;
 
-  // ---- per-case analysis (mirrors eval-diff) ----
+  // ---- per-case analysis (via eval-classify — the same verdicts as eval-diff) ----
   const analyse = (c) => {
     const b = baseMap.get(key(c));
+    let status, before = null, delta = null, noise = null, effThreshold = th.score, escalated = null, warnings = [];
     const score = c.summary?.score ?? null;
-    const before = b ? (b.summary?.score ?? null) : null;
-    const delta = base && b && score !== null && before !== null ? score - before : null;
-    let status;
     if (!base) status = score === 1 ? 'pass' : score === null ? 'none' : 'fail';
     else if (!b) status = 'new';
-    else status = delta === null ? 'unknown' : delta < -th.score ? 'regressed' : delta > th.score ? 'improved' : 'stable';
+    else {
+      const cls = classifyCase(key(c), b, c, histCases, th.score);
+      ({ status, escalated, before, delta, noise, effThreshold } = cls);
+      warnings = baselineWarnings(b, opt.minBaselineRuns ?? 3, th.score);
+    }
     const eff = {};
     for (const [name, field] of [['turns', 'numTurns'], ['cost', 'costUsd'], ['duration', 'durationMs']]) {
       const after = median(okRuns(c).map((r) => r[field])), bef = b ? median(okRuns(b).map((r) => r[field])) : null;
@@ -49,13 +51,14 @@ export function renderReport(cur, base = null, opt = {}) {
     }
     const flags = [['turns', 'slower'], ['cost', 'pricier'], ['duration', 'longer']].filter(([n]) => eff[n].drifted).map(([, fl]) => fl);
     const issues = runsOf(c, 'with').filter((r) => r.isError || r.truncated).length;
-    return { c, b, score, before, delta, status, eff, flags, issues, open: status === 'regressed' || status === 'fail' || status === 'missing' || issues > 0 || flags.length > 0 };
+    return { c, b, score, before, delta, noise, effThreshold, escalated, warnings, status, eff, flags, issues, open: status === 'regressed' || status === 'noisy' || status === 'fail' || status === 'missing' || issues > 0 || flags.length > 0 };
   };
   const rows = cases.map(analyse);
   const missing = base ? [...baseMap.keys()].filter((k) => !cases.some((c) => key(c) === k)) : [];
   const regressed = rows.filter((r) => r.status === 'regressed').length + missing.length;
   const improved = rows.filter((r) => r.status === 'improved').length;
   const flagged = rows.filter((r) => r.flags.length).length;
+  const noisyN = rows.filter((r) => r.status === 'noisy').length;
   const failing = rows.filter((r) => r.status === 'fail').length;
   const worth = (() => { const d = cases.map((c) => c.summary?.delta).filter((x) => typeof x === 'number'); return d.length ? d.reduce((s, x) => s + x, 0) / d.length : null; })();
   const errored = a.erroredRuns ?? 0;
@@ -67,7 +70,7 @@ export function renderReport(cur, base = null, opt = {}) {
   else if (errored) { tone = 'fail'; mark = '■'; headline = `${errored} of ${a.totalRuns} runs errored`; lede = `${a.partialReason ?? ''} Scores below are partial; nothing was stored as a baseline.`; }
   else if (base && regressed) { tone = 'fail'; mark = '▼'; headline = `${regressed} case${regressed === 1 ? '' : 's'} regressed vs baseline`; lede = 'Open the red cases below: each failing run shows which check failed and why. Classify before you fix — refused before acting, skill/hook did not fire, wrong thing, or grader wrong.'; }
   else if (!base && failing) { tone = 'fail'; mark = '▼'; headline = `${failing} case${failing === 1 ? '' : 's'} below 1.00`; lede = 'No baseline to compare with yet. Read the failing runs, fix the setup or the grader, then re-run with promote-baseline to record the first baseline.'; }
-  else if (base && flagged) { tone = 'warn'; mark = '◆'; headline = `No regressions · ${flagged} efficiency drift${flagged === 1 ? '' : 's'}`; lede = 'Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.'; }
+  else if (base && (flagged || noisyN)) { tone = 'warn'; mark = '◆'; headline = `No regressions · ${[noisyN ? `${noisyN} noisy` : null, flagged ? `${flagged} efficiency drift${flagged === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')}`; lede = [noisyN ? 'A case dropped past the threshold but stayed within its historical noise band — a warning, not a regression; more runs per case shrink the band.' : null, flagged ? 'Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.' : null].filter(Boolean).join(' '); }
   else if (base) { tone = 'pass'; mark = '●'; headline = improved ? `No drift · ${improved} improved` : 'No drift'; lede = `${a.passed ?? rows.filter((r) => r.score === 1).length} of ${cases.length} cases hold against the baseline. Nothing to do.`; }
   else { tone = a.overallScore === 1 ? 'pass' : 'warn'; mark = '●'; headline = a.overallScore === 1 ? 'Baseline recorded · all cases pass' : 'Baseline recorded'; lede = 'This run is the reference. From now on every run is diffed against it; a drop of more than the threshold turns the check red.'; }
   if (budget?.exceeded) lede += ` The per-run budget cap ($${budget.capUsd}) stopped this run early; ${budget.skippedRuns} planned run${budget.skippedRuns === 1 ? '' : 's'} did not start.`;
@@ -86,18 +89,27 @@ export function renderReport(cur, base = null, opt = {}) {
   if (worth !== null) stamp.push(['setup worth', `<b class="${worth > 0 ? 'pass' : 'warn'}">${fd(worth)}</b> <span class="from">with − without plugin</span>`]);
 
   // ---- what moved ----
-  const moves = rows.filter((r) => ['regressed', 'improved', 'new'].includes(r.status) || r.flags.length).map((r) => `<a class="move ${r.status === 'regressed' ? 'fail' : r.status === 'improved' ? 'pass' : r.flags.length ? 'warn' : 'new'}" href="#case-${esc(key(r.c))}">
+  const moves = rows.filter((r) => ['regressed', 'improved', 'new', 'noisy'].includes(r.status) || r.flags.length).map((r) => `<a class="move ${r.status === 'regressed' ? 'fail' : r.status === 'improved' ? 'pass' : r.status === 'noisy' || r.flags.length ? 'warn' : 'new'}" href="#case-${esc(key(r.c))}">
       <span class="move-case">${esc(key(r.c))}</span>
       <span class="move-num">${r.status === 'new' ? `new · ${f(r.score)}` : `${f(r.before)} → ${f(r.score)}`}</span>
-      <span class="move-why">${r.status === 'regressed' ? 'regressed' : r.status === 'improved' ? 'improved' : r.status === 'new' ? 'not in baseline' : 'passes'}${r.flags.length ? ` · ${r.flags.map((fl) => { const n = { slower: 'turns', pricier: 'cost', longer: 'time' }[fl]; const e = r.eff[{ slower: 'turns', pricier: 'cost', longer: 'duration' }[fl]]; return `${n} ${pct(e.rel)}`; }).join(', ')}` : ''}</span></a>`)
+      <span class="move-why">${r.status === 'regressed' ? 'regressed' : r.status === 'noisy' ? `noisy · within ±${(r.noise ?? 0).toFixed(2)} band` : r.status === 'improved' ? 'improved' : r.status === 'new' ? 'not in baseline' : 'passes'}${r.flags.length ? ` · ${r.flags.map((fl) => { const n = { slower: 'turns', pricier: 'cost', longer: 'time' }[fl]; const e = r.eff[{ slower: 'turns', pricier: 'cost', longer: 'duration' }[fl]]; return `${n} ${pct(e.rel)}`; }).join(', ')}` : ''}</span></a>`)
     .concat(missing.map((k) => `<span class="move fail"><span class="move-case">${esc(k)}</span><span class="move-num">missing</span><span class="move-why">in baseline, not in this run</span></span>`)).join('');
 
   // ---- table ----
   const effCell = (e, fmt) => e.after === null ? '—' : (e.drifted || (e.rel !== null && e.rel < -th.turns)) ? `<span class="${e.drifted ? 'warn' : 'pass'}">${fmt(e.before)} → ${fmt(e.after)}</span> <small>${pct(e.rel)}</small>` : fmt(e.after);
   const tableRows = rows.map((r) => `<tr class="st-${r.status}"><td><span class="dot ${r.status}"></span>${esc(r.status)}${r.flags.length ? ` <small class="warn">${r.flags.join(', ')}</small>` : ''}</td><td><a href="#case-${esc(key(r.c))}">${esc(key(r.c))}</a></td>
-      ${base ? `<td class="num">${f(r.before)}</td>` : ''}<td class="num"><b>${f(r.score)}</b></td>${base ? `<td class="num ${r.delta !== null && r.delta < -th.score ? 'fail' : r.delta !== null && r.delta > th.score ? 'pass' : ''}">${fd(r.delta)}</td>` : ''}
+      ${base ? `<td class="num">${f(r.before)}</td>` : ''}<td class="num"><b>${f(r.score)}</b></td>${base ? `<td class="num ${r.delta !== null && r.delta < -r.effThreshold ? 'fail' : r.delta !== null && r.delta > th.score ? 'pass' : r.status === 'noisy' ? 'warn' : ''}">${fd(r.delta)}</td><td class="num">${r.noise === null || r.noise === undefined ? '—' : `±${r.noise.toFixed(2)}`}</td>` : ''}
       ${ablating ? `<td class="num">${f(r.c.summary?.baselineScore)}</td><td class="num">${fd(r.c.summary?.delta)}</td>` : ''}<td class="num">${effCell(r.eff.turns, (x) => String(Math.round(x)))}</td><td class="num">${effCell(r.eff.cost, (x) => '$' + Number(x).toFixed(2))}</td><td class="num">${runsOf(r.c, 'with').length}${ablating ? '+' + runsOf(r.c, 'without').length : ''}${r.issues ? ` <small class="warn" title="runs that errored or hit max_turns">${r.issues}⚠</small>` : ''}</td></tr>`)
-    .concat(missing.map((k) => `<tr class="st-missing"><td><span class="dot missing"></span>missing</td><td>${esc(k)}</td><td class="num">${f(baseMap.get(k)?.summary?.score)}</td><td class="num">—</td><td class="num">—</td>${ablating ? '<td></td><td></td>' : ''}<td></td><td></td><td></td></tr>`)).join('');
+    .concat(missing.map((k) => `<tr class="st-missing"><td><span class="dot missing"></span>missing</td><td>${esc(k)}</td><td class="num">${f(baseMap.get(k)?.summary?.score)}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>${ablating ? '<td></td><td></td>' : ''}<td></td><td></td><td></td></tr>`)).join('');
+
+  // ---- noise / baseline-quality notes (mirror the PR-comment markdown) ----
+  const noisyRows = rows.filter((r) => r.status === 'noisy');
+  const warnedRows = rows.filter((r) => r.warnings?.length);
+  const notes = [
+    noisyRows.length ? `<p class="note"><b class="warn">⚠ ${noisyRows.length} noisy:</b> dropped past ${th.score} but within historical noise (±${Math.max(...noisyRows.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${(opt.history ?? []).length} run${(opt.history ?? []).length === 1 ? '' : 's'}) — warning, not a regression.</p>` : '',
+    rows.filter((r) => r.escalated).map((r) => `<p class="note"><b class="fail">▼ ${esc(key(r.c))}:</b> within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway — ${esc(r.escalated)}.</p>`).join(''),
+    warnedRows.length ? `<p class="note"><b class="warn">⚠ baseline quality (never red):</b> ${warnedRows.map((r) => `<code>${esc(key(r.c))}</code> — ${esc(r.warnings.join(', '))}`).join(' · ')}. More runs per case fix this; never loosen the threshold.</p>` : '',
+  ].filter(Boolean).join('');
 
   // ---- cases ----
   const chip = (g) => {
@@ -131,9 +143,21 @@ export function renderReport(cur, base = null, opt = {}) {
     if (t === 'llm') return `judge model: ${esc(g.criteria ?? '')}`;
     return esc(t);
   };
+  const spark = (c) => { // one bar per with-arm run, score 0..1 — the flake shape behind the noise band
+    const rs = runsOf(c, 'with');
+    if (!rs.length) return '';
+    const w = rs.length * 7 + 2, h = 22;
+    const bars = rs.map((x, i) => {
+      const s = typeof x.score === 'number' && !x.isError ? x.score : null;
+      const bh = s === null ? 3 : Math.max(2, Math.round(s * (h - 4)));
+      const col = s === null ? 'var(--muted)' : s >= 1 ? 'var(--pass)' : 'var(--fail)';
+      return `<rect x="${1 + i * 7}" y="${h - 2 - bh}" width="5" height="${bh}" rx="1" fill="${col}"><title>run ${i + 1}${x.isError ? ' (errored)' : ''}: ${s === null ? '—' : s.toFixed(2)}</title></rect>`;
+    }).join('');
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="with-arm run scores">${bars}</svg>`;
+  };
   const sections = rows.map((r) => { const c = r.c; return `<section class="case st-${r.status}" id="case-${esc(key(c))}">
     <header class="case-h"><div><h2>${esc(key(c))}</h2>${c.name && c.name !== key(c) ? `<p class="case-name">${esc(c.name)}</p>` : ''}</div>
-      <div class="case-num"><span class="dot ${r.status}"></span>${esc(r.status)} · <b>${f(r.score)}</b>${base && r.before !== null ? ` <span class="from">from ${f(r.before)}</span>` : ''}${ablating && typeof c.summary?.delta === 'number' ? ` <span class="from">· plugin ${fd(c.summary.delta)}</span>` : ''}</div></header>
+      <div class="case-num">${spark(c)}<span class="dot ${r.status}"></span>${esc(r.status)} · <b>${f(r.score)}</b>${base && r.before !== null ? ` <span class="from">from ${f(r.before)}</span>` : ''}${r.noise !== null && r.noise !== undefined ? ` <span class="from">· noise ±${r.noise.toFixed(2)}</span>` : ''}${ablating && typeof c.summary?.delta === 'number' ? ` <span class="from">· plugin ${fd(c.summary.delta)}</span>` : ''}</div></header>
     <p class="tags">${(c.tags ?? []).map((t) => `<span>${esc(t)}</span>`).join('')}${(c.covers ?? []).map((t) => `<span class="covers" title="rule this case covers">${esc(t)}</span>`).join('')}</p>
     <details class="about"${r.open ? '' : ''}><summary>What this case evaluates${c.description ? ` — <span class="desc">${esc(c.description)}</span>` : ''}</summary>
       ${c.prompt ? `<div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">${esc(c.prompt)}</pre></div>` : ''}
@@ -166,8 +190,10 @@ h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-wei
 .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);margin:0 0 26px;box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%}th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;font-weight:600}
 td{padding:9px 12px;border-bottom:1px solid var(--rule);font-size:14px}tr:last-child td{border-bottom:0}td.num{text-align:right;font-size:13px;white-space:nowrap}td.num small{color:var(--muted);font-size:11px}td small.warn{font-size:11px}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted);vertical-align:1px}.dot.pass,.dot.stable,.dot.improved{background:var(--pass)}.dot.fail,.dot.regressed,.dot.missing{background:var(--fail)}.dot.new{background:var(--track)}
-tr.st-regressed td,tr.st-fail td,tr.st-missing td{background:var(--fail-bg)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted);vertical-align:1px}.dot.pass,.dot.stable,.dot.improved{background:var(--pass)}.dot.fail,.dot.regressed,.dot.missing{background:var(--fail)}.dot.noisy{background:var(--warn)}.dot.new{background:var(--track)}
+tr.st-regressed td,tr.st-fail td,tr.st-missing td{background:var(--fail-bg)}tr.st-noisy td{background:var(--warn-bg)}
+.note{font-size:13px;color:var(--muted);margin:0 0 10px}.note b{font-weight:600}
+.spark{vertical-align:middle;margin-right:10px}
 /* cases */
 .filter{font-size:13px;color:var(--muted);display:inline-flex;gap:8px;align-items:center;margin:0 0 14px;cursor:pointer;user-select:none}.filter i{display:inline-block;width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;font-style:normal;text-align:center;line-height:12px;font-size:11px}#failing-only:checked ~ .cases .run.ok{display:none}#failing-only:checked ~ .filter i::before{content:"✓"}
 .case{margin:0 0 34px;padding:18px 0 0;border-top:2px solid var(--rule)}.case-h{display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap}.case h2{font-size:21px;margin:0;letter-spacing:-.01em;font-weight:600}.case-name{margin:2px 0 0;color:var(--muted);font-size:13.5px}
@@ -204,27 +230,29 @@ ${moves ? `<div class="moves">${moves}</div>` : ''}
 <li><b>No drift / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
 <li><b>N case(s) regressed:</b> open the red case(s) and classify each failing run: <i>refused or asked before acting</i> (1 turn, no tool calls) → the case never reached the skill/hook, rewrite the scenario; <i>skill/hook did not fire</i> → a real regression: pin <code>model.pinned</code>/<code>harness.pinned</code> in <code>.cdc.yml</code> to the last good pair, fix the setup (or run the <code>repair</code> skill), tell the maintainers; <i>grader wrong</i> (matched prose, a negation, nested parentheses) → fix the grader and re-score with <code>--regrade</code>; <i>flaky</i> (mixed verdicts across runs) → raise <code>runs</code>, never the threshold.</li>
 <li><b>Efficiency drift (slower / pricier / longer):</b> every case still passes, but the median turns, cost or time moved past its threshold. Warning by default; add it to <code>fail_on</code> in <code>.cdc.yml</code> to make it red.</li>
+<li><b>Noisy (⚠):</b> the case dropped past the threshold but stayed within its historical noise band — a warning, not a regression; more runs per case shrink the noise band.</li>
 <li><b>Runs errored:</b> read the error text — usually no prepaid API credit or a Claude Code startup failure. Nothing was stored; fix and re-run.</li>
 <li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is (amber) → raise that case's <code>max_turns</code>.</li>
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
-<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ</th><th>noise</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
+${notes}
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
 <div class="cases">${sections}</div>
-<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${th.score} against the baseline is a regression. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
+<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${th.score} against the baseline is a regression${opt.history ? ' — a drop inside the case\'s noise band is a ⚠ warning, not red' : ''}. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
 </div></body></html>`;
 }
 
 const isMain = (() => { try { return process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } })();
 if (isMain) {
-  const argv = process.argv.slice(2); let curPath = null, basePath = null, out = null, threshold = null, configDir = null;
-  for (let i = 0; i < argv.length; i++) { if (argv[i] === '--baseline') basePath = argv[++i]; else if (argv[i] === '--out') out = argv[++i]; else if (argv[i] === '--threshold') threshold = Number(argv[++i]); else if (argv[i] === '--config') configDir = argv[++i]; else if (!argv[i].startsWith('--')) curPath = argv[i]; }
-  if (!curPath) { console.error('usage: eval-report.mjs <current.json> [--baseline b.json] [--out report.html] [--threshold 0.15] [--config <plugin-dir>]'); process.exit(2); }
+  const argv = process.argv.slice(2); let curPath = null, basePath = null, out = null, threshold = null, configDir = null, historyDir = null;
+  for (let i = 0; i < argv.length; i++) { if (argv[i] === '--baseline') basePath = argv[++i]; else if (argv[i] === '--out') out = argv[++i]; else if (argv[i] === '--threshold') threshold = Number(argv[++i]); else if (argv[i] === '--config') configDir = argv[++i]; else if (argv[i] === '--history') historyDir = argv[++i]; else if (!argv[i].startsWith('--')) curPath = argv[i]; }
+  if (!curPath) { console.error('usage: eval-report.mjs <current.json> [--baseline b.json] [--out report.html] [--threshold 0.15] [--config <plugin-dir>] [--history dir]'); process.exit(2); }
   const cur = JSON.parse(await fs.readFile(curPath, 'utf8'));
   const base = basePath ? JSON.parse(await fs.readFile(basePath, 'utf8')) : null;
-  let thresholds = null;
-  if (configDir) { const { loadConfig, resolveTrack } = await import('./cdc-config.mjs'); thresholds = resolveTrack(loadConfig(path.resolve(configDir)), cur.track ?? undefined).thresholds; }
-  const html = renderReport(cur, base, { threshold: threshold ?? thresholds?.score, thresholds });
+  const { th, historyRuns, minBaselineRuns } = resolveThresholds(configDir ? path.resolve(configDir) : null, cur.track, { threshold });
+  const history = historyDir ? await loadHistory(path.resolve(historyDir), { exclude: path.resolve(curPath), track: cur.track, limit: historyRuns, before: cur.generatedAt ?? null }) : null;
+  const html = renderReport(cur, base, { thresholds: th, history, minBaselineRuns });
   const target = out ?? path.join(path.dirname(path.resolve(curPath)), 'report.html');
   await fs.writeFile(target, html);
   console.log(target);

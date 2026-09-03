@@ -16,6 +16,7 @@ inputs:
   scaffold:              { description: 'Run case.yaml scaffold_script (only for suites you authored)', default: 'true' }
   threshold:             { description: 'Score drop that counts as a regression (overrides .cdc.yml thresholds.score)', default: '' }
   coverage-min:          { description: 'Fail the check when agent-config coverage (rules with an eval case) is under this percent. Empty = report only', default: '' }
+  report-base-url:       { description: 'Public base URL of the results-branch Pages history folder (e.g. https://<you>.github.io/<repo>/history). When set, PR-comment case names deep-link into this run''s HTML report', default: '' }
   claude-code-version:   { description: 'Claude Code version to install (overrides the track''s harness pin), or "latest"', default: '' }
   results-branch:        { description: 'Orphan branch that stores baseline.json, canary/, history/, spend.json and the release-watch state', default: 'eval-results' }
   promote-baseline:      { description: 'Overwrite baseline.json with this run (first run, or after an intentional change). Pinned track only', default: 'false' }
@@ -182,6 +183,8 @@ runs:
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
+        # the stem the store step reuses for history/<stem>.json and docs/history/<stem>.html (PR-comment deep links)
+        echo "stem=$(date -u +%Y%m%dT%H%M%SZ)-cc${CC_VERSION}-${RUNNER}-${TRACK}" >> "$GITHUB_OUTPUT"
         errs=$(OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log((a.erroredRuns||0)+"/"+(a.totalRuns||0)+" "+(a.partialReason||""))')
         case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored — $errs. Nothing will be stored as a baseline. Common causes: no prepaid API credit on the key's account (console.anthropic.com → Billing), or a Claude Code startup failure — see the eval-report artifact's stderrTail."; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
         OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log(a.budget&&a.budget.exceeded ? "budget_hit=true" : "budget_hit=false")' >> "$GITHUB_OUTPUT"
@@ -200,6 +203,8 @@ runs:
         TRACK: ${{ steps.config.outputs.track }}
         MODEL_IS_PINNED: ${{ steps.config.outputs.model_is_pinned }}
         THRESHOLD_INPUT: ${{ inputs.threshold }}
+        REPORT_BASE_URL: ${{ inputs.report-base-url }}
+        STEM: ${{ steps.run.outputs.stem }}
         RUNNER: ${{ steps.runner.outputs.runner }}
         CC_VERSION: ${{ steps.install.outputs.version }}
         CC_REQUESTED: ${{ steps.install.outputs.requested }}
@@ -207,11 +212,12 @@ runs:
         set +e
         thr_args=(); [ -n "$THRESHOLD_INPUT" ] && thr_args=(--threshold "$THRESHOLD_INPUT")
         hist_args=(); [ -n "$(ls -A "$RESULTS_DIR/history" 2>/dev/null)" ] && hist_args=(--history "$RESULTS_DIR/history")
+        url_args=(); [ -n "$REPORT_BASE_URL" ] && url_args=(--report-url "${REPORT_BASE_URL%/}/$STEM.html")
         if [ "$ERRORED" != "true" ] && [ "$BASELINE_EXISTS" = "true" ] && ! { [ "$PROMOTE" = "true" ] && [ "$TRACK" = "pinned" ]; }; then
-          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" "${hist_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
+          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" "${hist_args[@]}" "${url_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
           node -e 'const d=require(process.env.RUNNER_TEMP+"/diff.json"); console.log("regressed="+d.regressed+"\nred="+d.red+"\nflagged="+d.flagged)' >> "$GITHUB_OUTPUT"
         else
-          node "$TOOLS/eval-diff.mjs" "$RESULT" "$RESULT" --config "$PLUGIN_DIR" --md "$RUNNER_TEMP/diff.md" >/dev/null
+          node "$TOOLS/eval-diff.mjs" "$RESULT" "$RESULT" --config "$PLUGIN_DIR" "${url_args[@]}" --md "$RUNNER_TEMP/diff.md" >/dev/null
           if [ "$ERRORED" = "true" ]; then sed -i '1s/.*/## Agent-config eval: ⚠ agent runs errored — nothing stored/' "$RUNNER_TEMP/diff.md"
           elif [ "$TRACK" = "canary" ]; then sed -i '1s/.*/## Agent-config eval: canary ran, but there is no pinned baseline yet — run the pinned track first/' "$RUNNER_TEMP/diff.md"
           else sed -i '1s/.*/## Agent-config eval: baseline recorded (no comparison yet)/' "$RUNNER_TEMP/diff.md"; fi
@@ -235,8 +241,9 @@ runs:
         BUDGET_HIT: ${{ steps.run.outputs.budget_hit }}
       run: |
         base_args=(); [ "$BASELINE_EXISTS" = "true" ] && [ "$PROMOTE" != "true" ] && base_args=(--baseline "$RESULTS_DIR/baseline.json")
+        hist_args=(); [ -n "$(ls -A "$RESULTS_DIR/history" 2>/dev/null)" ] && hist_args=(--history "$RESULTS_DIR/history")
         thr="$THRESHOLD_INPUT"; [ -n "$thr" ] || thr="$CONFIG_THRESHOLD"
-        node "$TOOLS/eval-report.mjs" "$RESULT" "${base_args[@]}" --threshold "$thr" --out "$RUNNER_TEMP/eval-report.html"
+        node "$TOOLS/eval-report.mjs" "$RESULT" "${base_args[@]}" "${hist_args[@]}" --threshold "$thr" --out "$RUNNER_TEMP/eval-report.html"
         cp "$RESULT" "$RUNNER_TEMP/aggregate-result.json"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
         [ "$BUDGET_HIT" = "true" ] && echo "■ The per-run budget cap (\`budget.per_run_usd\`) stopped this run early; cases without runs show as ❔." >> "$GITHUB_STEP_SUMMARY"
@@ -267,6 +274,7 @@ runs:
         BASELINE_EXISTS: ${{ steps.results.outputs.baseline }}
         PROMOTE: ${{ inputs.promote-baseline }}
         RED: ${{ steps.diff.outputs.red }}
+        STEM: ${{ steps.run.outputs.stem }}
         PAGES: ${{ inputs.pages }}
         PLUGIN_DIR: ${{ inputs.plugin-dir }}
         REPO: ${{ github.repository }}
@@ -277,8 +285,7 @@ runs:
         wt="$RUNNER_TEMP/results-wt"
         git fetch origin "$BRANCH" 2>/dev/null && git worktree add "$wt" "origin/$BRANCH" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$BRANCH" && git rm -rfq . 2>/dev/null || true); }
         cd "$wt"; mkdir -p history canary
-        stamp=$(date -u +%Y%m%dT%H%M%SZ)
-        name="${stamp}-cc${CC_VERSION}-${RUNNER}-${TRACK}"
+        name="$STEM"; stamp="${STEM%%-cc*}"
         cp "$RESULT" "history/${name}.json"
         if [ "$TRACK" = "pinned" ]; then
           if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then

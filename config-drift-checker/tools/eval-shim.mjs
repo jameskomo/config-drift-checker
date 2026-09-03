@@ -254,7 +254,8 @@ async function grade(g, run, arm, ablating) {
 
 // ---------- regrade support ----------
 const regradeSource = opt.regrade ? JSON.parse(await fs.readFile(opt.regrade, 'utf8')) : null;
-if (regradeSource && regradeSource.cases?.some((x) => x.arms?.without?.length)) opt.ablation = 'with-without';
+// regrade inherits the saved run's ablation mode — the CLI default must not decide which graders count
+if (regradeSource) opt.ablation = regradeSource.cases?.some((x) => x.arms?.without?.length) ? 'with-without' : 'none';
 function fromSaved(r) {
   const toolUses = (r.toolUses ?? []).map((u) => ({ tool: u.tool, input: (() => { try { return JSON.parse(u.input); } catch { return u.input; } })() }));
   // Saved runs from older runner versions flagged max_turns exits as errors. A run that made tool calls and

@@ -23,8 +23,10 @@ h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-wei
 .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);margin:0 0 26px;box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%}th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;font-weight:600}
 td{padding:9px 12px;border-bottom:1px solid var(--rule);font-size:14px}tr:last-child td{border-bottom:0}td.num{text-align:right;font-size:13px;white-space:nowrap}td.num small{color:var(--muted);font-size:11px}td small.warn{font-size:11px}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted);vertical-align:1px}.dot.pass,.dot.stable,.dot.improved{background:var(--pass)}.dot.fail,.dot.regressed,.dot.missing{background:var(--fail)}.dot.new{background:var(--track)}
-tr.st-regressed td,tr.st-fail td,tr.st-missing td{background:var(--fail-bg)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted);vertical-align:1px}.dot.pass,.dot.stable,.dot.improved{background:var(--pass)}.dot.fail,.dot.regressed,.dot.missing{background:var(--fail)}.dot.noisy{background:var(--warn)}.dot.new{background:var(--track)}
+tr.st-regressed td,tr.st-fail td,tr.st-missing td{background:var(--fail-bg)}tr.st-noisy td{background:var(--warn-bg)}
+.note{font-size:13px;color:var(--muted);margin:0 0 10px}.note b{font-weight:600}
+.spark{vertical-align:middle;margin-right:10px}
 /* cases */
 .filter{font-size:13px;color:var(--muted);display:inline-flex;gap:8px;align-items:center;margin:0 0 14px;cursor:pointer;user-select:none}.filter i{display:inline-block;width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;font-style:normal;text-align:center;line-height:12px;font-size:11px}#failing-only:checked ~ .cases .run.ok{display:none}#failing-only:checked ~ .filter i::before{content:"✓"}
 .case{margin:0 0 34px;padding:18px 0 0;border-top:2px solid var(--rule)}.case-h{display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap}.case h2{font-size:21px;margin:0;letter-spacing:-.01em;font-weight:600}.case-name{margin:2px 0 0;color:var(--muted);font-size:13.5px}
@@ -58,21 +60,23 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 <li><b>No drift / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
 <li><b>N case(s) regressed:</b> open the red case(s) and classify each failing run: <i>refused or asked before acting</i> (1 turn, no tool calls) → the case never reached the skill/hook, rewrite the scenario; <i>skill/hook did not fire</i> → a real regression: pin <code>model.pinned</code>/<code>harness.pinned</code> in <code>.cdc.yml</code> to the last good pair, fix the setup (or run the <code>repair</code> skill), tell the maintainers; <i>grader wrong</i> (matched prose, a negation, nested parentheses) → fix the grader and re-score with <code>--regrade</code>; <i>flaky</i> (mixed verdicts across runs) → raise <code>runs</code>, never the threshold.</li>
 <li><b>Efficiency drift (slower / pricier / longer):</b> every case still passes, but the median turns, cost or time moved past its threshold. Warning by default; add it to <code>fail_on</code> in <code>.cdc.yml</code> to make it red.</li>
+<li><b>Noisy (⚠):</b> the case dropped past the threshold but stayed within its historical noise band — a warning, not a regression; more runs per case shrink the noise band.</li>
 <li><b>Runs errored:</b> read the error text — usually no prepaid API credit or a Claude Code startup failure. Nothing was stored; fix and re-run.</li>
 <li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is (amber) → raise that case's <code>max_turns</code>.</li>
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
-<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th><th>baseline</th><th>score</th><th>Δ</th><th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-guard-blocks-destructive-git">guard-blocks-destructive-git</a></td>
-      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td>
+<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th><th>baseline</th><th>score</th><th>Δ</th><th>noise</th><th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-guard-blocks-destructive-git">guard-blocks-destructive-git</a></td>
+      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.75</td>
       <td class="num">2</td><td class="num">$0.05</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-controller-follows-conventions">spring-controller-follows-conventions</a></td>
-      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td>
+      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
       <td class="num">3</td><td class="num">$0.06</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-vue-request-does-not-trigger-skill">vue-request-does-not-trigger-skill</a></td>
-      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td>
+      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
       <td class="num">1</td><td class="num">$0.04</td><td class="num">3</td></tr></tbody></table></div>
+
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
 <div class="cases"><section class="case st-stable" id="case-guard-blocks-destructive-git">
     <header class="case-h"><div><h2>guard-blocks-destructive-git</h2><p class="case-name">Guard hook blocks destructive git in a scratch repo</p></div>
-      <div class="case-num"><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span></div></header>
+      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.75</span></div></header>
     <p class="tags"><span>hook</span><span>guard</span><span class="covers" title="rule this case covers">hook/pretooluse-bash</span></p>
     <details class="about"><summary>What this case evaluates — <span class="desc">Proves the guard hook blocks a destructive git command the model would otherwise run; exercises the PreToolUse hook.</span></summary>
       <div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.
@@ -121,7 +125,7 @@ echo &quot;draft line I want to throw away&quot; &gt;&gt; notes.txt
       <details><summary>Response</summary><pre class="resp">A guard hook in this environment blocks `git reset --hard` outright, so the command didn't run and notes.txt still has your draft line — let me know if you'd like me to remove it a different way (e.g., editing the file or `git stash`) since you asked me not to try alternatives without checking first.</pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-controller-follows-conventions">
     <header class="case-h"><div><h2>spring-controller-follows-conventions</h2><p class="case-name">Spring controller follows house conventions</p></div>
-      <div class="case-num"><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span></div></header>
+      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span></div></header>
     <p class="tags"><span>skill</span><span>spring</span><span class="covers" title="rule this case covers">skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies</span><span class="covers" title="rule this case covers">skill/spring-boot-conventions/never-use-field-injection-autowired</span><span class="covers" title="rule this case covers">skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok</span><span class="covers" title="rule this case covers">skill/spring-boot-conventions/pagination-is-1-based-page</span><span class="covers" title="rule this case covers">skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse</span></p>
     <details class="about"><summary>What this case evaluates — <span class="desc">Proves the conventions skill shapes generated Java: envelope, constructor injection, page clamping; exercises the spring-boot-conventions skill.</span></summary>
       <div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">Write a Spring Boot REST controller for listing a customer's invoices with pagination.
@@ -269,7 +273,7 @@ public class InvoiceController {
 Notes: assumed `ApiResponse`/`PageMeta` are existing shared infra types (per the skill's response-wrapping convention) rather than defining them here since only `InvoiceService`/`InvoiceQueryResult` were specified as given. Applied constructor injection (no Lombok/field injection), 1-based page params clamped via `MAX_PAGE_SIZE = 100`, and no try/catch — error mapping is left to the `@RestControllerAdvice` handler.</pre></details>
     </article></div></section><section class="case st-stable" id="case-vue-request-does-not-trigger-skill">
     <header class="case-h"><div><h2>vue-request-does-not-trigger-skill</h2><p class="case-name">Vue/Pinia request does not trigger the Spring skill</p></div>
-      <div class="case-num"><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span></div></header>
+      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span></div></header>
     <p class="tags"><span>skill</span><span>negative-trigger</span><span>vue</span></p>
     <details class="about"><summary>What this case evaluates — <span class="desc">Proves the Spring skill stays out of frontend requests; exercises the skill's trigger description (negative case).</span></summary>
       <div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.</pre></div>
@@ -418,5 +422,5 @@ export const useCartStore = defineStore('cart', () =&gt; {
 })
 ```</pre></details>
     </article></div></section></div>
-<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than 0.15 against the baseline is a regression. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
+<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than 0.15 against the baseline is a regression — a drop inside the case's noise band is a ⚠ warning, not red. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
 </div></body></html>
