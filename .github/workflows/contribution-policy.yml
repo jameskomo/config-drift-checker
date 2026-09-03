@@ -1,0 +1,31 @@
+name: contribution-policy
+# Automated/bot PRs are treated as reports, never as merges (maintainer policy, 2026-09-03).
+# Rationale: PR #9 "pinned" actions to mislabelled downgrade SHAs and our own action to a SHA that
+# does not exist — an unverified pin is the very supply-chain risk it claims to fix. Findings are
+# welcome; patches from automation are closed with this policy and re-implemented after verification.
+on:
+  pull_request_target:
+    types: [opened]
+permissions: { pull-requests: write }
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close automated PRs with the policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.event.pull_request.user.login }}
+          ACTOR_TYPE: ${{ github.event.pull_request.user.type }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          automated=false
+          case "$ACTOR_TYPE" in Bot) automated=true;; esac
+          case "$ACTOR" in dependabot*) automated=false;; esac   # dependabot is ours, gated by its own workflow
+          case "$BODY" in *'Automated security fix'*|*'orbis-meta:'*) automated=true;; esac
+          [ "$automated" = "true" ] || { echo "human PR — untouched"; exit 0; }
+          gh pr comment "$PR" --repo "$REPO" --body "Thanks — this repo does not merge automated patches (maintainer policy). Automated findings are welcome as **issues**; every fix here is implemented and verified by a maintainer (SHAs resolved against official tags, behaviour tested). Context: PR #9 proposed mislabelled downgrade SHAs and a nonexistent pin for this repo's own action. Closing."
+          gh pr close "$PR" --repo "$REPO"
+          echo "closed automated PR #$PR" >> "$GITHUB_STEP_SUMMARY"
