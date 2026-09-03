@@ -18,8 +18,8 @@
 
 **prompt.md frontmatter** (all optional): `name`, `tags[]`, `runs` (default 3), `max_turns`,
 `timeout_seconds`, `allowed_tools[]` (tools the agent may use; Bash/Write/Edit are gated),
-`model`, `append_system_prompt`, `env` (`EVAL_*` only), and — ours, ignored by the official runner —
-`covers[]`: ids of the rules this case exercises (`config-coverage.mjs --list` prints them).
+`model`, `append_system_prompt`, `env` (`EVAL_*` only), and `covers[]` (ours, ignored by the official
+runner): ids of the rules this case exercises (`config-coverage.mjs --list` prints them).
 
 **case.yaml**: `schema_version: "1.1"`, `context.scaffold_script` (bash run in the workspace,
 gated by `--scaffold`), `context.history_file` (replay a transcript, evaluate next turn),
@@ -70,7 +70,7 @@ to the without arm); `tool_used: Skill` graders are with-only indicators under a
 **Tracks** (`--track pinned|canary`, default from `.cdc.yml`): the track supplies model, harness,
 runs, expansion and budget unless a flag overrides them. **Sequential testing**
 (`--expand-on-deviation n`): after the configured runs of an arm, `n` more run only if a run scored
-below 1.00 — the cheap first look buys more evidence only when it matters. **Budget** (`--budget usd`):
+below 1.00, so the cheap first look buys more evidence only when it matters. **Budget** (`--budget usd`):
 before starting any run, if the invocation's spend has reached the cap, no further runs start; what
 already ran is kept and scored, `aggregates.budget` records the cap, spend and skipped runs, and a
 case with no runs scores `null` (❔ in the diff, never a regression). `--budget 0` disables the cap.
@@ -107,7 +107,7 @@ CLI: `get <dotted.key>` · `resolve <track> [--github-output]` · `set-pins --mo
 (rewrites the two `pinned:` lines in place, comments and order preserved; appends the block when
 missing) · `init` (starter file with comments). The user guide documents every key.
 
-## 3. Output — `aggregate-result.json` (schemaVersion "1.1", additive to "1")
+## 3. Output: `aggregate-result.json` (schemaVersion "1.1", additive to "1")
 
 ```jsonc
 {
@@ -149,7 +149,7 @@ runs; relative change above `thresholds.turns|cost|duration` (default 0.5) flags
 efficiency flags are warnings unless listed. Exit 2 when every run errored. `--config <plugin-dir>`
 reads thresholds and `fail_on` from `.cdc.yml`; flags override.
 
-**Noise band** (`--history <dir>` — the results branch's `history/`: newest `noise.history_runs`
+**Noise band** (`--history <dir>`, the results branch's `history/`: newest `noise.history_runs`
 timestamped `*.json`, same track only, the current file excluded): per case, `noise` = max − min of
 all with-arm run scores across the baseline and history runs (null under 2 samples). A drop past
 `thresholds.score` but not past `max(threshold, noise)` is **noisy** (⚠): it shows in the table with
@@ -157,10 +157,10 @@ a `±x.xx` noise column and a footer line, never counts as regressed or red, and
 exit code. Two escalations make an in-band drop red anyway (footer says which): no current run
 reaches the baseline score (a consistent shift, not a flake), or the newest two same-track history
 scores for the case were already below `baseline − threshold` (persisted). Runs with ≤1 turn, no
-tool use, a short reply (under ~600 chars) and a below-baseline score — on a case whose baseline
-runs have a nonzero median tool count — are counted as likely refusals and noted on red/noisy rows;
-a *full-length* no-tool answer is the setup being skipped (drift), not a refusal, and gets no excuse. Without `--history` the
-threshold is flat, as before. JSON rows carry `noise`, `effThreshold`, `historyRuns`, `escalated`
+tool use, a short reply (under about 600 characters) and a below-baseline score, on a case whose
+baseline runs have a nonzero median tool count, are counted as likely refusals and noted on red/noisy
+rows; a *full-length* no-tool answer is the setup being skipped (drift), not a refusal, and gets no
+excuse. Without `--history` the threshold is flat, as before. JSON rows carry `noise`, `effThreshold`, `historyRuns`, `escalated`
 (the escalation reason or null) and `refusedRuns`.
 
 **Baseline quality** (never red): a case whose baseline has fewer scored with-arm runs than
@@ -168,7 +168,7 @@ threshold is flat, as before. JSON rows carry `noise`, `effThreshold`, `historyR
 spread exceeds half the score threshold gets `unstable baseline (±x.xx)` (smaller spread is normal
 LLM-judge variance and stays quiet). They render as a warnings block after the table and as `warnings[]`
 per JSON row. `tools/baseline-check.mjs <result.json> [--min-runs n] [--config <plugin-dir>]`
-enforces the same bar at promotion time — exit 1 when any case is under min-runs or
+enforces the same bar at promotion time: exit 1 when any case is under min-runs or
 `aggregates.erroredRuns > 0`; the Action runs it before overwriting `baseline.json` and keeps the
 old baseline on failure.
 
@@ -186,8 +186,8 @@ must be handled by *more runs*, not a looser threshold. The canary track's seque
 
 ## 5. Release watch (`tools/release-watch.mjs`)
 
-Two axes. `npm view @anthropic-ai/claude-code version` vs the stored harness, and — with `--models`
-and an API key — `GET /v1/models` vs the stored id list. State is JSON `{ harness, models[] }`
+Two axes. `npm view @anthropic-ai/claude-code version` vs the stored harness, and (with `--models`
+and an API key) `GET /v1/models` vs the stored id list. State is JSON `{ harness, models[] }`
 (`.release-watch.json` on the results branch; a legacy plain-text `.claude-code-version` is read as
 `{ harness }`). Prints `changed=`, `reason=harness|model|both|none`, `version=`, `previous=`,
 `new_models=`, `retired_models=`, and with `--pin <id>` `pin_retired=true|false`. The first model
@@ -199,7 +199,7 @@ snapshot is not a change. The workflow's `watch` job runs the canary on schedule
 `budget.per_month_usd`; refuse (`reason=interval`) when a *scheduled canary* is sooner than
 `canary.min_interval_hours` after `streak.lastRunAt`. `--force` on a `workflow_dispatch` bypasses both.
 `record`: adds a run's cost, track, harness, resolved models and URL to the ledger (per-month totals,
-last 200 runs). A skip is a notice in the job summary and exit 0 — never a red check.
+last 200 runs). A skip is a notice in the job summary and exit 0, never a red check.
 
 ## 5b. Canary promotion (`tools/canary-promote.mjs`)
 
@@ -219,8 +219,8 @@ rule per hook event/matcher. Ids are `<scope>/<first-six-words>` (`claude-md/…
 `hook/<event>-<matcher>`), deduplicated. Cases claim rules with `covers:`; the tool reports
 covered/uncovered/unknown ids, writes `coverage.json`, a markdown block (in the job summary) and an
 SVG badge (`docs/coverage.svg` on the results branch). No agent runs. `--fail-under N` exits 1 when
-coverage is under N% (null pct — a plugin with no rules — never fails); the Action's `coverage-min`
-input wires it into the check.
+coverage is under N% (a null pct, meaning a plugin with no rules, never fails); the Action's
+`coverage-min` input wires it into the check.
 
 ## 5d. HTML report (`tools/eval-report.mjs`)
 
@@ -234,7 +234,7 @@ the score table (baseline / score / Δ / noise / without-plugin / Δ-plugin / tu
 evaluates, and run cards in three states (green pass, amber truncated-but-passed, red failed, grey
 errored) with grader chips (hover = type + reason), judge reasons (open on failed runs), tool calls,
 changed files, full response. "Failing and flagged runs only" toggle. No script dependencies,
-theme-aware. Cases are classified by `eval-classify.mjs` — with `--history <dir>` (the results
+theme-aware. Cases are classified by `eval-classify.mjs`. With `--history <dir>` (the results
 branch's `history/`, newest `noise.history_runs` same-track runs older than this run) a drop inside
 the case's noise band is **noisy** (amber ⚠, never red), with the noise column, footer notes and the
 baseline-quality block mirroring the PR-comment markdown; each case header carries a sparkline of its
@@ -248,9 +248,9 @@ Reads a history directory (the results branch's `history/*.json`, or a local `ev
 optionally `--baseline`, `--spend`, `--streak`, `--coverage`, `--config`. Writes one HTML file: the
 verdict across tracks (*holding at baseline*, *baseline holding · canary red*, *canary regressed*,
 *latest run errored*, *noisy — within the historical band*), the stamp (latest run, baseline model/version/date, latest canary and streak,
-Claude Code versions seen, budget spent vs cap with a meter, coverage, total cost), the **ribbon** —
-one row per case, one cell per run, filled for pinned runs and outlined for canaries, coloured by
-verdict — the SVG line chart of score per case over Claude Code versions with canary runs shaded,
+Claude Code versions seen, budget spent vs cap with a meter, coverage, total cost), the **ribbon**
+(one row per case, one cell per run, filled for pinned runs and outlined for canaries, coloured by
+verdict), the SVG line chart of score per case over Claude Code versions with canary runs shaded,
 and the run list with track, version, model, per-case scores, cost and a link to each run's report.
 Every run's cases are classified by `eval-classify.mjs` with the baseline + the preceding same-track
 runs as the noise evidence, so a cell the diff would call noisy is amber here too, never red. Chart
@@ -280,6 +280,6 @@ Written by the Action with a bot identity; one commit per run. The branch is pla
 ## 7. Known limitations
 
 `tool_order`, `baseline`, `history_file`, `add_dirs`, MCP mocks not implemented in the shim; LLM
-grader single vote; no parallelism (sequential runs — ~30 s each for short cases); `repair` and the
+grader single vote; no parallelism (sequential runs of roughly 30 s each for short cases); `repair` and the
 official-runner path are exercised on real accounts only, not by the test suite (which drives the shim
 with a fake `claude`); Claude-only (`agent:` is reserved for Codex/Gemini adapters).

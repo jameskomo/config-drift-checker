@@ -1,6 +1,6 @@
 # Architecture
 
-## Overview — GitHub Action, no backend
+## Overview: GitHub Action, no backend
 
 ```mermaid
 flowchart LR
@@ -42,7 +42,7 @@ flowchart LR
   RB --> PM --> PR
   E & P --> CV --> RB & SUM
   RB --> DI
-  API[(Anthropic API<br/>your key — BYOK)] -.-> OFF & SHIM
+  API[(Anthropic API<br/>your key, BYOK)] -.-> OFF & SHIM
 ```
 
 **Components**
@@ -59,7 +59,7 @@ flowchart LR
 | `config-coverage.mjs` | rules in CLAUDE.md / skills / hooks vs the cases' `covers:` → coverage JSON, markdown, badge | `coverage.json` |
 | `eval-report.mjs` | aggregate-result.json (+ baseline) → self-contained HTML report | none |
 | `eval-dashboard.mjs` | history (+ baseline, spend, streak, coverage) → the drift index | none |
-| results branch | history, baseline, ledger, streak, dashboards — without a database | git |
+| results branch | history, baseline, ledger, streak, dashboards, all without a database | git |
 
 **Trust boundaries**
 
@@ -67,8 +67,8 @@ flowchart LR
   tools make themselves are `npm view` and `GET /v1/models` with your key (the watch job).
 - Prompts, transcripts, and files created by the agent stay in your runner and results
   branch (you choose whether that branch is in a private repo).
-- The action runs `case.yaml` `scaffold_script` only when `scaffold: true` — same gate as the
-  official runner; never run suites you didn't author with scaffold on.
+- The action runs `case.yaml` `scaffold_script` only when `scaffold: true` (the same gate as the
+  official runner); never run suites you didn't author with scaffold on.
 - PRs the Action opens (bump, pin, repair) are never auto-merged and need the repo to allow Actions
   to create PRs; otherwise the branch is pushed and a warning tells you to open it.
 
@@ -76,7 +76,7 @@ flowchart LR
 
 | | pinned | canary |
 |---|---|---|
-| model | `model.pinned` — an exact id | `model.canary` — an alias, resolved at run time |
+| model | `model.pinned`: an exact id | `model.canary`: an alias, resolved at run time |
 | Claude Code | `harness.pinned` | `latest` |
 | when | push/PR to the setup, manual | schedule, only when npm or the model list moved, at most every `min_interval_hours` |
 | runs | case default (3) | 1, +2 on deviation |

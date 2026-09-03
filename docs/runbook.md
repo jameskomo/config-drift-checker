@@ -8,7 +8,7 @@
 2. Secrets: `ANTHROPIC_API_KEY` (an API key from console.anthropic.com with prepaid credit), optional
    `SLACK_WEBHOOK_URL`. Repo settings: workflow permissions *Read and write*, and *Allow GitHub Actions
    to create and approve pull requests* (for bump/pin/repair PRs).
-3. Write cases under `<plugin>/evals/` — start with three: one positive skill case, one
+3. Write cases under `<plugin>/evals/`. Start with three: one positive skill case, one
    negative-trigger case, one hook case with a `case.yaml` scaffold. If the repo ignores `.claude/`
    (`git check-ignore -v .claude/evals/x`), keep the plugin files under `agent-config/` instead and
    set `experimental.evals` in the manifest. Real-code cases: scaffold copies the real source and
@@ -24,7 +24,7 @@
 
 ```
 <plugin>/evals/results/<timestamp>/
-  aggregate-result.json   # the data (schemaVersion 1.1) — what eval-diff, --regrade and the Action read
+  aggregate-result.json   # the data (schemaVersion 1.1): what eval-diff, --regrade and the Action read
   report.html             # the same data as a self-contained page, generated from the JSON
 ```
 
@@ -38,8 +38,8 @@ report under `docs/`. One file, no server, opens from disk (Google Fonts if onli
 ## Daily operation
 
 Nothing. On push/PR to the setup the **pinned** track runs and sets the check. On the schedule the
-`watch` job checks npm and the model list; if something shipped, the **canary** runs — at most once per
-`canary.min_interval_hours`, never past `budget.per_month_usd`. Read the job summary; regressions also
+`watch` job checks npm and the model list; if something shipped, the **canary** runs, at most once per
+`canary.min_interval_hours` and never past `budget.per_month_usd`. Read the job summary; regressions also
 arrive on Slack; two green canaries on a new model/version arrive as a **bump PR**.
 
 ## When a case goes red
@@ -49,7 +49,7 @@ arrive on Slack; two green canaries on a new model/version arrive as a **bump PR
    Locally the same file is written as `report.html` next to each `aggregate-result.json`.
 2. Read the stamp first: did the **model** or **Claude Code** move since the baseline? On the pinned
    track neither should have (if they did, the pins in `.cdc.yml` are not what the baseline was
-   measured on — fix the pins). On the canary, a move is the point.
+   measured on; fix the pins). On the canary, a move is the point.
 3. Classify:
    - **Real regression** (behaviour changed after a Claude Code/model change) → keep the pins, adapt
      the setup (or `/config-drift-checker:repair`, or `repair: true` on the Action), write it up.
@@ -76,8 +76,8 @@ next pinned run on the new pins is then the baseline you promote).
 |---|---|
 | `budget.per_month_usd` in `.cdc.yml` | the ceiling. Past it the Action skips with a notice; `force: true` on a manual run overrides |
 | `budget.per_run_usd` | the runner stops starting runs mid-suite; what ran is kept |
-| `canary.min_interval_hours` | coalesces release bursts (25 versions/month observed) into ≤ ~10 canaries |
-| `canary.runs: 1` + `expand_on_deviation: 2` | one run per case; three only when something looks wrong (~3× cheaper canaries) |
+| `canary.min_interval_hours` | coalesces release bursts (25 versions/month observed) into at most about 10 canaries |
+| `canary.runs: 1` + `expand_on_deviation: 2` | one run per case; three only when something looks wrong (about 3× cheaper canaries) |
 | `ablation: none` in CI | halves cost; keep `with-without` for one-off proof |
 | `runs` per case | 3 default on pinned; 5 for flaky/critical hook cases; 1 for smoke on PRs |
 | `model: haiku` for PR smoke, the pin for baseline runs | 5–10× cheaper smoke |
@@ -100,7 +100,7 @@ node tools/canary-promote.mjs --config komo-stack --result current.json --streak
 node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json   # when enabled
-cd config-drift-checker && npm test                                  # 42 tests, no API key needed
+cd config-drift-checker && npm test                                  # 71 tests, no API key needed
 ```
 
 ## Troubleshooting

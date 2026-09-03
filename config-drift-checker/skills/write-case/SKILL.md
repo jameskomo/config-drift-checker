@@ -9,9 +9,9 @@ Layout: `<plugin>/evals/<case-dir>/prompt.md`, `graders/<name>.md`, optional `ca
 
 **prompt.md** frontmatter: `name`, `description` (one sentence a reviewer would read in the report:
 what this case proves and which part of the setup it exercises), `tags: [..]`, `covers: [..]` (the
-rule ids this case exercises — `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list`
+rule ids this case exercises; `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list`
 prints them; a negative-trigger case covers nothing, that is correct). Target ids the `--list`
-output marks `·` (uncovered) before adding a second case for a `✓` one — every new case should move
+output marks `·` (uncovered) before adding a second case for a `✓` one. Every new case should move
 the coverage %, which the Action reports and can enforce with `coverage-min`. `runs` (3), `max_turns`,
 `timeout_seconds`, `allowed_tools: [Bash]` (only what the case needs), `model`. Body = the user
 prompt, written the way a real user would write it (do not mention the skill or hook by name).
@@ -24,20 +24,20 @@ prompt, written the way a real user would write it (do not mention the skill or 
 Body = one sentence a reviewer would understand.
 
 **case.yaml** (`schema_version: "1.1"`): `context.scaffold_script` (bash; give the agent a state
-to act on — a git repo, a file, a branch), `context.add_dirs` (fixtures).
+to act on: a git repo, a file, a branch), `context.add_dirs` (fixtures).
 
 ## Rules that came from real failures
 1. `not_contains` graders must match **code position** (`^\s*@Autowired`, flag `m`), never a
-   word that can appear in prose — the model will say "I avoided X".
+   word that can appear in prose, because the model will say "I avoided X".
 2. A negative-trigger case (`tool_used: Skill, max: 0, arm: both`) for every skill.
 3. Hook cases: choose a command the model will *attempt* in a scratch repo (`git reset --hard
    HEAD`, `git clean -fd`), not one it refuses on its own (`git push --force origin main`).
    Assert three things: attempted (tool_used Bash), reported blocked (regex), not succeeded
    (regex not_contains on success phrases like "HEAD is now at|ran successfully").
-4. `tool_used: Skill` graders are indicators under ablation, not score — that is correct; add
+4. `tool_used: Skill` graders are indicators under ablation, not score. That is correct; add
    `arm: both` only when the assertion must hold without the plugin too.
 5. Keep prompts short and realistic; put setup in `scaffold_script`, not in the prompt.
-6. Regex over Java/TS: never rely on `name\([^)]*\)` to find a method — parameter annotations
+6. Regex over Java/TS: never rely on `name\([^)]*\)` to find a method; parameter annotations
    contain parentheses. Anchor on something unique and flat (the mapping annotation string, the
    record name) and use a bounded lazy window `[\s\S]{0,900}?`.
 7. Test every regex against a hand-written snippet of the expected code with `node -e` **before**
@@ -50,5 +50,5 @@ to act on — a git repo, a file, a branch), `context.add_dirs` (fixtures).
    workspace unless the binary is stubbed. Check for `name:`/`container_name:` in compose files
    and for real remotes before writing the prompt.
 9. Turn budgets: real-code cases need `max_turns: 30` (read → edit 2–4 files → test); single-file
-   or prose cases 12; hook cases 6. Runs that hit the cap are scored as-is and flagged TRUNCATED —
+   or prose cases 12; hook cases 6. Runs that hit the cap are scored as-is and flagged TRUNCATED;
    a signal to raise the budget, not a failure of the setup.

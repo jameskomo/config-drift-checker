@@ -101,5 +101,7 @@ jobs:
           if [ -z "$(git status --porcelain docs/drift)" ]; then echo "drift index unchanged"; exit 0; fi
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
-          # main may have moved during the run (e.g. a release commit): rebase our docs-only commit and retry
-          for i in 1 2 3; do git push -q origin HEAD:main && break; git fetch -q origin main && git rebase -q origin/main || exit 1; sleep 3; done
+          # main may have moved during the run (e.g. a release commit, or an earlier publish): rebase our
+          # docs-only commit and retry. Everything in it is generated output, so content conflicts resolve
+          # in favour of our (newer) generation: in rebase, -X theirs means the commit being replayed.
+          for i in 1 2 3; do git push -q origin HEAD:main && break; git fetch -q origin main && git rebase -q -X theirs origin/main || { git rebase --abort; exit 1; }; sleep 3; done

@@ -26,11 +26,11 @@ node ${CLAUDE_PLUGIN_ROOT}/tools/release-watch.mjs --state .release-watch.json -
 - If the official runner is enabled (`claude plugin eval` in an empty dir prints "No eval cases
   found"), prefer `claude plugin eval <plugin> --allow-tools Bash --scaffold --json out.json`.
 
-## Explaining red — read the run, not the score
+## Explaining red: read the run, not the score
 
 For each failing case open the run entries in the JSON: `numTurns`, `toolUses`, `response`,
 per-grader `verdict`. Classify and say which:
 1. **Model refused before acting** (1 turn, 0 tool calls) → the case doesn't exercise the hook; change the command/scaffold.
-2. **Hook/skill didn't fire** (tool attempted, no block / no Skill call) → real regression or config change — the report's stamp says whether the model or Claude Code moved; offer `/config-drift-checker:repair`.
+2. **Hook/skill didn't fire** (tool attempted, no block / no Skill call) → real regression or config change; the report's stamp says whether the model or Claude Code moved. Offer `/config-drift-checker:repair`.
 3. **Grader wrong** (prose matched, negative grader with min=1) → fix the grader, not the setup.
 4. **Flaky** (mixed verdicts across runs) → raise `runs`; never loosen the threshold.

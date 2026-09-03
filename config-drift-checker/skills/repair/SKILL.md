@@ -10,16 +10,16 @@ restore the behaviour with the smallest possible edit and prove it with a re-run
 
 ## Inputs (all paths are given in the request)
 
-- **Plugin under test** — the directory with `.claude-plugin/plugin.json`; its `CLAUDE.md`, `skills/**`,
+- **Plugin under test**: the directory with `.claude-plugin/plugin.json`; its `CLAUDE.md`, `skills/**`,
   `hooks/**` are the only files you may change.
-- **Failing report** — `aggregate-result.json` of the red run. **Diff vs baseline** — the markdown table.
-  **Baseline** — the last green `aggregate-result.json`.
-- **Shim** — `eval-shim.mjs`. **Budget** — the most you may spend on verification runs (USD).
-- **Summary path** — where to write `repair-summary.md`.
+- **Failing report**: `aggregate-result.json` of the red run. **Diff vs baseline**: the markdown table.
+  **Baseline**: the last green `aggregate-result.json`.
+- **Shim**: `eval-shim.mjs`. **Budget**: the most you may spend on verification runs (USD).
+- **Summary path**: where to write `repair-summary.md`.
 
 ## Hard rules
 
-1. Never edit anything under `evals/` — not prompts, not graders, not `case.yaml`. A grader that looks wrong
+1. Never edit anything under `evals/`: not prompts, not graders, not `case.yaml`. A grader that looks wrong
    goes in the summary as a finding, not a fix.
 2. Never loosen a rule to make a case pass ("archive instead of delete" does not become "delete is fine").
    Restoring a behaviour means making the instruction land again on the current model/version: sharper wording,
@@ -41,14 +41,14 @@ restore the behaviour with the smallest possible edit and prove it with a re-run
    `PreToolUse` hook if prose is structurally unreliable for a must-never rule.
 4. **Verify**: `node <shim> <plugin> --case <dir> --runs 2 --ablation none --scaffold --budget <remaining>
    --output-dir <tmp>`. Green = every run scores 1.00 on the scored graders. Compare cost/turns to the baseline
-   too — a fix that doubles turns is not a fix.
+   too; a fix that doubles turns is not a fix.
 5. Up to **two** attempts. If the second is not green, revert your edits (`git checkout -- <plugin-dir>` or
    undo them by hand) and write a summary that says what you tried and what you learned.
 6. **Write `repair-summary.md`** (this becomes the PR body):
 
 ```
 ## What drifted
-<case> — <one sentence: what the agent did vs what the setup requires>, since Claude Code <from> → <to> / model <from> → <to>.
+<case>: <one sentence: what the agent did vs what the setup requires>, since Claude Code <from> → <to> / model <from> → <to>.
 
 ## The change
 <file>: <one sentence per edit, and why this wording>
