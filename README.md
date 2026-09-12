@@ -68,9 +68,34 @@ Three things ride on top of that core:
 quality (it tests your configuration on your tasks), or a hosted service (it runs on your machine
 and your CI with your key; nothing is sent anywhere).
 
-It works with any codebase, because it tests the agent's behaviour rather than your app. It uses the
-official runner automatically where `claude plugin eval` is enabled, and a bundled runner otherwise.
+It works with any codebase, because it tests the agent's behaviour rather than your app. It is
+built on Anthropic's official `claude plugin eval`: cases are in that exact format and run under
+the official runner where available, with a bundled runner for older Claude Code versions.
 Zero npm dependencies; 72 tests run against a fake `claude`, so the suite needs no API key.
+
+## How this relates to `claude plugin eval`
+
+Claude Code ships an eval runner, and it's good: it runs your cases, grades them with the same
+grader types, generates starter cases with `init`, runs the no-plugin ablation arm by default, and
+writes an HTML report. We build on it, not beside it. Write your cases once, in the official
+format; run them ad hoc with the built-in command; add this when you want CI that remembers.
+
+| | `claude plugin eval` (built in) | config-drift-checker |
+|---|---|---|
+| Run cases, grade, report on one run | yes, and it's the runner we build on | uses it |
+| Generate starter cases | `init` | `/config-drift-checker:setup`, same format |
+| A stored baseline to diff against | no, you compare runs by eye | pinned baseline, promoted deliberately |
+| History across releases | no, the docs advise pinning your model | every run kept; a drift index of every case over every version |
+| Flake vs break | no, a noisy case just fails sometimes | per-case noise bands learned from history, with guards so a real break can't hide in the band |
+| Watching Claude Code and model releases | no | release watch plus a canary track, throttled by your budget |
+| Pin bump PRs | no | two green canaries open a PR with the runs attached |
+| Red check, PR comment, Slack alert | exit code | all three |
+| Spend control | a per-run ceiling flag | per-run and per-month caps in `.cdc.yml`, enforced from a ledger |
+| Coverage of your rules | no | percent, badge, and a `coverage-min` gate |
+| Repair proposal on red | no | a PR with the smallest setup change that restores the behaviour, re-run as proof |
+
+One sentence version: their command answers "does my plugin work right now on my machine"; this
+answers "did anything stop working since the baseline, across every release, without me watching".
 
 **What it costs to run:** on a Claude Pro/Max plan, nothing extra. `claude setup-token` gives CI a
 subscription token, and eval runs then spend no API credit. On an API key, `.cdc.yml` caps spend per
