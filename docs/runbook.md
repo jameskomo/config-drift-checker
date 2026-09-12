@@ -110,6 +110,7 @@ cd config-drift-checker && npm test                                  # 72 tests,
 | Symptom | Cause | Fix |
 |---|---|---|
 | `claude plugin eval` not found / errors | Claude Code older than 2.1.269 | Action falls back to the bundled runner automatically; upgrade Claude Code to use the official one |
+| "pages build and deployment" shows **cancelled** | several commits landed on main within a minute (a release bump, the drift index); GitHub cancels superseded Pages builds and deploys only the newest | nothing — check that the most recent Pages run succeeded; only a **failed** newest run needs action |
 | shim run `isError: true`, `stderrTail` mentions auth or credit | no key in CI / no credentials locally / no prepaid credit | set the secret (or `CLAUDE_CODE_OAUTH_TOKEN`); locally the shim copies `~/.claude/.credentials.json`; top up at console.anthropic.com → Billing |
 | job summary says **skipped: budget** | month's ledger reached `budget.per_month_usd` | raise the cap, wait for next month, or re-run manually with `force: true` |
 | job summary says **skipped: interval** | scheduled canary sooner than `canary.min_interval_hours` | nothing; push/PR/manual runs are never throttled |
