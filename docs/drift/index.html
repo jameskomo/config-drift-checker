@@ -11,6 +11,7 @@ a{color:inherit;text-decoration:none}a:hover{color:var(--track)}.wrap{max-width:
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}.eyebrow b{color:var(--track);font-weight:600}
 h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-weight:600;display:flex;gap:14px;align-items:baseline}h1 .mark{font-size:26px}h1.pass .mark{color:var(--pass)}h1.fail .mark{color:var(--fail)}h1.warn .mark{color:var(--warn)}h1.muted .mark{color:var(--muted)}
 .lede{font-size:16px;color:var(--muted);margin:0;max-width:58ch}
+.obs{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:70ch}.obs a{color:inherit}
 .stamp{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px;box-shadow:var(--shadow);position:relative}.stamp::before{content:"";position:absolute;inset:6px;border:1px dashed var(--rule);border-radius:5px;pointer-events:none}
 .stamp dt{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;padding-top:2px}.stamp dd{margin:0}.stamp b{font-weight:600}.from{color:var(--muted)}
 .meter{display:block;width:100%;max-width:220px;height:6px;background:var(--code);border-radius:3px;margin-top:5px;overflow:hidden}.meter i{display:block;height:100%;background:var(--pass)}.meter i.warn{background:var(--warn)}.meter i.fail{background:var(--fail)}
@@ -32,7 +33,8 @@ th.case{writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;vertic
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>komo-stack</b> · drift index</p>
     <h1 class="pass"><span class="mark">●</span><span>Canary green · baseline holding</span></h1>
-    <p class="lede">6 cases across 22 runs and 5 Claude Code versions. The canary is 1 green into a streak of 2.</p></div>
+    <p class="lede">6 cases across 22 runs and 5 Claude Code versions. The canary is 1 green into a streak of 2.</p>
+    <p class="obs">A live observatory: this suite re-runs on every Claude Code release, 5 versions covered so far. Updated 2026-09-06 20:25. <a href="https://github.com/jameskomo/config-drift-checker/releases">Get alerts (watch releases)</a> · <a href="https://github.com/jameskomo/config-drift-checker#quick-start">Run this on your own setup</a></p></div>
   <dl class="stamp"><dt>latest</dt><dd><b>2026-09-06 20:25</b> <span class="from">canary</span></dd><dt>baseline</dt><dd><b>claude-sonnet-5</b> <span class="from">cc 2.1.258 · 2026-09-03</span></dd><dt>canary</dt><dd><b>claude-sonnet-5</b> <span class="from">cc 2.1.263 · 2026-09-06 20:25</span> <span class="from">· 1 / 2 greens</span></dd><dt>claude code</dt><dd><b>2.1.263</b> <span class="from">5 seen</span></dd><dt>budget</dt><dd><b>$5.43</b> <span class="from">of $5 this month</span> <span class="from">· 8 runs</span><span class="meter"><i style="width:100%" class="fail"></i></span></dd><dt>coverage</dt><dd><b class="pass">100%</b> <span class="from">11 of 11 rules have a case</span></dd><dt>total cost</dt><dd><b>$11.02</b> <span class="from">22 runs</span></dd></dl>
 </header>
 <h2>Every case, every run</h2>
