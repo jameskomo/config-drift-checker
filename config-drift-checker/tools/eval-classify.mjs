@@ -11,6 +11,32 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { loadConfig, resolveTrack } from './cdc-config.mjs';
 
+// Native `claude plugin eval` results (schemaVersion 1 with a `suite` block) normalize into the
+// shim's 1.1 shape so diff/report/dashboard read either. The native runner keeps tool calls and
+// the response in a temp trace that is gone by the time we read the JSON, so toolUses/response
+// stay null here: unknown, not zero — refusal detection needs inline evidence and skips these runs.
+export function normalizeResult(j) {
+  if (!j || j.schemaVersion !== 1 || !j.suite || !Array.isArray(j.cases)) return j;
+  const run = (r) => ({
+    score: r.score ?? null, isError: !!r.error, numTurns: r.turns ?? null,
+    toolUses: null, response: null, costUsd: r.costUsd ?? null,
+    durationMs: typeof r.durationSeconds === 'number' ? r.durationSeconds * 1000 : null,
+    graders: r.graders ?? [], startedAt: r.startedAt ?? null,
+  });
+  return {
+    schemaVersion: '1.1', source: 'claude-plugin-eval', generatedAt: j.startedAt ?? null,
+    track: j.track ?? null, harness: j.claudeVersion ? { name: 'claude-code', version: j.claudeVersion } : null,
+    suite: { name: j.suite.root ? path.basename(j.suite.root) : 'claude-plugin-eval', ablation: j.suite.ablation ?? null },
+    cases: j.cases.map((c) => ({
+      dir: String(c.dir ?? c.name ?? '').split('/').pop(), name: c.name ?? c.dir,
+      tags: c.tags ?? [], covers: c.covers ?? [], graders: c.graders ?? [],
+      arms: Object.fromEntries(Object.entries(c.arms ?? {}).map(([a, rs]) => [a, (rs ?? []).map(run)])),
+      summary: { score: c.aggregates?.score ?? null },
+    })),
+    aggregates: { overallScore: j.aggregates?.overallScore ?? null, totalRuns: j.cases.reduce((n, c) => n + Object.values(c.arms ?? {}).reduce((m, rs) => m + (rs?.length ?? 0), 0), 0), erroredRuns: j.cases.reduce((n, c) => n + Object.values(c.arms ?? {}).flat().filter((r) => r?.error).length, 0), costUsd: j.costUsd ?? null },
+  };
+}
+
 export const key = (c) => c.dir ?? c.name;
 export const caseScore = (c) => c.summary?.score ?? null;
 export const withRuns = (c) => (c.arms?.with ?? []).filter((r) => !r.isError);
@@ -44,7 +70,7 @@ export async function loadHistory(dir, { exclude = null, track = null, limit = 1
     const p = path.join(dir, n);
     if (exclude && p === exclude) continue;
     try {
-      const j = JSON.parse(await fs.readFile(p, 'utf8'));
+      const j = normalizeResult(JSON.parse(await fs.readFile(p, 'utf8')));
       if (track && j.track && j.track !== track) continue;
       if (before && j.generatedAt && j.generatedAt >= before) continue;
       out.push(j);

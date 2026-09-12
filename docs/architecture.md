@@ -15,7 +15,7 @@ flowchart LR
     G[gate<br/>cdc-gate.mjs: budget · interval]
     A[action/action.yml]
     R{runner}
-    OFF[claude plugin eval<br/>official, if enabled]
+    OFF[claude plugin eval<br/>official, preferred]
     SHIM[tools/eval-shim.mjs<br/>claude -p per run · track · budget]
     D[eval-diff.mjs<br/>score + efficiency drift]
     PM[canary-promote.mjs<br/>streak → bump / pin]
@@ -55,6 +55,7 @@ flowchart LR
 | `action.yml` | config → coverage → results → gate → install pinned Claude Code → detect runner → run → diff → report → store → PR → repair → notify → exit | none (stateless per run) |
 | `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance | temp dirs only |
 | `eval-diff.mjs` | baseline vs current → score drift and efficiency drift → markdown + JSON + exit code by `fail_on` | none |
+| `eval-classify.mjs` | the shared per-case verdict (noise band, escalations) used by diff, report and dashboard; `normalizeResult()` maps official-runner JSON (v1) to the 1.1 shape at load, so all three read either | none |
 | `canary-promote.mjs` | green streak on the same model+version → bump decision; unpinned green pinned run → pin decision; PR title/body | `canary/streak.json` |
 | `config-coverage.mjs` | rules in CLAUDE.md / skills / hooks vs the cases' `covers.yaml` → coverage JSON, markdown, badge | `coverage.json` |
 | `eval-report.mjs` | aggregate-result.json (+ baseline) → self-contained HTML report | none |

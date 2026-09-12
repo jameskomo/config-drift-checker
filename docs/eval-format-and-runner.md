@@ -130,10 +130,17 @@ missing) · `init` (starter file with comments). The user guide documents every 
 }
 ```
 
-The official runner's JSON has the same top-level keys and per-run/per-grader shape (v1); the shim
-adds the provenance block (`agent`, `track`, `harness`, `judge`, `config`), `covers`, `durationMs`,
-`truncated`, `resolvedModels` and `budget`. The Action stamps `track`/`harness`/`judge` onto official
-output so the diff, store and promote steps can reason about it. Readers treat missing fields as unknown.
+The official runner's JSON (`schemaVersion: 1`, shipped in Claude Code 2.1.269) is close but not
+identical: runs carry `turns` (not `numTurns`), `durationSeconds`, `passed` and a `tracePath`
+instead of inline `toolUses`/`response` (the trace is a temp file, gone once the command exits),
+case `dir` keeps an `evals/` prefix, and per-case scores live in `aggregates`. `normalizeResult()`
+in `eval-classify.mjs` maps all of that into the 1.1 shape at load time, so eval-diff, eval-report
+and eval-dashboard read either format directly, including mixed history. Two consequences of the
+missing trace: refusal labelling needs inline tool/response evidence and never fires on native
+runs, and `tool_used`-style retroactive analysis only works on shim results. One CLI difference:
+the official `--case` glob matches the case's `name:`, the shim's matches the directory. The
+Action stamps `track`/`harness`/`judge` onto official output so the diff, store and promote steps
+can reason about it. Readers treat missing fields as unknown.
 
 ## 4. Diff (`tools/eval-diff.mjs`)
 

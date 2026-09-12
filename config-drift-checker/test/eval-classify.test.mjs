@@ -84,3 +84,32 @@ test('resolveThresholds: flag > .cdc.yml > default', async () => {
   assert.equal(c.th.score, 0.5); assert.equal(c.historyRuns, 4); assert.equal(c.minBaselineRuns, 2);
   assert.equal(resolveThresholds(plugin, 'pinned', { threshold: 0.2 }).th.score, 0.2, 'flag wins');
 });
+
+test('normalizeResult: native claude plugin eval JSON maps to the 1.1 shape; 1.1 passes through', async () => {
+  const { normalizeResult } = await import('../tools/eval-classify.mjs');
+  const native = {
+    schemaVersion: 1, claudeVersion: '2.1.269', startedAt: '2026-09-12T04:34:42.171Z', costUsd: 0.14,
+    suite: { root: '/x/komo-stack', ablation: 'none' },
+    aggregates: { casesTotal: 1, casesPassed: 1, overallScore: 1, overallPassRate: 1 },
+    cases: [{
+      name: 'Spring work triggers the conventions skill', dir: 'evals/spring-work-triggers-skill',
+      aggregates: { score: 1, passRate: 1 }, runsPerCase: 1, maxTurns: 6,
+      graders: [{ name: 'skill-fired', type: 'tool_used' }],
+      arms: { with: [{ score: 1, passed: true, turns: 3, costUsd: 0.14, durationSeconds: 16, startedAt: '2026-09-12T04:34:42.171Z', error: null, tracePath: '/tmp/gone/trace.jsonl', graders: [{ name: 'skill-fired', passed: true, scored: true }] }] },
+    }],
+  };
+  const n = normalizeResult(native);
+  assert.equal(n.schemaVersion, '1.1');
+  assert.equal(n.source, 'claude-plugin-eval');
+  assert.equal(n.harness.version, '2.1.269');
+  const c = n.cases[0];
+  assert.equal(c.dir, 'spring-work-triggers-skill', 'evals/ prefix stripped so keys match shim results');
+  assert.equal(c.summary.score, 1);
+  const r = c.arms.with[0];
+  assert.equal(r.numTurns, 3); assert.equal(r.durationMs, 16000); assert.equal(r.isError, false);
+  assert.equal(r.toolUses, null, 'unknown, not zero — the trace is gone');
+  assert.equal(r.response, null);
+  assert.equal(n.aggregates.totalRuns, 1); assert.equal(n.aggregates.erroredRuns, 0);
+  const ours = { schemaVersion: '1.1', track: 'pinned', cases: [] };
+  assert.equal(normalizeResult(ours), ours, '1.1 results pass through untouched');
+});

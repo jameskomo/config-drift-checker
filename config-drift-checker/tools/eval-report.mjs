@@ -12,7 +12,7 @@
 import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { key, median, caseMap, classifyCase, baselineWarnings, resolveThresholds, loadHistory } from './eval-classify.mjs';
+import { key, median, caseMap, classifyCase, baselineWarnings, resolveThresholds, loadHistory, normalizeResult } from './eval-classify.mjs';
 
 export function renderReport(cur, base = null, opt = {}) {
   const th = { score: opt.threshold ?? opt.thresholds?.score ?? 0.15, turns: opt.thresholds?.turns ?? 0.5, cost: opt.thresholds?.cost ?? 0.5, duration: opt.thresholds?.duration ?? 0.5 };
@@ -248,8 +248,8 @@ if (isMain) {
   const argv = process.argv.slice(2); let curPath = null, basePath = null, out = null, threshold = null, configDir = null, historyDir = null;
   for (let i = 0; i < argv.length; i++) { if (argv[i] === '--baseline') basePath = argv[++i]; else if (argv[i] === '--out') out = argv[++i]; else if (argv[i] === '--threshold') threshold = Number(argv[++i]); else if (argv[i] === '--config') configDir = argv[++i]; else if (argv[i] === '--history') historyDir = argv[++i]; else if (!argv[i].startsWith('--')) curPath = argv[i]; }
   if (!curPath) { console.error('usage: eval-report.mjs <current.json> [--baseline b.json] [--out report.html] [--threshold 0.15] [--config <plugin-dir>] [--history dir]'); process.exit(2); }
-  const cur = JSON.parse(await fs.readFile(curPath, 'utf8'));
-  const base = basePath ? JSON.parse(await fs.readFile(basePath, 'utf8')) : null;
+  const cur = normalizeResult(JSON.parse(await fs.readFile(curPath, 'utf8')));
+  const base = basePath ? normalizeResult(JSON.parse(await fs.readFile(basePath, 'utf8'))) : null;
   const { th, historyRuns, minBaselineRuns } = resolveThresholds(configDir ? path.resolve(configDir) : null, cur.track, { threshold });
   const history = historyDir ? await loadHistory(path.resolve(historyDir), { exclude: path.resolve(curPath), track: cur.track, limit: historyRuns, before: cur.generatedAt ?? null }) : null;
   const html = renderReport(cur, base, { thresholds: th, history, minBaselineRuns });

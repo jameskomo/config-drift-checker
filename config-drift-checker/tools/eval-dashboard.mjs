@@ -11,12 +11,12 @@
 // (noise band from the baseline + preceding same-track runs) — the same verdicts as eval-diff.
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
-import { key, caseMap, classifyCase } from './eval-classify.mjs';
+import { key, caseMap, classifyCase, normalizeResult } from './eval-classify.mjs';
 
 const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null };
 for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
 if (!opt.dir) { console.error('usage: eval-dashboard.mjs <history-dir> [--baseline b.json] [--reports dir] [--out dashboard.html] [--spend s.json] [--streak s.json] [--coverage c.json] [--config <plugin-dir>]'); process.exit(2); }
-const readJson = async (p) => (p && existsSync(p) ? JSON.parse(await fs.readFile(p, 'utf8')) : null);
+const readJson = async (p) => (p && existsSync(p) ? normalizeResult(JSON.parse(await fs.readFile(p, 'utf8'))) : null);
 
 const outPath = opt.out ?? path.join(path.resolve(opt.dir), 'dashboard.html');
 const relReports = opt.reports ? path.relative(path.dirname(path.resolve(outPath)), path.resolve(opt.reports)) : '';
@@ -27,7 +27,7 @@ for (const e of await fs.readdir(opt.dir, { withFileTypes: true })) {
   else if (e.isDirectory() && existsSync(path.join(opt.dir, e.name, 'aggregate-result.json'))) f = path.join(opt.dir, e.name, 'aggregate-result.json');
   if (!f) continue;
   try {
-    const j = JSON.parse(await fs.readFile(f, 'utf8')); if (!j.cases) continue;
+    const j = normalizeResult(JSON.parse(await fs.readFile(f, 'utf8'))); if (!j.cases) continue;
     const m = id.match(/cc([\d.]+)/);
     runs.push({ id, at: j.generatedAt ?? id, cc: j.harness?.version ?? (m ? m[1] : null), track: j.track ?? (/-canary$/.test(id) ? 'canary' : /-pinned$/.test(id) ? 'pinned' : null), runner: j.shim ? 'shim' : 'official', models: j.aggregates?.resolvedModels ?? [...new Set(j.cases.flatMap((c) => (c.arms?.with ?? []).map((r) => r.model)).filter(Boolean))], json: j, report: opt.reports && existsSync(path.join(opt.reports, id + '.html')) ? (relReports ? relReports + '/' : '') + id + '.html' : null });
   } catch {}

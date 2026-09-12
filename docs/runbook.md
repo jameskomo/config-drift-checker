@@ -99,7 +99,8 @@ node tools/cdc-gate.mjs check --config komo-stack --track canary --spend spend.j
 node tools/canary-promote.mjs --config komo-stack --result current.json --streak canary/streak.json --regressed 0
 node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
-claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json   # when enabled
+claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
+node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 cd config-drift-checker && npm test                                  # 72 tests, no API key needed
 ```
 
@@ -107,7 +108,7 @@ cd config-drift-checker && npm test                                  # 72 tests,
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| "`plugin eval` is currently in early access" | account not enabled | Action falls back to the shim automatically; request access from Anthropic (`/bug` in Claude Code, or a GitHub issue on anthropics/claude-code) |
+| `claude plugin eval` not found / errors | Claude Code older than 2.1.269 | Action falls back to the bundled runner automatically; upgrade Claude Code to use the official one |
 | shim run `isError: true`, `stderrTail` mentions auth or credit | no key in CI / no credentials locally / no prepaid credit | set the secret (or `CLAUDE_CODE_OAUTH_TOKEN`); locally the shim copies `~/.claude/.credentials.json`; top up at console.anthropic.com → Billing |
 | job summary says **skipped: budget** | month's ledger reached `budget.per_month_usd` | raise the cap, wait for next month, or re-run manually with `force: true` |
 | job summary says **skipped: interval** | scheduled canary sooner than `canary.min_interval_hours` | nothing; push/PR/manual runs are never throttled |

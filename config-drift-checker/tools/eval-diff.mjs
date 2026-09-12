@@ -22,7 +22,7 @@
 // Exit 0: nothing red. Exit 1: red drift. Exit 2: every agent run errored (nothing to compare).
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { caseScore, withRuns, median, caseMap, resolveThresholds, loadHistory, classifyCase, baselineWarnings } from './eval-classify.mjs';
+import { caseScore, withRuns, median, caseMap, resolveThresholds, loadHistory, classifyCase, baselineWarnings, normalizeResult } from './eval-classify.mjs';
 
 const argv = process.argv.slice(2);
 const files = [];
@@ -43,7 +43,7 @@ for (let i = 0; i < argv.length; i++) {
   else { console.error(`unknown option ${a}`); process.exit(2); }
 }
 if (files.length !== 2) { console.error('usage: eval-diff.mjs <baseline.json> <current.json> [--threshold 0.15] [--config <plugin-dir>] [--fail-on score,turns] [--history dir] [--md out.md] [--json out.json]'); process.exit(2); }
-const [base, cur] = await Promise.all(files.map(async (f) => JSON.parse(await fs.readFile(f, 'utf8'))));
+const [base, cur] = await Promise.all(files.map(async (f) => normalizeResult(JSON.parse(await fs.readFile(f, 'utf8')))));
 
 // thresholds: flag > .cdc.yml > default; history: newest N same-track results, the current file excluded
 const { th, failOn, minBaselineRuns, historyRuns } = resolveThresholds(opt.config, cur.track, opt);
@@ -58,7 +58,8 @@ const toolCount = (r) => (Array.isArray(r.toolUses) ? r.toolUses.length : r.tool
 // setup (e.g. the skill stopped firing): that is drift and must not be excused as a guardrail.
 const refusedRuns = (b, c, before) => {
   if (before === null || !(median(withRuns(b).map(toolCount)) > 0)) return 0;
-  return withRuns(c).filter((r) => toolCount(r) === 0 && (r.numTurns ?? 99) <= 1 && typeof r.score === 'number' && r.score < before && String(r.response ?? '').length < 600).length;
+  // native results carry no tool/response evidence (toolUses null): never call those refusals
+  return withRuns(c).filter((r) => r.toolUses != null && toolCount(r) === 0 && (r.numTurns ?? 99) <= 1 && typeof r.score === 'number' && r.score < before && String(r.response ?? '').length < 600).length;
 };
 const runs = (c) => (c.arms?.with ?? []).length;
 const failedGraders = (c) => {

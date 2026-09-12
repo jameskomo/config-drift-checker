@@ -337,8 +337,11 @@ and only in the repo you run it in, as a reviewable diff.
 **Does pushing a repo trigger Actions/Slack by itself?** Only if that repo contains the workflow
 file *and* the secrets. No workflow file → nothing runs. No API key → the run fails loudly.
 
-**Do I need Anthropic's `claude plugin eval` early access?** No. The bundled runner reads the same
-case format. If your account is enabled, the Action switches to the official runner automatically.
+**Do I need Anthropic's `claude plugin eval`?** It ships with current Claude Code and the Action
+prefers it automatically; the bundled runner covers older versions. Both read the same case format,
+and a `claude plugin eval ... --json out.json` result diffs directly against any baseline
+(`eval-diff`, the report and the drift index all accept it). One caveat: the official runner keeps
+transcripts in a temp trace, so refusal labelling only works on bundled-runner results.
 
 **Where does my code go?** Into a temporary directory on your runner for the length of one run,
 then deleted. Results (scores, responses, tool calls) stay in your repo's `eval-results` branch and

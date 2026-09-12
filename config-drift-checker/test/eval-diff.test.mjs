@@ -227,3 +227,21 @@ test('refusals: a full-length reply with no tools is drift, not a refusal — no
   assert.equal(json.rows.find((r) => r.case === 'a').refusedRuns, 0);
   assert.doesNotMatch(md, /look like refusals/);
 });
+
+test('native current result diffs against a shim baseline; missing tool evidence is never a refusal', async () => {
+  const acts = { toolUses: [{ tool: 'Bash', input: '{}' }] };
+  const base = report({ cases: { a: three({ score: 1, ...acts }) } });
+  const native = {
+    schemaVersion: 1, claudeVersion: '2.1.269', startedAt: '2026-09-12T05:00:00.000Z', costUsd: 0.1,
+    suite: { root: '/x/komo-stack', ablation: 'none' }, aggregates: { casesTotal: 1, casesPassed: 0, overallScore: 0.2, overallPassRate: 0 },
+    cases: [{ name: 'a', dir: 'evals/a', aggregates: { score: 0.2 },
+      arms: { with: [{ score: 0.2, passed: false, turns: 1, costUsd: 0.1, durationSeconds: 9, error: null, graders: [] }] } }],
+  };
+  const { status, md, json } = await run(base, native);
+  assert.equal(status, 1, 'the native drop still fails the check');
+  const row = json.rows.find((r) => r.case === 'a');
+  assert.ok(row, 'native evals/a pairs with baseline case a');
+  assert.equal(row.status, 'regressed');
+  assert.equal(row.refusedRuns, 0, 'toolUses unknown (null): no refusal claim without evidence');
+  assert.doesNotMatch(md, /look like refusals/);
+});
