@@ -149,3 +149,18 @@ test('--regrade inherits the saved run ablation mode — tool_used Skill graders
   assert.equal(g.scored, true, 'tool_used grader must stay scored on an ablation-none regrade');
   assert.notEqual(report.cases[0].summary.score, null, 'the case score must not collapse to null');
 });
+
+test('discovery snapshot: every SKILL.md under the plugin is recorded, malformed ones flagged', async () => {
+  const plugin = await makePlugin();
+  await fs.mkdir(path.join(plugin, 'skills/conventions'), { recursive: true });
+  await fs.writeFile(path.join(plugin, 'skills/conventions/SKILL.md'), '---\nname: Conventions\ndescription: house style\n---\n# body\n');
+  await fs.mkdir(path.join(plugin, 'skills/broken'), { recursive: true });
+  await fs.writeFile(path.join(plugin, 'skills/broken/SKILL.md'), '# no frontmatter at all\n');
+  const { report } = await runShim(plugin, ['--runs', '1']);
+  const skills = report.discovered.skills;
+  assert.equal(skills.length, 2);
+  const good = skills.find((s) => s.dir === 'skills/conventions');
+  assert.equal(good.name, 'Conventions'); assert.equal(good.malformed, false);
+  const bad = skills.find((s) => s.dir === 'skills/broken');
+  assert.equal(bad.malformed, true, 'SKILL.md without name/description is flagged');
+});

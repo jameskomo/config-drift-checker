@@ -18,11 +18,10 @@ the tripwire case reads 0.00, "the skill stopped firing". The report is unedited
 
 ## Quick start
 
+One command in the repo whose setup you want protected:
+
 ```bash
-claude plugin marketplace add jameskomo/config-drift-checker
-claude plugin install config-drift-checker@jameskomo
-claude
-> /config-drift-checker:setup
+claude plugin marketplace add jameskomo/config-drift-checker && claude plugin install config-drift-checker@jameskomo && claude "/config-drift-checker:setup"
 ```
 
 Five minutes: it finds your CLAUDE.md, skills and hooks, writes starter eval cases from them,
@@ -93,7 +92,7 @@ runner with your key; nothing is sent to us, because there is no us to send it t
 
 ```
 config-drift-checker/   the plugin: skills (setup · run · write-case · repair) + the tools
-  tools/                shim runner · diff · classify · report · dashboard · coverage · watch · gate · promote
+  tools/                shim runner · diff · classify · report · dashboard · coverage · watch · gate · promote · trace-keeper
   test/                 node --test suite, fake claude, npm test
 action/                 composite GitHub Action: gate → run → diff → store → PR → repair → alert
 examples/komo-stack/    a full example suite with .cdc.yml and baseline results

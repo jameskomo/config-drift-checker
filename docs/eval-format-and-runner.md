@@ -137,7 +137,12 @@ case `dir` keeps an `evals/` prefix, and per-case scores live in `aggregates`. `
 in `eval-classify.mjs` maps all of that into the 1.1 shape at load time, so eval-diff, eval-report
 and eval-dashboard read either format directly, including mixed history. Two consequences of the
 missing trace: refusal labelling needs inline tool/response evidence and never fires on native
-runs, and `tool_used`-style retroactive analysis only works on shim results. One CLI difference:
+runs, and `tool_used`-style retroactive analysis only works on shim results — unless you run the
+eval with `--keep-temp` and then `trace-keeper.mjs out.json --clean`, which copies each run's
+trace next to the JSON and writes `toolUses`/`response`/`numTurns`/`model` inline, restoring both.
+Shim results also carry `discovered.skills`: every SKILL.md that parses at run start, so a red
+trigger case can be split into "discovered but never invoked" (fix the trigger description) and
+"not discovered" (packaging) — eval-diff prints which. One CLI difference:
 the official `--case` glob matches the case's `name:`, the shim's matches the directory. The
 Action stamps `track`/`harness`/`judge` onto official output so the diff, store and promote steps
 can reason about it. Readers treat missing fields as unknown.

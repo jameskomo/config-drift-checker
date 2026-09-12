@@ -245,3 +245,26 @@ test('native current result diffs against a shim baseline; missing tool evidence
   assert.equal(row.refusedRuns, 0, 'toolUses unknown (null): no refusal claim without evidence');
   assert.doesNotMatch(md, /look like refusals/);
 });
+
+test('discovered vs invoked: a red Skill-grader case gets the diagnosis that matches the snapshot', async () => {
+  const base = report({ cases: { trip: three({ score: 1 }) } });
+  const failG = { name: 'skill-fired', verdict: 'fail', scored: true };
+  const curObj = report({ cases: { trip: three({ score: 0, graders: [failG] }) } });
+  curObj.cases[0].graders = [{ name: 'skill-fired', type: 'tool_used', tool: 'Skill', input_match: 'spring-boot-conventions', min: 1 }];
+  curObj.discovered = { skills: [{ dir: 'skills/spring-boot-conventions', name: 'Spring Boot conventions', description: 'x', malformed: false }] };
+  const r1 = await run(base, curObj);
+  assert.match(r1.json.rows[0].skillNote, /discovered but never invoked/);
+  assert.match(r1.md, /suspect the trigger description/);
+
+  const cur2 = JSON.parse(JSON.stringify(curObj)); cur2.discovered = { skills: [] };
+  assert.match((await run(base, cur2)).json.rows[0].skillNote, /not discovered: packaging/);
+
+  const cur3 = JSON.parse(JSON.stringify(curObj)); cur3.discovered.skills[0].malformed = true;
+  assert.match((await run(base, cur3)).json.rows[0].skillNote, /lacks a parseable name/);
+
+  // a negative-trigger grader (max 0) and a result without a snapshot both stay silent
+  const cur4 = JSON.parse(JSON.stringify(curObj)); cur4.cases[0].graders[0] = { ...cur4.cases[0].graders[0], min: null, max: 0 };
+  assert.equal((await run(base, cur4)).json.rows[0].skillNote, null);
+  const cur5 = JSON.parse(JSON.stringify(curObj)); delete cur5.discovered;
+  assert.equal((await run(base, cur5)).json.rows[0].skillNote ?? null, null);
+});

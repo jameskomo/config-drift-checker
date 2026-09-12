@@ -97,7 +97,7 @@ jobs:
           # regenerate the index here so its report links are relative to docs/drift/history
           git archive origin/eval-results history | tar -x -C "$RUNNER_TEMP" && git show origin/eval-results:canary/streak.json > "$RUNNER_TEMP/streak.json" 2>/dev/null || true
           node config-drift-checker/tools/eval-dashboard.mjs "$RUNNER_TEMP/history" --baseline docs/drift/baseline.json --reports docs/drift/history --out docs/drift/index.html \
-            --title komo-stack --spend docs/drift/spend.json --streak "$RUNNER_TEMP/streak.json" --coverage docs/drift/coverage.json --config examples/komo-stack
+            --title komo-stack --spend docs/drift/spend.json --streak "$RUNNER_TEMP/streak.json" --coverage docs/drift/coverage.json --config examples/komo-stack --repo-url https://github.com/jameskomo/config-drift-checker
           if [ -z "$(git status --porcelain docs/drift)" ]; then echo "drift index unchanged"; exit 0; fi
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"

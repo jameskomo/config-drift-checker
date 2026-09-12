@@ -13,8 +13,8 @@ import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 import { key, caseMap, classifyCase, normalizeResult } from './eval-classify.mjs';
 
-const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null };
-for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
+const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null, repoUrl: null };
+for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (a === '--repo-url') opt.repoUrl = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
 if (!opt.dir) { console.error('usage: eval-dashboard.mjs <history-dir> [--baseline b.json] [--reports dir] [--out dashboard.html] [--spend s.json] [--streak s.json] [--coverage c.json] [--config <plugin-dir>]'); process.exit(2); }
 const readJson = async (p) => (p && existsSync(p) ? normalizeResult(JSON.parse(await fs.readFile(p, 'utf8'))) : null);
 
@@ -135,6 +135,7 @@ a{color:inherit;text-decoration:none}a:hover{color:var(--track)}.wrap{max-width:
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}.eyebrow b{color:var(--track);font-weight:600}
 h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-weight:600;display:flex;gap:14px;align-items:baseline}h1 .mark{font-size:26px}h1.pass .mark{color:var(--pass)}h1.fail .mark{color:var(--fail)}h1.warn .mark{color:var(--warn)}h1.muted .mark{color:var(--muted)}
 .lede{font-size:16px;color:var(--muted);margin:0;max-width:58ch}
+.obs{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:70ch}.obs a{color:inherit}
 .stamp{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px;box-shadow:var(--shadow);position:relative}.stamp::before{content:"";position:absolute;inset:6px;border:1px dashed var(--rule);border-radius:5px;pointer-events:none}
 .stamp dt{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;padding-top:2px}.stamp dd{margin:0}.stamp b{font-weight:600}.from{color:var(--muted)}
 .meter{display:block;width:100%;max-width:220px;height:6px;background:var(--code);border-radius:3px;margin-top:5px;overflow:hidden}.meter i{display:block;height:100%;background:var(--pass)}.meter i.warn{background:var(--warn)}.meter i.fail{background:var(--fail)}
@@ -159,7 +160,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>${esc(suite)}</b> · drift index</p>
     <h1 class="${tone}"><span class="mark">${mark}</span><span>${esc(headline)}</span></h1>
-    <p class="lede">${esc(lede)}</p></div>
+    <p class="lede">${esc(lede)}</p>
+    <p class="obs">A live observatory: this suite re-runs on every Claude Code release${versions.length > 1 ? `, ${versions.length} versions covered so far` : ''}${latest ? `. Updated ${esc(when(latest.at))}` : ''}.${opt.repoUrl ? ` <a href="${esc(opt.repoUrl)}/releases">Get alerts (watch releases)</a> · <a href="${esc(opt.repoUrl)}#quick-start">Run this on your own setup</a>` : ''}</p></div>
   <dl class="stamp">${stamp.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
 </header>
 <h2>Every case, every run</h2>

@@ -341,7 +341,8 @@ file *and* the secrets. No workflow file → nothing runs. No API key → the ru
 prefers it automatically; the bundled runner covers older versions. Both read the same case format,
 and a `claude plugin eval ... --json out.json` result diffs directly against any baseline
 (`eval-diff`, the report and the drift index all accept it). One caveat: the official runner keeps
-transcripts in a temp trace, so refusal labelling only works on bundled-runner results.
+transcripts in a temp trace, so refusal labelling only works on bundled-runner results, unless
+you run it with `--keep-temp` and harvest with `tools/trace-keeper.mjs` (see the runbook).
 
 **Where does my code go?** Into a temporary directory on your runner for the length of one run,
 then deleted. Results (scores, responses, tool calls) stay in your repo's `eval-results` branch and

@@ -59,6 +59,7 @@ flowchart LR
 | `canary-promote.mjs` | green streak on the same model+version → bump decision; unpinned green pinned run → pin decision; PR title/body | `canary/streak.json` |
 | `config-coverage.mjs` | rules in CLAUDE.md / skills / hooks vs the cases' `covers.yaml` → coverage JSON, markdown, badge | `coverage.json` |
 | `eval-report.mjs` | aggregate-result.json (+ baseline) → self-contained HTML report | none |
+| `trace-keeper.mjs` | after `claude plugin eval --keep-temp`: copy the ephemeral traces next to the JSON and write toolUses/response/model inline | traces/ next to the result |
 | `eval-dashboard.mjs` | history (+ baseline, spend, streak, coverage) → the drift index | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |
 

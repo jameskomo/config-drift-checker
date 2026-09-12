@@ -315,7 +315,7 @@ runs:
           [ -s spend.json ] && cp spend.json docs/spend.json || true
           [ -s canary/streak.json ] && cp canary/streak.json docs/streak.json || true
           node "$TOOLS/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "$REPO" \
-            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" >/dev/null
+            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" >/dev/null
           touch docs/.nojekyll
           echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $BRANCH, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
         fi

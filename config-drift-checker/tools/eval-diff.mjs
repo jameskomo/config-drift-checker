@@ -62,6 +62,20 @@ const refusedRuns = (b, c, before) => {
   return withRuns(c).filter((r) => r.toolUses != null && toolCount(r) === 0 && (r.numTurns ?? 99) <= 1 && typeof r.score === 'number' && r.score < before && String(r.response ?? '').length < 600).length;
 };
 const runs = (c) => (c.arms?.with ?? []).length;
+// discovered vs invoked: when a Skill tool_used grader fails on a red case, the discovery snapshot
+// (shim results record every SKILL.md that parses) says which of two different repairs is needed.
+const skillNote = (c) => {
+  const skills = cur.discovered?.skills; if (!skills) return null;
+  const def = (c.graders ?? []).find((g) => (g.tool ?? g.config?.tool) === 'Skill' && (g.max ?? g.config?.max) !== 0);
+  if (!def) return null;
+  const failed = (c.arms?.with ?? []).some((r) => (r.graders ?? []).some((g) => g.name === def.name && g.scored !== false && g.verdict === 'fail'));
+  if (!failed) return null;
+  const target = String(def.input_match ?? def.config?.input_match ?? '');
+  const hit = skills.find((s) => !target || (s.dir ?? '').includes(target) || (s.name ?? '').toLowerCase().includes(target.toLowerCase()));
+  if (!hit) return `the skill it watches (\`${target || 'any'}\`) has no SKILL.md in the plugin — not discovered: packaging (renamed dir, deleted or moved file)`;
+  if (hit.malformed) return `\`${hit.dir}/SKILL.md\` lacks a parseable name/description — likely not discovered: packaging`;
+  return `\`${hit.dir}\` is on disk and parseable — discovered but never invoked: suspect the trigger description, not packaging`;
+};
 const failedGraders = (c) => {
   const counts = {};
   for (const r of c.arms?.with ?? []) for (const g of r.graders ?? []) if (g.scored !== false && g.verdict === 'fail') counts[g.name] = (counts[g.name] ?? 0) + 1;
@@ -90,7 +104,7 @@ for (const [k, b] of baseMap) {
   const { status, escalated, before, after, delta, noise, effThreshold } = classifyCase(k, b, c, histCases, th.score);
   const eff = efficiency(b, c);
   const flags = EFF.filter(([name]) => eff[name].drifted).map(([, , flag]) => flag);
-  rows.push({ case: k, status, escalated, before, after, delta, noise, effThreshold, historyRuns: nHist, warnings, refusedRuns: status === 'regressed' || status === 'noisy' ? refusedRuns(b, c, before) : 0, runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c), eff, flags });
+  rows.push({ case: k, status, escalated, before, after, delta, noise, effThreshold, historyRuns: nHist, warnings, refusedRuns: status === 'regressed' || status === 'noisy' ? refusedRuns(b, c, before) : 0, skillNote: status === 'regressed' ? skillNote(c) : null, runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c), eff, flags });
 }
 for (const [k, c] of curMap) if (!baseMap.has(k)) rows.push({ case: k, status: 'new', before: null, after: caseScore(c), delta: null, noise: null, effThreshold: th.score, historyRuns: nHist, warnings: [], runs: runs(c), baselineArm: baseline(c), failedGraders: failedGraders(c), flags: [] });
 
@@ -139,6 +153,7 @@ const md = [
   ...(noisy.length ? ['', `_${noisy.length} case${noisy.length === 1 ? '' : 's'} dropped past ${th.score} but within historical noise (±${Math.max(...noisy.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${nHist} run${nHist === 1 ? '' : 's'}) — warning, not a regression_`] : []),
   ...(rows.some((r) => r.escalated) ? ['', rows.filter((r) => r.escalated).map((r) => `_\`${r.case}\` is within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway: ${r.escalated}_`).join('\n')] : []),
   ...(rows.some((r) => r.refusedRuns) ? ['', rows.filter((r) => r.refusedRuns).map((r) => `_\`${r.case}\`: ${r.refusedRuns} of ${r.runs} run(s) look like refusals (≤1 turn, no tool use) — likely a model guardrail change, not setup drift; read the run transcript before acting_`).join('\n')] : []),
+  ...(rows.some((r) => r.skillNote) ? ['', rows.filter((r) => r.skillNote).map((r) => `_\`${r.case}\`: ${r.skillNote}_`).join('\n')] : []),
   ...(warned.length ? ['', `**⚠ baseline quality (never red):** ${warned.map((r) => `\`${r.case}\` — ${r.warnings.join(', ')}`).join(' · ')}. More runs per case fix this; never loosen the threshold.`] : []),
   '',
   `<sub>baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]} · fail on: ${[...failOn].join(', ')} · efficiency thresholds: turns ${th.turns}, cost ${th.cost}, duration ${th.duration}</sub>`,

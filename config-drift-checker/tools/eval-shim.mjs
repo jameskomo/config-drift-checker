@@ -111,6 +111,28 @@ async function readCovers(caseDir) {
   return items.map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
 }
 
+// What the agent could see at plugin load: every SKILL.md under the plugin that parses. A red
+// trigger case then splits into "discovered but never invoked" (suspect the trigger description)
+// vs "not discovered at all" (packaging: renamed dir, missing or malformed SKILL.md).
+async function discoverSkills(root) {
+  const out = [];
+  const walk = async (dir, depth) => {
+    if (depth > 6) return;
+    for (const e of await fs.readdir(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) { if (!['node_modules', '.git', 'results', 'evals', 'target', 'dist'].includes(e.name)) await walk(p, depth + 1); }
+      else if (e.name === 'SKILL.md') {
+        const t = await fs.readFile(p, 'utf8');
+        const name = (t.match(/^---[\s\S]*?^name:\s*(.+)$/m) ?? [])[1]?.trim() ?? null;
+        const description = (t.match(/^---[\s\S]*?^description:\s*(.+)$/m) ?? [])[1]?.trim() ?? null;
+        out.push({ dir: path.relative(root, path.dirname(p)), name: name ?? path.basename(path.dirname(p)), description, malformed: !name || !description });
+      }
+    }
+  };
+  await walk(root, 0);
+  return out.sort((a, b) => a.dir.localeCompare(b.dir));
+}
+
 // ---------- load suite ----------
 const manifest = JSON.parse(await fs.readFile(path.join(pluginDir, '.claude-plugin/plugin.json'), 'utf8'));
 const pluginName = manifest.name;
@@ -291,7 +313,9 @@ const report = {
   judge: { model: opt.judgeModel },
   config: { model: modelLabel, modelIsPinned: opt.model ? true : track.modelIsPinned, harness: String(track.harness), harnessIsPinned: track.harnessIsPinned, expandOnDeviation: opt.expand || 0, budgetUsd: opt.budget, file: cdc._exists ? path.basename(cdc._path) : null },
   startedAt: new Date().toISOString(), generatedAt: opt.regrade ? (regradeSource?.generatedAt ?? new Date().toISOString()) : new Date().toISOString(), regradedAt: opt.regrade ? new Date().toISOString() : undefined, regradeOf: opt.regrade ?? undefined,
-  suite: { name: pluginName, caseCount: cases.length, baselineOnly: false }, cases: [], aggregates: {},
+  suite: { name: pluginName, caseCount: cases.length, baselineOnly: false },
+  discovered: { skills: await discoverSkills(pluginDir) },
+  cases: [], aggregates: {},
 };
 let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null, budgetExceeded = false, skippedRuns = 0;
 const overBudget = () => opt.budget !== null && totalCost >= opt.budget;
