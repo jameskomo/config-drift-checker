@@ -98,6 +98,10 @@ jobs:
           git archive origin/eval-results history | tar -x -C "$RUNNER_TEMP" && git show origin/eval-results:canary/streak.json > "$RUNNER_TEMP/streak.json" 2>/dev/null || true
           node config-drift-checker/tools/eval-dashboard.mjs "$RUNNER_TEMP/history" --baseline docs/drift/baseline.json --reports docs/drift/history --out docs/drift/index.html \
             --title komo-stack --spend docs/drift/spend.json --streak "$RUNNER_TEMP/streak.json" --coverage docs/drift/coverage.json --config examples/komo-stack --repo-url https://github.com/jameskomo/config-drift-checker
+          # re-render the newest run's report too, so report-logic changes reach the published page
+          # without waiting for the next eval run (older history pages stay as period documents)
+          latest=$(ls "$RUNNER_TEMP/history"/*.json 2>/dev/null | sort | tail -1)
+          [ -n "$latest" ] && node config-drift-checker/tools/eval-report.mjs "$latest" --baseline docs/drift/baseline.json --history "$RUNNER_TEMP/history" --config examples/komo-stack --out "docs/drift/history/$(basename "${latest%.json}").html" || true
           if [ -z "$(git status --porcelain docs/drift)" ]; then echo "drift index unchanged"; exit 0; fi
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add docs/drift && git commit -qm "drift index $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
