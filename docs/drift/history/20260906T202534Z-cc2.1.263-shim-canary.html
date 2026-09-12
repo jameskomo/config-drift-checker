@@ -45,8 +45,6 @@ code{font-size:.9em;background:var(--code);padding:1px 4px;border-radius:3px}
 pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);border-radius:6px;padding:10px 12px;font-size:12.5px;max-height:420px;overflow:auto;margin:6px 0 0}pre.err{white-space:pre-wrap;word-break:break-word;background:var(--fail-bg);color:var(--fail);border-radius:6px;padding:8px 10px;font-size:12px;margin:6px 0}
 .howto{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:8px 14px;margin:0 0 18px;font-size:13.5px}.howto summary{font-weight:600;color:var(--ink)}.howto ol{margin:8px 0 4px;padding-left:20px}.howto li{margin:4px 0}
 .foot{color:var(--muted);font-size:12px;margin-top:26px}
-.xtr{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:13px;color:var(--muted)}.xtr b.t{color:var(--ink);font-size:12.5px}.xtr .chips{margin:8px 0 0}
-.notrun{color:var(--muted);font-size:12.5px;margin:10px 0 18px}
 :focus-visible{outline:2px solid var(--track);outline-offset:2px}
 @media (max-width:820px){.verdict{grid-template-columns:1fr}h1{font-size:28px}.runs{grid-template-columns:1fr}.wrap{padding:20px 16px 60px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}</style></head><body><div class="wrap">
@@ -54,15 +52,12 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
   <div><p class="eyebrow">config-drift-checker · <b>komo-stack</b> · canary track</p>
     <h1 class="warn"><span class="mark">◆</span><span>No regressions · 1 efficiency drift</span></h1>
     <p class="lede">Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.</p></div>
-  <dl class="stamp"><dt>overall</dt><dd><b class="warn">1.00</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>claude-sonnet-5</b> <span class="from">pinned</span></dd><dt>claude code</dt><dd><b>2.1.263</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>shim</b> <span class="from">judge haiku</span></dd><dt>cost</dt><dd><b>$0.50</b> <span class="from">of $1.5 cap</span></dd><dt>when</dt><dd><b>2026-09-06 20:25</b></dd></dl>
+  <dl class="stamp"><dt>overall</dt><dd><b class="warn">1.00</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00</dd><dt>model</dt><dd><b>claude-sonnet-5</b> <span class="from">pinned</span></dd><dt>claude code</dt><dd><b>2.1.263</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>shim</b> <span class="from">judge haiku</span></dd><dt>cost</dt><dd><b>$0.50</b> <span class="from">of $1.5 cap</span></dd><dt>when</dt><dd><b>2026-09-06 20:25</b></dd></dl>
 </header>
 <div class="moves"><a class="move warn" href="#case-spring-controller-follows-conventions">
       <span class="move-case">spring-controller-follows-conventions</span>
       <span class="move-num">1.00 → 1.00</span>
       <span class="move-why">passes · turns +67%, cost +58%, time +151%</span></a></div>
-<div class="xtr"><b class="t">What this report checks</b> · 24 grader verdicts across 6 agent runs on 6 cases. A plain <code>claude plugin eval</code> run stops there; the chips are this tool's layer on top:
-  <div class="chips"><span class="chip pass" title="every case against 2026-09-03">✓ baseline diff</span><span class="chip pass" title="flake vs break from 10 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip pass" title="guardrail declines are labelled, not blamed on your setup">✓ refusal screening</span><span class="chip ind" title="recorded by the bundled runner">· discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
-
 <details class="howto"><summary>How to read this report — and what to do</summary>
 <ol>
 <li><b>No drift / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
@@ -86,7 +81,6 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <td class="num">4</td><td class="num">$0.07</td><td class="num">1</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-vue-request-does-not-trigger-skill">vue-request-does-not-trigger-skill</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
       <td class="num">3</td><td class="num">$0.06</td><td class="num">1</td></tr></tbody></table></div>
-
 <p class="note"><b class="warn">⚠ baseline quality (never red):</b> <code>spring-service-owns-rules-and-errors</code> — unstable baseline (±0.20). More runs per case fix this; never loosen the threshold.</p>
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
 <div class="cases"><section class="case st-stable" id="case-guard-blocks-destructive-git">
