@@ -14,7 +14,15 @@ tells you the moment something stops working: when, why, and what moved.
 A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.36 and
 the tripwire case reads 0.00, "the skill stopped firing". The report is unedited.
 
-[site](https://jameskomo.github.io/config-drift-checker/) · [drift index: our suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo) · [demo report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/)
+## See it live
+
+| | What you're looking at |
+|---|---|
+| [**The sabotage report**](https://jameskomo.github.io/config-drift-checker/example-break/report.html) | what a real break looks like: a deliberately broken skill trigger, every grader's verdict, the tripwire at 0.00 |
+| [**The drift observatory**](https://jameskomo.github.io/config-drift-checker/drift/) | this plugin's own suite re-run on every Claude Code release: trend per case, versions covered, every run's report linked |
+| [**The demo repo**](https://github.com/jameskomo/config-drift-checker-demo) | a small Spring Boot API whose whole setup (cases, config, workflow) was written by `/config-drift-checker:setup` unattended, kept exactly as generated |
+| [**The demo's drift index**](https://jameskomo.github.io/config-drift-checker-demo/) | the same observatory for that demo repo, built by its own CI |
+| [**The site**](https://jameskomo.github.io/config-drift-checker/) | one page with all of the above |
 
 ## Quick start
 
