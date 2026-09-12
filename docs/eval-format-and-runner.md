@@ -243,7 +243,10 @@ self-contained HTML file: the
 cases at 1.00, model + pinned/alias and *moved from*, Claude Code and *moved from*, track, runner and
 judge, cost vs cap, setup worth), *what moved* cards (regressed / noisy / improved / new / efficiency),
 the score table (baseline / score / Δ / noise / without-plugin / Δ-plugin / turns / cost / runs, with
-`→` and % when a median moved), and per-case sections: tags and `covers` chips, what the case
+`→` and % when a median moved), a checks panel (grader-verdict and run counts, with the layers
+beyond a bare `claude plugin eval` run marked), a discovered-skills panel (invoked / never
+invoked / malformed), a not-evaluated strip when `--config` shows suite cases missing from the
+run, and per-case sections: tags and `covers` chips, what the case
 evaluates, and run cards in three states (green pass, amber truncated-but-passed, red failed, grey
 errored) with grader chips (hover = type + reason), judge reasons (open on failed runs), tool calls,
 changed files, full response. "Failing and flagged runs only" toggle. No script dependencies,

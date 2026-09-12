@@ -55,3 +55,40 @@ test('baseline-quality warnings render as a never-red note', () => {
   const html = renderReport(result({ a: [1, 0.4] }), thinBase, { threshold: 0.15, minBaselineRuns: 3 });
   assert.match(html, /⚠ baseline quality \(never red\):<\/b> <code>a<\/code> — thin baseline \(n=2\), unstable baseline \(±0\.60\)/);
 });
+
+test('suite completeness: cases on disk but not in the run are listed, stamp shows N of M', () => {
+  const html = renderReport(cur, base, { thresholds: { score: 0.15 }, history, minBaselineRuns: 3, suiteDirs: ['a', 'b', 'c-not-run', 'd-not-run'] });
+  assert.match(html, /2 of 4 in suite/);
+  assert.match(html, /Not evaluated in this run \(2 of the suite\)/);
+  assert.match(html, /<code>c-not-run<\/code>/);
+  assert.match(html, /suite completeness/);
+  // without suiteDirs: no strip, chip shown as inactive guidance
+  const bare = renderReport(cur, base, { thresholds: { score: 0.15 }, history, minBaselineRuns: 3 });
+  assert.doesNotMatch(bare, /Not evaluated in this run/);
+  assert.match(bare, /run with --config to compare against the suite on disk/);
+});
+
+test('checks panel: counts grader verdicts and runs, marks the layer beyond a plain claude plugin eval', () => {
+  const html = renderReport(cur, base, { thresholds: { score: 0.15 }, history, minBaselineRuns: 3 });
+  assert.match(html, /6 grader verdicts across 6 agent runs on 2 cases/);
+  assert.match(html, /A plain <code>claude plugin eval<\/code> run stops there/);
+  assert.match(html, /✓ baseline diff/); assert.match(html, /✓ noise bands/); assert.match(html, /✓ refusal screening/);
+  // no baseline, no history: chips flip to guidance
+  const alone = renderReport(cur, null, { thresholds: { score: 0.15 }, history: null, minBaselineRuns: 3 });
+  assert.match(alone, /run with --baseline to compare/);
+});
+
+test('discovered skills panel: invoked, never invoked, and malformed each render distinctly', () => {
+  const withSkill = JSON.parse(JSON.stringify(cur));
+  withSkill.discovered = { skills: [
+    { dir: 'skills/conventions', name: 'Conventions', description: 'x', malformed: false },
+    { dir: 'skills/unused', name: 'Unused', description: 'y', malformed: false },
+    { dir: 'skills/broken', name: 'broken', description: null, malformed: true },
+  ] };
+  withSkill.cases[0].arms.with[0].toolUses = [{ tool: 'Skill', input: '{"command":"conventions"}' }];
+  const html = renderReport(withSkill, base, { thresholds: { score: 0.15 }, history, minBaselineRuns: 3 });
+  assert.match(html, /Skills discovered at run start/);
+  assert.match(html, /✓ conventions · invoked in 1/);
+  assert.match(html, /⚠ unused · never invoked this run/);
+  assert.match(html, /✖ broken · malformed/);
+});

@@ -239,11 +239,12 @@ runs:
         THRESHOLD_INPUT: ${{ inputs.threshold }}
         CONFIG_THRESHOLD: ${{ steps.config.outputs.threshold }}
         BUDGET_HIT: ${{ steps.run.outputs.budget_hit }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
       run: |
         base_args=(); [ "$BASELINE_EXISTS" = "true" ] && [ "$PROMOTE" != "true" ] && base_args=(--baseline "$RESULTS_DIR/baseline.json")
         hist_args=(); [ -n "$(ls -A "$RESULTS_DIR/history" 2>/dev/null)" ] && hist_args=(--history "$RESULTS_DIR/history")
         thr="$THRESHOLD_INPUT"; [ -n "$thr" ] || thr="$CONFIG_THRESHOLD"
-        node "$TOOLS/eval-report.mjs" "$RESULT" "${base_args[@]}" "${hist_args[@]}" --threshold "$thr" --out "$RUNNER_TEMP/eval-report.html"
+        node "$TOOLS/eval-report.mjs" "$RESULT" "${base_args[@]}" "${hist_args[@]}" --threshold "$thr" --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --out "$RUNNER_TEMP/eval-report.html"
         cp "$RESULT" "$RUNNER_TEMP/aggregate-result.json"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "📄 Full report (grader reasons, tool calls, responses): download the **eval-report** artifact of this run." >> "$GITHUB_STEP_SUMMARY"
         [ "$BUDGET_HIT" = "true" ] && echo "■ The per-run budget cap (\`budget.per_run_usd\`) stopped this run early; cases without runs show as ❔." >> "$GITHUB_STEP_SUMMARY"

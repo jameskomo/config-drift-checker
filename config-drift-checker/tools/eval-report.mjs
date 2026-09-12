@@ -28,6 +28,17 @@ export function renderReport(cur, base = null, opt = {}) {
   const models = a.resolvedModels?.length ? a.resolvedModels : [...new Set(cases.flatMap((c) => runsOf(c, 'with').map((r) => r.model)).filter(Boolean))];
   const ablating = cases.some((c) => runsOf(c, 'without').length);
   const baseMap = new Map((base?.cases ?? []).map((c) => [key(c), c]));
+  // suite completeness + the layer inventory (what this report checks beyond one bare run)
+  const inRun = new Set(cases.map((c) => key(c)));
+  const notRun = (opt.suiteDirs ?? []).filter((d) => !inRun.has(d));
+  const totalRuns = cases.reduce((n, c) => n + ['with', 'without'].reduce((m, arm) => m + runsOf(c, arm).length, 0), 0);
+  const graderVerdicts = cases.reduce((n, c) => n + ['with', 'without'].reduce((m, arm) => m + runsOf(c, arm).reduce((k, r) => k + (r.graders ?? []).length, 0), 0), 0);
+  const hasToolEvidence = cases.some((c) => runsOf(c, 'with').some((r) => r.toolUses != null));
+  const discovered = cur.discovered?.skills ?? null;
+  const skillInvokedCases = (sk) => {
+    const needle = String(sk.dir ?? '').split('/').pop().toLowerCase(), nm = String(sk.name ?? '').toLowerCase();
+    return cases.filter((c) => runsOf(c, 'with').some((r) => (r.toolUses ?? []).some((u) => u.tool === 'Skill' && ((needle && String(u.input ?? '').toLowerCase().includes(needle)) || (nm && String(u.input ?? '').toLowerCase().includes(nm)))))).length;
+  };
   const baseModels = base ? [...new Set((base.cases ?? []).flatMap((c) => runsOf(c, 'with').map((r) => r.model)).filter(Boolean))] : [];
   const histCases = opt.history ? opt.history.map(caseMap) : null;
 
@@ -78,7 +89,7 @@ export function renderReport(cur, base = null, opt = {}) {
   const trackLabel = cur.track ? cur.track : null;
   const stamp = [
     ['overall', `<b class="${tone}">${f(a.overallScore)}</b>${base ? ` <span class="from">from ${f(base.aggregates?.overallScore)}</span>` : ''}`],
-    ['cases', `<b>${a.passed ?? rows.filter((r) => r.score === 1).length}</b> / ${cases.length} at 1.00`],
+    ['cases', `<b>${a.passed ?? rows.filter((r) => r.score === 1).length}</b> / ${cases.length} at 1.00${opt.suiteDirs ? ` <span class="${notRun.length ? 'warn' : 'from'}">· ${cases.length} of ${opt.suiteDirs.length} in suite</span>` : ''}`],
     ['model', `<b>${esc(models.join(', ') || '?')}</b>${cur.config ? ` <span class="from">${cur.config.modelIsPinned ? 'pinned' : `alias ${esc(cur.config.model)}`}</span>` : ''}${baseModels.length && baseModels.join() !== models.join() ? ` <span class="moved">moved from ${esc(baseModels.join(', '))}</span>` : ''}`],
     ['claude code', `<b>${esc(cur.harness?.version ?? '?')}</b>${base?.harness?.version && base.harness.version !== cur.harness?.version ? ` <span class="moved">moved from ${esc(base.harness.version)}</span>` : ''}`],
     ['track', trackLabel ? `<b class="track">${esc(trackLabel)}</b>` : '<span class="from">—</span>'],
@@ -212,6 +223,8 @@ code{font-size:.9em;background:var(--code);padding:1px 4px;border-radius:3px}
 pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);border-radius:6px;padding:10px 12px;font-size:12.5px;max-height:420px;overflow:auto;margin:6px 0 0}pre.err{white-space:pre-wrap;word-break:break-word;background:var(--fail-bg);color:var(--fail);border-radius:6px;padding:8px 10px;font-size:12px;margin:6px 0}
 .howto{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:8px 14px;margin:0 0 18px;font-size:13.5px}.howto summary{font-weight:600;color:var(--ink)}.howto ol{margin:8px 0 4px;padding-left:20px}.howto li{margin:4px 0}
 .foot{color:var(--muted);font-size:12px;margin-top:26px}
+.xtr{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:13px;color:var(--muted)}.xtr b.t{color:var(--ink);font-size:12.5px}.xtr .chips{margin:8px 0 0}
+.notrun{color:var(--muted);font-size:12.5px;margin:10px 0 18px}
 :focus-visible{outline:2px solid var(--track);outline-offset:2px}
 @media (max-width:820px){.verdict{grid-template-columns:1fr}h1{font-size:28px}.runs{grid-template-columns:1fr}.wrap{padding:20px 16px 60px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
@@ -225,6 +238,18 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
   <dl class="stamp">${stamp.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
 </header>
 ${moves ? `<div class="moves">${moves}</div>` : ''}
+<div class="xtr"><b class="t">What this report checks</b> · ${graderVerdicts} grader verdicts across ${totalRuns} agent run${totalRuns === 1 ? '' : 's'} on ${cases.length} case${cases.length === 1 ? '' : 's'}${ablating ? ', with and without the plugin' : ''}. A plain <code>claude plugin eval</code> run stops there; the chips are this tool's layer on top:
+  <div class="chips">${[
+    [!!base, 'baseline diff', base ? `every case against ${String(base.generatedAt ?? 'the stored baseline').slice(0, 10)}` : 'run with --baseline to compare'],
+    [!!opt.history, 'noise bands', opt.history ? `flake vs break from ${opt.history.length} past run${opt.history.length === 1 ? '' : 's'}` : 'run with --history to separate flakes from breaks'],
+    [!!opt.history, 'escalation guards', 'an in-band drop with no recovering run, or one that persisted, is red anyway'],
+    [hasToolEvidence, 'refusal screening', hasToolEvidence ? 'guardrail declines are labelled, not blamed on your setup' : 'needs transcripts: bundled runner, or --keep-temp + trace-keeper'],
+    [!!discovered, 'discovered vs invoked', discovered ? `${discovered.length} skill${discovered.length === 1 ? '' : 's'} snapshotted at run start` : 'recorded by the bundled runner'],
+    [!!base, 'efficiency drift', 'median turns, cost and time per case against the baseline'],
+    [!!opt.suiteDirs, 'suite completeness', opt.suiteDirs ? `${cases.length} of ${opt.suiteDirs.length} suite cases in this run` : 'run with --config to compare against the suite on disk'],
+  ].map(([on, label, tip]) => `<span class="chip ${on ? 'pass' : 'ind'}" title="${esc(tip)}">${on ? '✓' : '·'} ${esc(label)}</span>`).join('')}</div></div>
+${discovered && discovered.length ? `<div class="xtr"><b class="t">Skills discovered at run start</b> · present and parseable when the agent loaded the plugin; a skill invoked nowhere deserves a look at its trigger description.
+  <div class="chips">${discovered.map((sk) => { const n = skillInvokedCases(sk); const label = String(sk.dir ?? sk.name).split('/').pop(); return sk.malformed ? `<span class="chip fail" title="SKILL.md lacks a parseable name/description — may not be discovered by the agent">✖ ${esc(label)} · malformed</span>` : n > 0 ? `<span class="chip pass" title="invoked via the Skill tool in ${n} case${n === 1 ? '' : 's'} of this run">✓ ${esc(label)} · invoked in ${n}</span>` : `<span class="chip" title="discovered but no with-arm run invoked it${hasToolEvidence ? '' : ' (no transcript evidence in this result)'}">${hasToolEvidence ? '⚠' : '·'} ${esc(label)} · ${hasToolEvidence ? 'never invoked this run' : 'invocation unknown'}</span>`; }).join('')}</div></div>` : ''}
 <details class="howto"><summary>How to read this report — and what to do</summary>
 <ol>
 <li><b>No drift / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
@@ -236,6 +261,7 @@ ${moves ? `<div class="moves">${moves}</div>` : ''}
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ</th><th>noise</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
+${notRun.length ? `<p class="notrun">Not evaluated in this run (${notRun.length} of the suite): ${notRun.map((d) => `<code>${esc(d)}</code>`).join(' ')} — a case filter, a budget stop, or cases added since. They still count in the suite column of the stamp.</p>` : ''}
 ${notes}
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
 <div class="cases">${sections}</div>
@@ -252,7 +278,19 @@ if (isMain) {
   const base = basePath ? normalizeResult(JSON.parse(await fs.readFile(basePath, 'utf8'))) : null;
   const { th, historyRuns, minBaselineRuns } = resolveThresholds(configDir ? path.resolve(configDir) : null, cur.track, { threshold });
   const history = historyDir ? await loadHistory(path.resolve(historyDir), { exclude: path.resolve(curPath), track: cur.track, limit: historyRuns, before: cur.generatedAt ?? null }) : null;
-  const html = renderReport(cur, base, { thresholds: th, history, minBaselineRuns });
+  // the whole suite on disk, so the report can show what this run did NOT evaluate
+  let suiteDirs = null;
+  if (configDir) {
+    try {
+      const root = path.resolve(configDir);
+      const manifest = JSON.parse(await fs.readFile(path.join(root, '.claude-plugin/plugin.json'), 'utf8').catch(() => '{}'));
+      const ed = path.join(root, manifest.experimental?.evals ?? 'evals');
+      suiteDirs = (await fs.readdir(ed, { withFileTypes: true }))
+        .filter((e) => e.isDirectory() && !['results', 'mocks'].includes(e.name))
+        .map((e) => e.name).sort();
+    } catch { suiteDirs = null; }
+  }
+  const html = renderReport(cur, base, { thresholds: th, history, minBaselineRuns, suiteDirs });
   const target = out ?? path.join(path.dirname(path.resolve(curPath)), 'report.html');
   await fs.writeFile(target, html);
   console.log(target);

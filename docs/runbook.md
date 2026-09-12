@@ -102,7 +102,7 @@ node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
 node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 node tools/trace-keeper.mjs out.json --clean   # after --keep-temp: keep transcripts inline (enables refusal labels on native runs)
-cd config-drift-checker && npm test                                  # 72 tests, no API key needed
+cd config-drift-checker && npm test                                  # full suite, fake claude, no API key needed
 ```
 
 ## Troubleshooting

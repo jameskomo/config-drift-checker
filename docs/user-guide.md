@@ -203,8 +203,12 @@ branch: history without a database.
 ## 7. Reading a report
 
 Every run produces the same report (job summary plus the `eval-report` artifact, or `report.html`
-locally). It opens with the verdict; the stamp says which model and Claude Code version ran and
-whether either moved since the baseline.
+locally). It opens with the verdict; the stamp says which model and Claude Code version ran,
+whether either moved since the baseline, and how many of the suite's cases this run evaluated
+(cases not run, from a filter or a budget stop, are listed under the table so nothing is silently
+absent). A panel under the verdict counts every grader verdict and agent run and marks which
+checks come from this tool's layer versus a plain `claude plugin eval` run; a second panel lists
+every skill discovered at run start and whether any case invoked it.
 
 | The report says | Do this |
 |---|---|

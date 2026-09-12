@@ -83,7 +83,7 @@ One sentence: their command answers "does my plugin work right now on my machine
 
 ## Trust
 
-Zero npm dependencies (Node builtins only), 74 tests that run against a fake `claude` with no API
+Zero npm dependencies (Node builtins only), 81 tests that run against a fake `claude` with no API
 key, every third-party action pinned to a verified commit SHA, CodeQL on every push. Runs on your
 runner with your key; nothing is sent to us, because there is no us to send it to. Details in
 [docs/security.md](docs/security.md).
