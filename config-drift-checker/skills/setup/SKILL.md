@@ -29,7 +29,8 @@ edits several files and writes a test), `12` for single-file or prose cases, `6`
 run that hits `max_turns` is scored as-is and flagged TRUNCATED; treat that as "raise the budget".
 Give every case a `description:` line in `prompt.md` frontmatter, one sentence stating what the
 case proves and which part of the setup (skill, hook, CLAUDE.md rule) it exercises; the HTML report
-shows it under the case heading. Also give it `covers: [..]`, the ids of the rules it exercises,
+shows it under the case heading. Also give it a `covers.yaml` next to prompt.md listing the ids of the rules it exercises
+(never a `covers:` frontmatter key: the official runner rejects unknown keys),
 from `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list` (run it after step 1;
 a negative-trigger case covers nothing, which is correct). The coverage number in every report
 comes from these. Write them under `<plugin>/evals/<case>/` using the official layout (prompt.md + graders/*.md,
@@ -53,7 +54,7 @@ or the format section of the `write-case` skill.
   (`tool_used: Bash`), reported-blocked (regex), not-succeeded (regex not_contains).
 
 Beyond the three starters: write **one case per remaining hook** and a **trigger + negative-trigger
-case per remaining skill**, each tagged `covers:` with ids from the `--list` run above. Then re-run
+case per remaining skill**, each with a `covers.yaml` listing ids from the `--list` run above. Then re-run
 `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin>` and report the coverage % to the
 user. CI can enforce it with the Action's `coverage-min` input.
 

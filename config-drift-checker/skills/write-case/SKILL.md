@@ -8,7 +8,7 @@ description: Author or fix an eval case (prompt.md, graders/*.md, case.yaml) for
 Layout: `<plugin>/evals/<case-dir>/prompt.md`, `graders/<name>.md`, optional `case.yaml`.
 
 **prompt.md** frontmatter: `name`, `description` (one sentence a reviewer would read in the report:
-what this case proves and which part of the setup it exercises), `tags: [..]`, `covers: [..]` (the
+what this case proves and which part of the setup it exercises), `tags: [..]`, a `covers.yaml` sidecar next to prompt.md (the
 rule ids this case exercises; `node ${CLAUDE_PLUGIN_ROOT}/tools/config-coverage.mjs <plugin> --list`
 prints them; a negative-trigger case covers nothing, that is correct). Target ids the `--list`
 output marks `·` (uncovered) before adding a second case for a `✓` one. Every new case should move

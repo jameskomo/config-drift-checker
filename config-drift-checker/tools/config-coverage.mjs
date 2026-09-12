@@ -4,8 +4,9 @@
 //   node tools/config-coverage.mjs <plugin-dir> [--eval-dir evals] [--claude-md <path>] [--json out] [--md out] [--badge out.svg] [--list] [--fail-under pct]
 //
 // Rules are the bullets in CLAUDE.md and every skill's SKILL.md (outside code fences), plus one rule per
-// hook event/matcher. A case claims rules with `covers: [id, …]` in its prompt.md frontmatter.
-// `--list` prints every rule id with its text so you can paste ids into `covers:`.
+// hook event/matcher. A case claims rules by listing ids in a `covers.yaml` next to its prompt.md
+// (frontmatter `covers:` still parses, but the official runner rejects it as an unknown key).
+// `--list` prints every rule id with its text so you can paste ids into `covers.yaml`.
 // `--fail-under N` exits 1 when coverage is under N% (a plugin with no rules never fails).
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
@@ -70,6 +71,14 @@ function parseCovers(frontmatter) {
   if (/^\[.*\]$/.test(v)) return v.slice(1, -1).split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
   return v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [];
 }
+// Preferred location: covers.yaml next to prompt.md. The official runner rejects unknown
+// frontmatter keys, so `covers:` inside prompt.md makes the case fail to load there.
+function parseCoversSidecar(text) {
+  const t = text.replace(/#[^\n]*/g, '');
+  const b = t.match(/\[([^\]]*)\]/);
+  const items = b ? b[1].split(',') : [...t.matchAll(/^\s*-\s*(.+)$/gm)].map((m) => m[1]);
+  return items.map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+}
 
 export async function coverage(pluginDir, { evalDir = null, claudeMd = null } = {}) {
   const manifestPath = path.join(pluginDir, '.claude-plugin/plugin.json');
@@ -94,17 +103,19 @@ export async function coverage(pluginDir, { evalDir = null, claudeMd = null } = 
   assignIds(rules);
   const byId = new Map(rules.map((r) => [r.id, r]));
   for (const r of rules) r.cases = [];
-  const cases = []; const unknown = [];
+  const cases = []; const unknown = []; const legacy = [];
   const ed = path.join(pluginDir, evalDir ?? manifest.experimental?.evals ?? 'evals');
   if (existsSync(ed)) for (const e of (await fs.readdir(ed, { withFileTypes: true })).filter((x) => x.isDirectory() && !['results', 'mocks'].includes(x.name))) {
     const t = await readIf(path.join(ed, e.name, 'prompt.md')); if (!t) continue;
     const fm = (t.match(/^---\r?\n([\s\S]*?)\r?\n---/) ?? [])[1] ?? '';
-    const covers = parseCovers(fm);
+    const sidecar = await readIf(path.join(ed, e.name, 'covers.yaml'));
+    const covers = sidecar !== null ? parseCoversSidecar(sidecar) : parseCovers(fm);
+    if (sidecar === null && covers.length) legacy.push(e.name);
     cases.push({ dir: e.name, covers });
     for (const id of covers) { const r = byId.get(id); if (r) r.cases.push(e.name); else unknown.push({ case: e.name, id }); }
   }
   const covered = rules.filter((r) => r.cases.length);
-  return { schemaVersion: 1, pluginDir: path.basename(pluginDir), total: rules.length, covered: covered.length, pct: rules.length ? Math.round((covered.length / rules.length) * 100) : null, rules, uncovered: rules.filter((r) => !r.cases.length).map((r) => r.id), unknownCovers: unknown, cases };
+  return { schemaVersion: 1, pluginDir: path.basename(pluginDir), total: rules.length, covered: covered.length, pct: rules.length ? Math.round((covered.length / rules.length) * 100) : null, rules, uncovered: rules.filter((r) => !r.cases.length).map((r) => r.id), unknownCovers: unknown, legacyCoversFrontmatter: legacy, cases };
 }
 
 export function badgeSvg(pct, label = 'agent-config coverage') {
@@ -119,9 +130,10 @@ export function markdown(c) {
   if (c.uncovered.length) {
     lines.push('', '| untested rule | where |', '|---|---|');
     for (const id of c.uncovered) { const r = c.rules.find((x) => x.id === id); lines.push(`| \`${id}\` — ${r.text.length > 90 ? r.text.slice(0, 87) + '…' : r.text} | ${r.source}${r.line ? `:${r.line}` : ''} |`); }
-    lines.push('', `Add \`covers: [${c.uncovered[0]}]\` to a case's prompt.md, or generate one with \`/config-drift-checker:write-case\`.`);
+    lines.push('', `Add \`${c.uncovered[0]}\` to a case's \`covers.yaml\`, or generate a case with \`/config-drift-checker:write-case\`.`);
   }
-  if (c.unknownCovers.length) lines.push('', `⚠ unknown ids in \`covers:\` — ${c.unknownCovers.map((u) => `${u.case}: \`${u.id}\``).join(', ')} (run \`config-coverage.mjs --list\` for valid ids)`);
+  if (c.unknownCovers.length) lines.push('', `⚠ unknown ids in \`covers.yaml\` — ${c.unknownCovers.map((u) => `${u.case}: \`${u.id}\``).join(', ')} (run \`config-coverage.mjs --list\` for valid ids)`);
+  if (c.legacyCoversFrontmatter?.length) lines.push('', `⚠ \`covers:\` in prompt.md frontmatter makes the case fail to load under \`claude plugin eval\` (unknown key) — move it to a \`covers.yaml\` next to prompt.md: ${c.legacyCoversFrontmatter.join(', ')}`);
   return lines.join('\n');
 }
 

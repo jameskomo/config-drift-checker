@@ -42,7 +42,7 @@ Claude will:
    it copies your source into a scratch workspace and asks for a feature that doesn't exist yet),
    a negative-trigger case (the skill must *not* fire on an unrelated request), and a hook case
    (a command your guard must block, stubbed so nothing real can be harmed). Each case says which
-   rules it `covers:` so the coverage number means something.
+   rules it covers (listed in the case's `covers.yaml`) so the coverage number means something.
 3. **Smoke-run them** and show a table of every grader's verdict. Graders that fail for the wrong
    reason get fixed before you see them.
 4. **Write `.cdc.yml`** (pins and budget, see below) and `.github/workflows/config-drift-checker.yml`,
@@ -258,7 +258,7 @@ node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --history eval
 node <plugin-root>/tools/baseline-check.mjs aggregate-result.json --config <plugin>   # exit 1 if not baseline material
 node <plugin-root>/tools/eval-report.mjs current.json --baseline baseline.json --config <plugin>
 node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html
-node <plugin-root>/tools/config-coverage.mjs <plugin> --list       # rule ids to put in a case's covers:
+node <plugin-root>/tools/config-coverage.mjs <plugin> --list       # rule ids to put in a case's covers.yaml
 node <plugin-root>/tools/config-coverage.mjs <plugin> --fail-under 80   # exit 1 under 80% coverage
 node <plugin-root>/tools/cdc-config.mjs <plugin> init              # write .cdc.yml; set-pins --model … --harness …
 node <plugin-root>/tools/release-watch.mjs --state .release-watch.json --models --pin claude-sonnet-5
@@ -346,7 +346,7 @@ the workflow artifact. We operate no server.
 
 **Can I test CLAUDE.md rules?** Yes. Cases copy your `CLAUDE.md` into the workspace via
 `scaffold_script`, so the rule is in force during the run and the grader checks the outcome. Declare
-`covers:` on the case and the coverage number tells you which rules still have no test.
+`covers.yaml` on the case and the coverage number tells you which rules still have no test.
 
 **Codex / Gemini / Cursor?** Next. The runner is "spawn a headless agent, grade the trace"; the case
 format and `.cdc.yml` are agent-agnostic (`agent:` is reserved).

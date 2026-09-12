@@ -70,7 +70,7 @@ and your CI with your key; nothing is sent anywhere).
 
 It works with any codebase, because it tests the agent's behaviour rather than your app. It uses the
 official runner automatically where `claude plugin eval` is enabled, and a bundled runner otherwise.
-Zero npm dependencies; 71 tests run against a fake `claude`, so the suite needs no API key.
+Zero npm dependencies; 72 tests run against a fake `claude`, so the suite needs no API key.
 
 **What it costs to run:** on a Claude Pro/Max plan, nothing extra. `claude setup-token` gives CI a
 subscription token, and eval runs then spend no API credit. On an API key, `.cdc.yml` caps spend per

@@ -100,6 +100,17 @@ function parseScalar(v) {
   return v;
 }
 
+// covers.yaml sidecar: rule ids a case exercises. Lives next to prompt.md because the official
+// runner rejects unknown frontmatter keys (a bare `covers:` in prompt.md fails to load there).
+async function readCovers(caseDir) {
+  const p = path.join(caseDir, 'covers.yaml');
+  if (!existsSync(p)) return null;
+  const t = (await fs.readFile(p, 'utf8')).replace(/#[^\n]*/g, '');
+  const b = t.match(/\[([^\]]*)\]/);
+  const items = b ? b[1].split(',') : [...t.matchAll(/^\s*-\s*(.+)$/gm)].map((m) => m[1]);
+  return items.map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+}
+
 // ---------- load suite ----------
 const manifest = JSON.parse(await fs.readFile(path.join(pluginDir, '.claude-plugin/plugin.json'), 'utf8'));
 const pluginName = manifest.name;
@@ -120,7 +131,7 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
   let scaffoldScript = null;
   const casePath = path.join(evalDir, d.name, 'case.yaml');
   if (existsSync(casePath)) { const m = (await fs.readFile(casePath, 'utf8')).match(/scaffold_script:\s*\|\s*\n((?:[ \t]+.*\n?)+)/); if (m) scaffoldScript = m[1].replace(/^[ \t]+/gm, ''); }
-  cases.push({ scaffoldScript, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
+  cases.push({ scaffoldScript, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
 }
 if (!cases.length) die('No eval cases found');
 function globToRe(g) { const alts = g.replace(/^\{(.*)\}$/, '$1').split(',').map((x) => x.trim()).filter(Boolean); return new RegExp('^(?:' + alts.map((a) => a.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')).join('|') + ')$'); } // supports a,b and {a,b}

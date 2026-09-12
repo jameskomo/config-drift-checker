@@ -47,7 +47,18 @@ test('coverage: counts, uncovered list, unknown ids, cases; results dir ignored'
   assert.deepEqual(c.rules.find((r) => r.id === 'hook/pretooluse-bash').cases, ['guard']);
   assert.equal(c.cases.length, 2);
   const md = markdown(c);
-  assert.match(md, /\*\*50%\*\* \(3 of 6 rules have a case\)/); assert.match(md, /`claude-md\/notes-are-never-deleted-delete-means` — Notes are never deleted/); assert.match(md, /CLAUDE\.md:5/); assert.match(md, /unknown ids in `covers:` — guard: `nope\/not-a-rule`/);
+  assert.match(md, /\*\*50%\*\* \(3 of 6 rules have a case\)/); assert.match(md, /`claude-md\/notes-are-never-deleted-delete-means` — Notes are never deleted/); assert.match(md, /CLAUDE\.md:5/); assert.match(md, /unknown ids in `covers.yaml` — guard: `nope\/not-a-rule`/);
+  assert.deepEqual(c.legacyCoversFrontmatter, ['envelope', 'guard'], 'frontmatter covers flagged as legacy');
+  assert.match(md, /fail to load under `claude plugin eval`/);
+});
+
+test('covers.yaml sidecar wins over legacy frontmatter and clears the legacy warning', async () => {
+  const dir = await fixture();
+  await fs.writeFile(path.join(dir, 'evals/guard/covers.yaml'), '# ids\n- hook/pretooluse-bash\n');
+  const c = await coverage(dir);
+  assert.deepEqual(c.cases.find((x) => x.dir === 'guard').covers, ['hook/pretooluse-bash']);
+  assert.deepEqual(c.unknownCovers, [], 'frontmatter nope/not-a-rule ignored once sidecar exists');
+  assert.deepEqual(c.legacyCoversFrontmatter, ['envelope'], 'only the sidecar-less case stays legacy');
 });
 
 test('empty plugin → no rules, null pct, grey badge', async () => {

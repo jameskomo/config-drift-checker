@@ -18,7 +18,8 @@
 
 **prompt.md frontmatter** (all optional): `name`, `tags[]`, `runs` (default 3), `max_turns`,
 `timeout_seconds`, `allowed_tools[]` (tools the agent may use; Bash/Write/Edit are gated),
-`model`, `append_system_prompt`, `env` (`EVAL_*` only), and `covers[]` (ours, ignored by the official
+`model`, `append_system_prompt`, `env` (`EVAL_*` only), and, ours only, a `covers.yaml` sidecar next to prompt.md (a `covers:` frontmatter key is
+rejected by the official
 runner): ids of the rules this case exercises (`config-coverage.mjs --list` prints them).
 
 **case.yaml**: `schema_version: "1.1"`, `context.scaffold_script` (bash run in the workspace,
@@ -216,7 +217,7 @@ failed case.
 
 Rules = bullets and numbered items (outside code fences) in `CLAUDE.md` and every `SKILL.md`, plus one
 rule per hook event/matcher. Ids are `<scope>/<first-six-words>` (`claude-md/…`, `skill/<name>/…`,
-`hook/<event>-<matcher>`), deduplicated. Cases claim rules with `covers:`; the tool reports
+`hook/<event>-<matcher>`), deduplicated. Cases claim rules in their `covers.yaml`; the tool reports
 covered/uncovered/unknown ids, writes `coverage.json`, a markdown block (in the job summary) and an
 SVG badge (`docs/coverage.svg` on the results branch). No agent runs. `--fail-under N` exits 1 when
 coverage is under N% (a null pct, meaning a plugin with no rules, never fails); the Action's

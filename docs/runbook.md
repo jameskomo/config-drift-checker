@@ -13,7 +13,7 @@
    (`git check-ignore -v .claude/evals/x`), keep the plugin files under `agent-config/` instead and
    set `experimental.evals` in the manifest. Real-code cases: scaffold copies the real source and
    `CLAUDE.md` into the workspace (`$EVAL_PLUGIN_ROOT` is set during scaffold); ask for a feature
-   that does not exist yet. Put the rule ids the case exercises in `covers:`
+   that does not exist yet. Put the rule ids the case exercises in the case's `covers.yaml`
    (`node tools/config-coverage.mjs <plugin> --list`).
 4. Validate locally: `claude plugin validate <plugin>` then
    `node tools/eval-shim.mjs <plugin> --case '<one>' --runs 1 --ablation none --scaffold --budget 0.5`.
@@ -100,7 +100,7 @@ node tools/canary-promote.mjs --config komo-stack --result current.json --streak
 node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json   # when enabled
-cd config-drift-checker && npm test                                  # 71 tests, no API key needed
+cd config-drift-checker && npm test                                  # 72 tests, no API key needed
 ```
 
 ## Troubleshooting

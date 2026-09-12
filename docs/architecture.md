@@ -56,7 +56,7 @@ flowchart LR
 | `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance | temp dirs only |
 | `eval-diff.mjs` | baseline vs current → score drift and efficiency drift → markdown + JSON + exit code by `fail_on` | none |
 | `canary-promote.mjs` | green streak on the same model+version → bump decision; unpinned green pinned run → pin decision; PR title/body | `canary/streak.json` |
-| `config-coverage.mjs` | rules in CLAUDE.md / skills / hooks vs the cases' `covers:` → coverage JSON, markdown, badge | `coverage.json` |
+| `config-coverage.mjs` | rules in CLAUDE.md / skills / hooks vs the cases' `covers.yaml` → coverage JSON, markdown, badge | `coverage.json` |
 | `eval-report.mjs` | aggregate-result.json (+ baseline) → self-contained HTML report | none |
 | `eval-dashboard.mjs` | history (+ baseline, spend, streak, coverage) → the drift index | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |
