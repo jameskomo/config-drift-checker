@@ -101,6 +101,7 @@ node tools/cdc-gate.mjs check --config komo-stack --track canary --spend spend.j
 node tools/canary-promote.mjs --config komo-stack --result current.json --streak canary/streak.json --regressed 0
 node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
+node tools/fleet.mjs --config fleet.yml --out fleet.html    # many repos, one dashboard + pin policy
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
 node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 node tools/trace-keeper.mjs out.json --clean   # after --keep-temp: keep transcripts inline (enables refusal labels on native runs)

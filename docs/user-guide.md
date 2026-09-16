@@ -254,7 +254,24 @@ and its PR is never auto-merged, you review it like any other. Full procedure:
 What one looks like in practice:
 [a real repair, verified](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).
 
-## 8. The drift index
+## 8. Fleet: many repos, one view
+
+Running the check on several repos? `tools/fleet.mjs` pulls every repo's published results (their
+`eval-results` branches) into one dashboard with a pin policy:
+
+```bash
+node <plugin-root>/tools/fleet.mjs --config fleet.yml --out fleet.html
+```
+
+`fleet.yml` lists the repos and the pins they should all be on (`policy: model / harness`); the
+table shows each repo's status, pins, policy skew, month spend, coverage and last run, and any
+repo whose pins differ from the policy is flagged. Repos with errored or missing data exit the
+command red, so the fleet view is itself a check. The ready workflow template is
+`ci/fleet.yml` in the plugin: drop it in a small fleet repo with your `fleet.yml`, and it publishes
+`docs/fleet.html` on a schedule (Pages source: main, folder /docs); private repos need a PAT with
+org read as `FLEET_TOKEN`.
+
+## 9. The drift index
 
 Every CI run also writes a dashboard to the `eval-results` branch under `docs/`: the verdict,
 pinned baseline vs latest canary, budget spent, coverage, a ribbon of every case over every run,
@@ -265,7 +282,7 @@ Source: branch `eval-results`, folder `/docs`. Turn it off with `pages: 'false'`
 - Coverage badge: `![agent-config coverage](https://raw.githubusercontent.com/<you>/<repo>/eval-results/docs/coverage.svg)`
 - Locally: `node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html`
 
-## 9. Local commands
+## 10. Local commands
 
 ```bash
 /config-drift-checker:run                      # inside Claude Code: run, diff, explain red
@@ -288,7 +305,7 @@ node <plugin-root>/tools/trace-keeper.mjs out.json --clean         # after claud
 `<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every
 run writes `aggregate-result.json` and `report.html` into `<your-plugin>/evals/results/<timestamp>/`.
 
-## 10. Cost (measured)
+## 11. Cost (measured)
 
 $0.05 to $0.08 per short Sonnet run; $0.20 to $0.25 per real-code run. A 3-case suite at 3 runs is
 about $0.43 per pinned run; a canary at 1 run per case is $0.15 to $0.20. With
@@ -296,7 +313,7 @@ about $0.43 per pinned run; a canary at 1 run per case is $0.15 to $0.20. With
 and `budget.per_month_usd` is the hard ceiling whatever npm publishes. On a subscription token,
 API cost is $0. Use `ablation: none` in CI and Haiku for PR smoke.
 
-## 11. Safety
+## 12. Safety
 
 Workspaces are throwaway directories, not sandboxes for Docker, the network or your host. Every
 run carries a safety-net hook that blocks `docker compose down -v`, prunes, force-pushes, `rm -rf`
@@ -306,7 +323,7 @@ does this for you). Read third-party suites before running them with `--scaffold
 skill may edit `CLAUDE.md`, skills and hooks only, never a case or grader, and every PR it opens
 carries its re-run evidence and is never auto-merged.
 
-## 12. See it work: the demo repo
+## 13. See it work: the demo repo
 
 [config-drift-checker-demo](https://github.com/jameskomo/config-drift-checker-demo) is a small
 Spring Boot notes API with a typical setup: CLAUDE.md, one conventions skill, one guard hook.
@@ -317,7 +334,7 @@ smoke-ran them, fixed two of its own graders, and reached 1.00. Everything it pr
 repo as generated, run log included. Read those three cases first; they are the best starting
 point for writing your own.
 
-## 13. FAQ
+## 14. FAQ
 
 **Isn't this what `/doctor` or `/skill-doctor` does?** No. Those are static health checks: they
 never run the agent. A setup can be perfectly well-formed and silently useless after a release.

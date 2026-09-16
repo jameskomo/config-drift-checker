@@ -1,0 +1,48 @@
+name: agent-config-fleet
+# One dashboard and one pin policy across every repo running config-drift-checker.
+# Put this in a small "fleet" repo together with a fleet.yml:
+#
+#   policy:
+#     model: claude-sonnet-5
+#     harness: "2.1.258"
+#   repos:
+#     - your-org/service-a
+#     - your-org/service-b
+#
+# Each run pulls every repo's published results (its eval-results branch), writes docs/fleet.html
+# (serve it with GitHub Pages: source = this repo's main branch, folder /docs) and puts the table
+# in the job summary. Repos with errored or missing data turn the run red, so the fleet check is
+# itself a check. Private repos: the default GITHUB_TOKEN only reads this repo, so pass a PAT with
+# org read access as FLEET_TOKEN and it is used via gh.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch: {}
+permissions: { contents: write }
+jobs:
+  fleet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { repository: jameskomo/config-drift-checker, ref: v0, path: .cdc-tools }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - name: Build the fleet dashboard
+        env:
+          GH_TOKEN: ${{ secrets.FLEET_TOKEN || github.token }}
+          USE_GH: ${{ secrets.FLEET_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p docs
+          gh_flag=""; [ "$USE_GH" = "true" ] && gh_flag="--gh"
+          node .cdc-tools/config-drift-checker/tools/fleet.mjs --config fleet.yml \
+            --out docs/fleet.html --md fleet.md $gh_flag | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Publish
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain docs)" ]; then echo "fleet unchanged"; exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs && git commit -qm "fleet dashboard [skip ci]"
+          for i in 1 2 3; do git push -q && break; git pull -q --rebase; sleep 3; done

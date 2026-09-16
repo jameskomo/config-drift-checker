@@ -116,7 +116,7 @@ runner with your key; nothing is sent to us, because there is no us to send it t
 
 ```
 config-drift-checker/   the plugin: skills (setup · run · write-case · repair) + the tools
-  tools/                shim runner · diff · classify · report · dashboard · coverage · watch · gate · promote · trace-keeper
+  tools/                shim runner · diff · classify · report · dashboard · coverage · watch · gate · promote · trace-keeper · fleet · bootstrap
   test/                 node --test suite, fake claude, npm test
 action/                 composite GitHub Action: gate → run → diff → store → PR → repair → alert
 examples/komo-stack/    a full example suite with .cdc.yml and baseline results
