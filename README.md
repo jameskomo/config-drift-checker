@@ -11,14 +11,16 @@ tells you the moment something stops working: when, why, and what moved.
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
 
 **Proof it works: [we sabotaged our own setup](https://jameskomo.github.io/config-drift-checker/example-break/report.html).**
-A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.36 and
-the tripwire case reads 0.00, "the skill stopped firing". The report is unedited.
+A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.56,
+the tripwire case reads 0.00, and the report names the cause itself: the skill was *discovered but
+never invoked*, so fix the trigger wording, not the packaging. The report is unedited.
 
 ## See it live
 
 | | What you're looking at |
 |---|---|
-| [**The sabotage report**](https://jameskomo.github.io/config-drift-checker/example-break/report.html) | what a real break looks like: a deliberately broken skill trigger, every grader's verdict, the tripwire at 0.00 |
+| [**The sabotage report**](https://jameskomo.github.io/config-drift-checker/example-break/report.html) | what a real break looks like: a deliberately broken skill trigger, the tripwire at 0.00, the report naming the cause itself | 
+| [**The repair that fixed it**](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) | the repair skill's own PR-ready summary from fixing that break live: what drifted, the smallest edit, the green re-run as evidence, $0.28 spent |
 | [**The drift observatory**](https://jameskomo.github.io/config-drift-checker/drift/) | this plugin's own suite re-run on every Claude Code release: trend per case, versions covered, every run's report linked |
 | [**The demo repo**](https://github.com/jameskomo/config-drift-checker-demo) | a small Spring Boot API whose whole setup (cases, config, workflow) was written by `/config-drift-checker:setup` unattended, kept exactly as generated |
 | [**The demo's drift index**](https://jameskomo.github.io/config-drift-checker-demo/) | the same observatory for that demo repo, built by its own CI |
