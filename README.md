@@ -56,6 +56,13 @@ Already have a suite in the `claude plugin eval` format? One step:
 - **A diff that doesn't cry wolf.** Each case has a noise band learned from its own history: a dip
   inside the band warns instead of failing the build, and guards make sure a real break can never
   hide in the band. Model refusals are labelled as refusals, not setup drift.
+- **Red cases that diagnose themselves.** Every run snapshots which skills the agent could see, so
+  a failed skill case says which repair it needs: *discovered but never invoked* (fix the trigger
+  wording) or *not discovered* (fix the packaging). [Watch it happen on a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html).
+- **Reports that show their work.** Every report lists the whole suite including cases a filter or
+  budget skipped, every discovered skill and whether it fired, and exactly which checks ran beyond
+  a bare `claude plugin eval` run. And `trace-keeper` preserves the official runner's transcripts,
+  which it otherwise deletes on exit.
 - **Red check, PR comment, Slack alert, HTML report, drift index.** Every grader's verdict with
   its reason, tool calls, cost and turns per case, and a Pages-served index of every case across
   every version.
@@ -87,7 +94,9 @@ exact format, the Action prefers the official runner (bundled fallback for older
 | Red check, PR comment, Slack | exit code | all three |
 | Spend control | a per-run ceiling flag | per-run and per-month caps, enforced from a ledger |
 | Coverage of your rules | no | percent, badge, `coverage-min` gate |
-| Repair proposal on red | no | a PR with the smallest fix, re-run as proof |
+| Repair proposal on red | no | a PR with the smallest fix, [proven live](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
+| Why a skill case failed | a score | discovered vs invoked: trigger wording or packaging |
+| Transcripts | deleted when the command exits | `trace-keeper` copies them next to the JSON |
 
 One sentence: their command answers "does my plugin work right now on my machine"; this answers
 "did anything stop working since the baseline, across every release, without me watching".
