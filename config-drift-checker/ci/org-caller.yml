@@ -1,0 +1,12 @@
+# The whole per-repo install once your org's .github repo carries org-reusable.yml
+# (as .github/workflows/config-drift-checker.yml) and the org secret is set.
+# Adjust the paths: filters to where this repo's setup lives.
+name: config-drift-checker
+on:
+  push: { branches: [main], paths: ['CLAUDE.md', '.claude/**', 'agent-config/**'] }
+  pull_request: { paths: ['CLAUDE.md', '.claude/**', 'agent-config/**'] }
+  workflow_dispatch: {}
+jobs:
+  eval:
+    uses: your-org/.github/.github/workflows/config-drift-checker.yml@main
+    secrets: inherit

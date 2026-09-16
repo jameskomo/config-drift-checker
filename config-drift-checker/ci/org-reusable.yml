@@ -1,0 +1,43 @@
+name: config-drift-checker-org
+# Org-wide rollout without a hosted app. Put THIS file in your org's `.github` repository under
+# .github/workflows/config-drift-checker.yml, set the org-level Actions secret
+# CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY) once, and every member repo needs only the
+# three-line caller (ci/org-caller.yml next to this file):
+#
+#   jobs:
+#     eval:
+#       uses: your-org/.github/.github/workflows/config-drift-checker.yml@main
+#       secrets: inherit
+#
+# What a hosted GitHub App would add beyond this: no per-repo caller file at all, and
+# org-installed webhooks. What it would cost: a server of ours between your code and your key.
+# This stays serverless on purpose; the caller file is the price.
+on:
+  workflow_call:
+    inputs:
+      plugin-dir: { type: string, default: '.' }
+      track: { type: string, default: 'pinned' }
+      coverage-min: { type: string, default: '' }
+      promote-baseline: { type: string, default: 'false' }
+      force: { type: string, default: 'false' }
+    secrets:
+      ANTHROPIC_API_KEY: { required: false }
+      CLAUDE_CODE_OAUTH_TOKEN: { required: false }
+      SLACK_WEBHOOK_URL: { required: false }
+permissions: { contents: write, pull-requests: write }
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: jameskomo/config-drift-checker/action@v0
+        with:
+          plugin-dir: ${{ inputs.plugin-dir }}
+          track: ${{ inputs.track }}
+          coverage-min: ${{ inputs.coverage-min }}
+          promote-baseline: ${{ inputs.promote-baseline }}
+          force: ${{ inputs.force }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

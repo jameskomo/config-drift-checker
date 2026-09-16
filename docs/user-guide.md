@@ -271,6 +271,17 @@ command red, so the fleet view is itself a check. The ready workflow template is
 `docs/fleet.html` on a schedule (Pages source: main, folder /docs); private repos need a PAT with
 org read as `FLEET_TOKEN`.
 
+### Rolling it out across an org (no hosted app)
+
+Put `ci/org-reusable.yml` (from the plugin) into your org's `.github` repository as
+`.github/workflows/config-drift-checker.yml`, set the org-level Actions secret
+(`CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`) once, and each member repo installs the whole
+check with the three-line caller in `ci/org-caller.yml`: `uses: your-org/.github/...` plus
+`secrets: inherit`. Combine with the fleet dashboard above and you have org rollout plus org
+overview with zero hosted infrastructure. A GitHub App could remove even the caller file, but it
+would put a server of ours between your code and your key, which is exactly what this tool
+promises not to have; if that trade ever changes, it will be loudly opt-in.
+
 ## 9. The drift index
 
 Every CI run also writes a dashboard to the `eval-results` branch under `docs/`: the verdict,
