@@ -25,6 +25,7 @@ behaviour on its own and proved it with a green re-run, for $0.28. Both artifact
 | [**The drift observatory**](https://jameskomo.github.io/config-drift-checker/drift/) | this plugin's own suite re-run on every Claude Code release: trend per case, versions covered, every run's report linked |
 | [**The demo repo**](https://github.com/jameskomo/config-drift-checker-demo) | a small Spring Boot API whose whole setup (cases, config, workflow) was written by `/config-drift-checker:setup` unattended, kept exactly as generated |
 | [**The demo's drift index**](https://jameskomo.github.io/config-drift-checker-demo/) | the same observatory for that demo repo, built by its own CI |
+| [**What a setup is worth**](docs/community-suites.md) | the first community suite (Spring Boot conventions) with a published with/without measurement: the guard hook is worth +0.75, [the run itself](https://jameskomo.github.io/config-drift-checker/worth/report.html) |
 | [**The site**](https://jameskomo.github.io/config-drift-checker/) | one page with all of the above |
 
 ## Quick start
