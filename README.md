@@ -10,10 +10,11 @@ tells you the moment something stops working: when, why, and what moved.
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
 
-**Proof it works: [we sabotaged our own setup](https://jameskomo.github.io/config-drift-checker/example-break/report.html).**
+**Proof it works: [we broke our own setup](https://jameskomo.github.io/config-drift-checker/example-break/report.html), and [the repair skill fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).**
 A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.56,
-the tripwire case reads 0.00, and the report names the cause itself: the skill was *discovered but
-never invoked*, so fix the trigger wording, not the packaging. The report is unedited.
+the tripwire case read 0.00, and the report named the cause itself: the skill was *discovered but
+never invoked*, so fix the trigger wording, not the packaging. Then the repair skill restored the
+behaviour on its own and proved it with a green re-run, for $0.28. Both artifacts are unedited.
 
 ## See it live
 
