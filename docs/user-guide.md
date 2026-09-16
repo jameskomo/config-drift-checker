@@ -45,6 +45,11 @@ starter case (official `claude plugin eval init --bare`), `.cdc.yml` with the ha
 your installed Claude Code, and the workflow; you then write the case content yourself. Both modes
 are idempotent, never overwrite existing files, and end with the same hand-off checklist.
 
+**Or start from a ready-made setup:** [community suites](community-suites.md) are maintained
+setups with eval suites and a published with/without worth measurement; the first is Spring Boot
+conventions (`claude plugin install komo-stack@jameskomo`), where the guard hook measures +0.75
+on its case. Adopt one and adapt the rules; the suite keeps measuring your adaptation.
+
 ## 3. Wire CI (the parts only you can do)
 
 **One auth secret**, either kind:
