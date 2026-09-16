@@ -2,6 +2,8 @@
 
 ## First-time setup (a repo that has a plugin)
 
+0. One-command version of steps 1-3: `node <plugin-root>/tools/cdc-bootstrap.mjs .` (headless
+   setup; `--no-agent` scaffolds for $0). The manual steps:
 1. Add the workflow (`uses: jameskomo/config-drift-checker/action@v0`; the full two-track template is
    `ci/config-drift-checker.yml` in the plugin) and a `.cdc.yml` at the plugin root
    (`node tools/cdc-config.mjs <plugin> init`, then set `budget.per_month_usd` to what you are willing to spend).

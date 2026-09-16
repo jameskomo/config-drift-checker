@@ -38,6 +38,13 @@ Claude will:
 
 Review the diff like any PR. Commit.
 
+**Without entering Claude at all:** `node <plugin-root>/tools/cdc-bootstrap.mjs .` runs the same
+setup headlessly from a plain terminal (state a spend cap with `--budget`, default 3). Add
+`--no-agent` for a $0 deterministic scaffold instead: a minimal manifest if you have none, a blank
+starter case (official `claude plugin eval init --bare`), `.cdc.yml` with the harness pinned to
+your installed Claude Code, and the workflow; you then write the case content yourself. Both modes
+are idempotent, never overwrite existing files, and end with the same hand-off checklist.
+
 ## 3. Wire CI (the parts only you can do)
 
 **One auth secret**, either kind:

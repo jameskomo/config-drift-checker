@@ -37,7 +37,10 @@ claude plugin marketplace add jameskomo/config-drift-checker && claude plugin in
 ```
 
 Five minutes: it finds your CLAUDE.md, skills and hooks, writes starter eval cases from them,
-smoke-runs them, and writes `.cdc.yml` plus the GitHub workflow. Add one secret
+smoke-runs them, and writes `.cdc.yml` plus the GitHub workflow. Prefer never opening Claude at
+all? `node <plugin-root>/tools/cdc-bootstrap.mjs .` runs the same setup headlessly, and
+`--no-agent` scaffolds everything for $0 (blank starter case included) so you fill in the prompts
+yourself. Add one secret
 (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` to run free on a Pro/Max subscription, or
 `ANTHROPIC_API_KEY`), push, done.
 
