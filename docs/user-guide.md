@@ -232,6 +232,21 @@ In one sentence: a green report asks nothing of you; a red one tells you which o
 happened (the model refused, the setup regressed, the grader was wrong, or the run was flaky) and
 what to do.
 
+### When and how repair runs
+
+Repair never runs on its own. It runs in exactly two situations: you invoke
+`/config-drift-checker:repair` after a red run, or the Action ran with `repair: true` and the run
+came out red. What it then does, in order: reads the failing runs' transcripts and classifies the
+failure; finds the instruction in your CLAUDE.md, skill or hook that should have produced the
+behaviour; makes the smallest edit that makes it land again (reword, add an example, move the rule,
+or add a hook when prose is structurally unreliable); re-runs only the failing cases to prove the
+fix; and writes a PR-ready summary. Hard limits: it may touch CLAUDE.md, skills and hooks only,
+never anything under `evals/`; it never loosens a rule to make a case pass; it stops at the budget;
+and its PR is never auto-merged, you review it like any other. Full procedure:
+[the repair skill](https://github.com/jameskomo/config-drift-checker/blob/main/config-drift-checker/skills/repair/SKILL.md).
+What one looks like in practice:
+[a real repair, verified](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).
+
 ## 8. The drift index
 
 Every CI run also writes a dashboard to the `eval-results` branch under `docs/`: the verdict,
