@@ -3,8 +3,8 @@
 Everything from install to reading a red report. What the tool is and how it relates to
 `claude plugin eval` is in the [README](../README.md); this page assumes you want it running.
 
-Live example: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
-plugin's own suite on every Claude Code release) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo) · [demo report](https://jameskomo.github.io/config-drift-checker-demo/dashboard/)
+Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
+plugin's own suite on every Claude Code release) · [a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [the repair that fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo)
 
 ## 1. Install (once per machine)
 
@@ -106,7 +106,7 @@ the `watch` job from the full template at `ci/config-drift-checker.yml` in the p
 | `runs: 1`, `model: haiku` | cheap PR smoke |
 | `ablation: with-without` | measure what each skill is worth (run once, not in every CI run) |
 | `promote-baseline: true` | after an intentional setup change |
-| `repair: true` | on red, the agent proposes a fix PR (spends credit, budget-capped) |
+| `repair: true` | on red, the agent proposes a fix PR (spends credit, budget-capped). [A real repair, verified](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
 | `open-prs: false` | no bump/pin PRs |
 | `claude-code-version: 2.1.258` | override the pin for this run |
 | `coverage-min: 80` | fail when under 80% of your rules have a case (empty = report only) |
