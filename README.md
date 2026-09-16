@@ -78,6 +78,9 @@ Already have a suite in the `claude plugin eval` format? One step:
 - **Ablation, coverage, repair.** With/without-plugin deltas show what each skill is worth;
   coverage shows which of your rules have no test (`coverage-min` gates it); on a red run a skill
   proposes the smallest setup fix and proves it by re-running the failing cases.
+- **Fleet and org rollout, serverless.** One reusable workflow in your org's `.github` repo plus a
+  three-line caller installs the check on every repo; `fleet.mjs` folds all their published
+  results into one dashboard with a pin policy, and skew from the policy is flagged per repo.
 
 ## How this relates to `claude plugin eval`
 

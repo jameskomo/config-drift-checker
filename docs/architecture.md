@@ -61,6 +61,9 @@ flowchart LR
 | `eval-report.mjs` | aggregate-result.json (+ baseline) → self-contained HTML report | none |
 | `trace-keeper.mjs` | after `claude plugin eval --keep-temp`: copy the ephemeral traces next to the JSON and write toolUses/response/model inline | traces/ next to the result |
 | `eval-dashboard.mjs` | history (+ baseline, spend, streak, coverage) → the drift index | none |
+| `fleet.mjs` | many repos' published results → one dashboard + pin-policy skew; errored/missing repos exit red | none (reads each repo's results branch) |
+| `cdc-bootstrap.mjs` | one command to a protected repo: headless setup-skill run, or a $0 `--no-agent` scaffold | none |
+| `ci/` templates | the per-repo two-track workflow, the fleet workflow, and the org pair (reusable workflow + three-line caller) | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |
 
 **Trust boundaries**
