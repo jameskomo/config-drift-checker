@@ -143,7 +143,11 @@ trace next to the JSON and writes `toolUses`/`response`/`numTurns`/`model` inlin
 Shim results also carry `discovered.skills`: every SKILL.md that parses at run start, so a red
 trigger case can be split into "discovered but never invoked" (fix the trigger description) and
 "not discovered" (packaging) — eval-diff prints which. One CLI difference:
-the official `--case` glob matches the case's `name:`, the shim's matches the directory. The
+the official `--case` glob matches the case's `name:`, which defaults to the directory name, while
+the shim's always matches the directory. So the two agree unless a case sets an explicit `name:`
+that differs from its folder; the simplest rule (pointed out by a sharp dev.to commenter) is to set
+no `name:` at all, and the folder is the filter and the report key under both runners — the
+reference suite follows it. The
 Action stamps `track`/`harness`/`judge` onto official output so the diff, store and promote steps
 can reason about it. Readers treat missing fields as unknown.
 

@@ -1,6 +1,5 @@
 ---
 description: Proves business rules and authorization live in the service (not the controller), failures are domain exceptions mapped by a @RestControllerAdvice handler, and services return records rather than Map<String, Object>; exercises the spring-boot-conventions skill.
-name: Spring service owns rules, exceptions and result types
 tags: [skill, spring]
 runs: 3
 max_turns: 8

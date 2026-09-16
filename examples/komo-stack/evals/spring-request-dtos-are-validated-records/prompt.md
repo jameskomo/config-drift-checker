@@ -1,6 +1,5 @@
 ---
 description: Proves request/response shapes are Java records grouped in a <Feature>Dtos holder and that request bodies are validated with jakarta.validation; exercises the spring-boot-conventions skill.
-name: Request bodies are validated records in a Dtos holder
 tags: [skill, spring]
 runs: 3
 max_turns: 8
