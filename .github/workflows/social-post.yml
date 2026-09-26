@@ -6,11 +6,8 @@ name: social-post
 #   BLUESKY_APP_PASSWORD  Settings → App passwords (never the account password)
 #   MASTODON_INSTANCE   e.g. https://fosstodon.org
 #   MASTODON_TOKEN      Preferences → Development → New application → write:statuses
-#   X_CONSUMER_KEY / X_CONSUMER_SECRET / X_ACCESS_TOKEN / X_ACCESS_SECRET
-#                       X killed its free API tier in Feb 2026; posting is pay-per-use credits
-#                       ($0.20/post with a link). Set these four ONLY if the account has credits
-#                       to spend; otherwise leave unset and post to X by hand (the website is
-#                       free) using docs/drift/post.txt. Bluesky and Mastodon remain free APIs.
+# X is deliberately absent: its API has been pay-per-use since Feb 2026 (no free posting tier),
+# so X posts stay manual, pasted from the privately generated per-platform copy.
 # State (the last version posted) lives on the eval-results branch, so re-runs never double-post.
 on:
   schedule:
@@ -38,10 +35,6 @@ jobs:
           BSKY_PW: ${{ secrets.BLUESKY_APP_PASSWORD }}
           MASTO_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
           MASTO_TOKEN: ${{ secrets.MASTODON_TOKEN }}
-          X_CONSUMER_KEY: ${{ secrets.X_CONSUMER_KEY }}
-          X_CONSUMER_SECRET: ${{ secrets.X_CONSUMER_SECRET }}
-          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
         run: |
           set -euo pipefail
           node config-drift-checker/tools/drift-digest.mjs docs/drift --post "$RUNNER_TEMP/post.txt" >/dev/null 2>&1
@@ -59,9 +52,6 @@ jobs:
           if [ -n "$MASTO_INSTANCE" ] && [ -n "$MASTO_TOKEN" ]; then
             curl -sf "$MASTO_INSTANCE/api/v1/statuses" -H "Authorization: Bearer $MASTO_TOKEN" --data-urlencode "status=$text" >/dev/null \
               && { echo "posted to Mastodon"; posted=true; } || echo "::warning::Mastodon post failed"
-          fi
-          if [ -n "$X_CONSUMER_KEY" ] && [ -n "$X_ACCESS_TOKEN" ]; then
-            TEXT="$text" node .github/scripts/x-post.mjs && posted=true || echo "::warning::X post failed"
           fi
           [ "$posted" = "true" ] || { echo "no social secrets set — dormant (see the header of this workflow for which to set)"; exit 0; }
       - if: steps.decide.outputs.post == 'true'
