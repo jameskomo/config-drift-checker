@@ -102,6 +102,7 @@ node tools/canary-promote.mjs --config komo-stack --result current.json --streak
 node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
 node tools/fleet.mjs --config fleet.yml --out fleet.html    # many repos, one dashboard + pin policy
+node tools/drift-digest.mjs docs/drift --md digest.md --post post.txt   # weekly digest + the release-verdict post, pre-written
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
 node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 node tools/trace-keeper.mjs out.json --clean   # after --keep-temp: keep transcripts inline (enables refusal labels on native runs)

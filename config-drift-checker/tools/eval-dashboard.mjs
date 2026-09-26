@@ -185,7 +185,7 @@ const verdicts = [...byVersion.entries()].map(([cc, r]) => {
     overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null };
 }).reverse(); // newest first
 const outDir = path.dirname(outPath);
-await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), verdicts }, null, 2) + '\n');
+// (verdicts.json written below, once the streak is known)
 const pageUrl = opt.pageUrl ? opt.pageUrl.replace(/\/$/, '') : null;
 const entries = verdicts.slice(0, 25).map((v) => `  <entry>
     <id>urn:config-drift-checker:${esc(suite)}:cc${esc(v.claudeCode)}</id>
@@ -211,4 +211,5 @@ const badgeValue = !latest ? 'no runs' : latestStatus === 'errored' ? 'runs erro
 const badgeColor = !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestStatus === 'errored' ? '#f85149' : '#3fb950';
 const lw = 8 + badgeLabel.length * 6.3, vw = 12 + badgeValue.length * 6.5, bw = Math.round(lw + vw);
 await fs.writeFile(path.join(outDir, 'status.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="20" role="img" aria-label="${esc(badgeLabel)}: ${esc(badgeValue)}"><title>${esc(badgeLabel)}: ${esc(badgeValue)}</title><rect rx="3" width="${bw}" height="20" fill="#555"/><rect rx="3" x="${lw.toFixed(1)}" width="${vw.toFixed(1)}" height="20" fill="${badgeColor}"/><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,sans-serif" font-size="11"><text x="${(lw / 2).toFixed(1)}" y="14">${esc(badgeLabel)}</text><text x="${(lw + vw / 2).toFixed(1)}" y="14">${esc(badgeValue)}</text></g></svg>\n`);
+await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts }, null, 2) + '\n');
 console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, ~${streakDays} days clean)` : ''}`);
