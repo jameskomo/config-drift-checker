@@ -6,6 +6,9 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      codeql:
+        patterns: ["github/codeql-action*"]
   # The composite action users consume; not scanned by the "/" entry above.
   - package-ecosystem: github-actions
     directory: /action
