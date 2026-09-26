@@ -29,6 +29,7 @@ const readJson = async (f) => { try { return JSON.parse(await fs.readFile(path.j
 const v = await readJson('verdicts.json');
 if (!v) { console.error(`no verdicts.json in ${dir} — run eval-dashboard first`); process.exit(1); }
 const spend = await readJson('spend.json');
+const streak = v.streak ?? { runs: 0, versions: 0, days: 0 }; // verdicts.json from an older dashboard has no streak
 
 const now = Date.now();
 const windowV = v.verdicts.filter((x) => x.at && now - new Date(x.at).getTime() <= days * 86400000);
@@ -44,7 +45,7 @@ const digest = [
     ? windowV.map((x) => `- ${icon(x)} Claude Code **${x.claudeCode}**: ${x.verdict === 'held' ? 'behaviour held' : x.verdict === 'drift' ? `drift on ${x.casesMoved.join(', ')}` : 'runs errored'} (overall ${x.overall === null ? 'n/a' : Number(x.overall).toFixed(2)}, ${x.track} track)`).join('\n')
     : `- No Claude Code releases reached the suite in this window. The streak stands.`,
   '',
-  `Streak: **${v.streak.versions} release${v.streak.versions === 1 ? '' : 's'} clean** across ${v.streak.runs} runs, about ${v.streak.days} days.` +
+  `Streak: **${streak.versions} release${streak.versions === 1 ? '' : 's'} clean** across ${streak.runs} runs, about ${streak.days} days.` +
     (spent !== null ? ` Spend this month: $${spent.toFixed(2)}.` : ''),
   page ? `\nObservatory: ${page} · feed: ${page}feed.xml` : '',
 ].join('\n');
@@ -53,7 +54,7 @@ const newest = v.verdicts[0] ?? null;
 let post = '';
 if (newest) {
   if (newest.verdict === 'held') {
-    post = `Claude Code ${newest.claudeCode} tested against our reference agent setup: behaviour held. That makes ${v.streak.versions} release${v.streak.versions === 1 ? '' : 's'} clean in a row (~${v.streak.days} days).
+    post = `Claude Code ${newest.claudeCode} tested against our reference agent setup: behaviour held. That makes ${streak.versions} release${streak.versions === 1 ? '' : 's'} clean in a row (~${streak.days} days).
 
 Every release gets this treatment, automatically.${page ? ` Verdicts feed: ${page}feed.xml` : ''}`;
   } else if (newest.verdict === 'drift') {
