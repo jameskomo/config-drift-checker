@@ -114,9 +114,9 @@ test('errored runs are still counted and surfaced (credit exhausted), score null
 
 test('--agent outside the supported set exits with a clear message', async () => {
   const plugin = await makePlugin();
-  const r = spawnSync('node', [SHIM, plugin, '--agent', 'gemini', '--ablation', 'none'], { encoding: 'utf8' });
+  const r = spawnSync('node', [SHIM, plugin, '--agent', 'cursor', '--ablation', 'none'], { encoding: 'utf8' });
   assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /unknown agent 'gemini' \(claude \| codex\)/);
+  assert.match(r.stderr, /unknown agent 'cursor' \(claude \| codex \| gemini\)/);
 });
 
 test('--regrade keeps working and carries the source harness version through', async () => {
@@ -194,4 +194,29 @@ test('codex agent (experimental): runs via codex exec, bridges AGENTS.md, skips 
   assert.equal(skill.scored, false, 'Skill indicator skipped on codex');
   assert.match(skill.reason, /does not exist on codex/);
   assert.equal(report.cases[0].summary.score, 1, 'skipped indicator does not drag the score');
+});
+
+test('gemini agent (experimental): headless text run, GEMINI.md bridged, tool indicators skipped', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  await fs.writeFile(path.join(plugin, 'evals/case-a/graders/acted.md'), '---\ntype: tool_used\ntool: Bash\nmin: 1\n---\nRan something.\n');
+  const caseYaml = `scaffold_script: |
+  mkdir -p .eval-bin
+  cat > .eval-bin/gemini << 'SH'
+  #!/bin/sh
+  [ -f GEMINI.md ] && A=yes || A=no
+  echo "DONE GEMINIMD=$A"
+  SH
+  chmod +x .eval-bin/gemini
+  echo house rules > CLAUDE.md
+`;
+  await fs.writeFile(path.join(plugin, 'evals/case-a/case.yaml'), caseYaml);
+  const { report } = await runShim(plugin, ['--agent', 'gemini', '--scaffold']);
+  assert.equal(report.agent, 'gemini');
+  const run = report.cases[0].arms.with[0];
+  assert.match(run.response, /DONE GEMINIMD=yes/, 'CLAUDE.md bridged to GEMINI.md');
+  assert.equal(run.graders.find((g) => g.name === 'done').verdict, 'pass');
+  const acted = run.graders.find((g) => g.name === 'acted');
+  assert.equal(acted.scored, false, 'tool indicator skipped without machine-readable tool calls');
+  assert.match(acted.reason, /no machine-readable tool calls/);
+  assert.equal(report.cases[0].summary.score, 1);
 });

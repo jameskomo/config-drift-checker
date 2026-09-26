@@ -62,7 +62,7 @@ const cdc = loadConfig(pluginDir);
 let track;
 try { track = resolveTrack(cdc, opt.track ?? cdc.track); } catch (e) { die(e.message); }
 const agent = opt.agent ?? track.agent ?? 'claude';
-if (!['claude', 'codex'].includes(agent)) { die(`unknown agent '${agent}' (claude | codex)`); }
+if (!['claude', 'codex', 'gemini'].includes(agent)) { die(`unknown agent '${agent}' (claude | codex | gemini)`); }
 opt.judgeModel ??= track.judgeModel;
 opt.expand ??= track.expandOnDeviation;
 opt.budget ??= track.budget.per_run_usd;
@@ -178,9 +178,10 @@ async function runAgent(c, arm) {
     if (!opt.scaffold) log(`    (scaffold_script present but --scaffold not given: skipping)`);
     else { const r = await exec('bash', ['-euo', 'pipefail', '-c', c.scaffoldScript], { cwd: ws, env: { ...process.env, EVAL_PLUGIN_ROOT: pluginDir, EVAL_CASE: c.dir }, timeout: 120_000 }); if (r.code !== 0) log(`    scaffold failed: ${r.stderr.slice(-300)}`); }
   }
-  // codex reads AGENTS.md, not CLAUDE.md: bridge whatever the scaffold provided, so the same
-  // cases exercise the same instructions on both agents (skills stay Claude-only; see graders)
-  if (agent === 'codex' && existsSync(path.join(ws, 'CLAUDE.md')) && !existsSync(path.join(ws, 'AGENTS.md'))) await fs.copyFile(path.join(ws, 'CLAUDE.md'), path.join(ws, 'AGENTS.md'));
+  // other agents read their own context file, not CLAUDE.md: bridge whatever the scaffold
+  // provided, so the same cases exercise the same instructions everywhere (skills stay Claude-only)
+  const bridge = { codex: 'AGENTS.md', gemini: 'GEMINI.md' }[agent];
+  if (bridge && existsSync(path.join(ws, 'CLAUDE.md')) && !existsSync(path.join(ws, bridge))) await fs.copyFile(path.join(ws, 'CLAUDE.md'), path.join(ws, bridge));
   const before = await snapshot(ws);
   const cfg = await makeConfigDir();
   if (agent === 'codex') {
@@ -211,6 +212,22 @@ async function runAgent(c, arm) {
     await fs.rm(ws, { recursive: true, force: true });
     const isErr = errored || (code !== 0 && texts.length === 0) || (texts.length === 0 && toolUses.length === 0);
     return { lastMessage: texts.join('\n\n'), finalMessage: texts.at(-1) ?? '', texts, toolUses, toolResults, files: files0, fileContents: fileContents0, trace: events, costUsd: null, inputTokens: inTok, outputTokens: outTok, numTurns: texts.length || null, isError: isErr, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: isErr ? stdout.slice(-1500) : '', model: model ?? 'codex' };
+  }
+  if (agent === 'gemini') {
+    // EXPERIMENTAL: gemini -p is headless but emits plain text, so tool-call evidence is not
+    // machine-readable; graders that need it are skipped, content graders score the reply.
+    const genv = { ...process.env };
+    if (existsSync(path.join(ws, '.eval-bin'))) genv.PATH = path.join(ws, '.eval-bin') + path.delimiter + (genv.PATH ?? '');
+    const t0 = Date.now();
+    const { stdout, stderr, code, timedOut } = await exec('gemini', ['-p', c.prompt, '--approval-mode', 'yolo', '--skip-trust'], { cwd: ws, env: genv, timeout: c.timeout });
+    const text = stdout.trim();
+    const after0 = await snapshot(ws);
+    const files0 = [...after0.keys()].filter((f) => !before.has(f) || before.get(f) !== after0.get(f));
+    const fileContents0 = {};
+    for (const f of files0) { try { const st = await fs.stat(path.join(ws, f)); if (st.size < 200_000) fileContents0[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
+    if (cfg) await fs.rm(cfg, { recursive: true, force: true });
+    await fs.rm(ws, { recursive: true, force: true });
+    return { lastMessage: text, finalMessage: text, texts: text ? [text] : [], toolUses: [], toolEvidence: false, toolResults: [], files: files0, fileContents: fileContents0, trace: [], costUsd: null, inputTokens: null, outputTokens: null, numTurns: null, isError: code !== 0 || !text, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: code !== 0 ? stdout.slice(-800) : '', model: 'gemini' };
   }
   const args = ['-p', c.prompt, '--output-format', 'stream-json', '--verbose', '--setting-sources', opt.safetyNet && cfg ? 'user' : '', '--permission-mode', 'dontAsk', '--max-turns', String(c.maxTurns), '--model', c.model];
   if (arm === 'with') args.push('--plugin-dir', pluginDir);
@@ -292,6 +309,7 @@ async function grade(g, run, arm, ablating) {
   }
   if (g.type === 'tool_used') {
     if (agent !== 'claude' && g.tool === 'Skill') return { ...base, score: null, verdict: 'skipped', scored: false, reason: `the Skill tool does not exist on ${agent}; Claude-only indicator` };
+    if (run.toolEvidence === false) return { ...base, score: null, verdict: 'skipped', scored: false, reason: `${agent} emits no machine-readable tool calls headlessly; indicator skipped` };
     const im = g.input_match ? new RegExp(String(g.input_match), 's') : null;
     const n = run.toolUses.filter((u) => u.tool === g.tool && (!im || im.test(typeof u.input === 'string' ? u.input : JSON.stringify(u.input)))).length;
     const max = g.max, min = g.min ?? (max === 0 ? 0 : 1);
