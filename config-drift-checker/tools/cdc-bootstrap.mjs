@@ -57,6 +57,16 @@ say(`bootstrap: ${dir}`);
 say(`  claude ${harness} · manifest ${has.manifest ? 'found' : 'missing'} · .cdc.yml ${has.cdc ? 'found' : 'missing'} · workflow ${has.workflow ? 'found' : 'missing'} · mode ${agent ? `agent (budget $${budget})` : 'no-agent scaffold'}`);
 
 if (agent) {
+  // ---- auth preflight: fail in 30 seconds with a plain sentence, not after minutes of setup.
+  // (Rotated tokens that were revoked pass `gh secret list` and fail only at the first real call.)
+  say('  checking auth with one tiny agent call …');
+  const probe = run('claude', ['-p', 'Reply with exactly: OK', '--max-turns', '1'], { timeout: 60_000 });
+  const pout = `${probe.stdout ?? ''}${probe.stderr ?? ''}`;
+  if (probe.status !== 0 || /Failed to authenticate|OAuth .* invalid|401|Credit balance is too low/i.test(pout)) {
+    console.error(`auth check failed: ${pout.trim().split('\n').slice(-2).join(' / ') || `exit ${probe.status}`}
+Fix: \`claude setup-token\` (Pro/Max) or top up API credit, then re-run. Nothing was written.`);
+    process.exit(1);
+  }
   // ---- agent mode: the setup skill, headless ----
   const prompt = `/config-drift-checker:setup — run non-interactively: never ask questions, choose sensible defaults, and stay under $${budget} of eval spend (pass --budget to every shim call). Set budget.per_month_usd to 10 in .cdc.yml. Skip anything that already exists rather than overwriting it. Finish by printing the hand-off checklist.`;
   say('  running the setup skill headlessly (this takes minutes and spends agent runs) …');

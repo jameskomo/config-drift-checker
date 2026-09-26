@@ -21,6 +21,8 @@ if (a[0] === 'plugin' && a[2] === 'init') {
   process.exit(0);
 }
 if (a[0] === '-p') {
+  if (process.env.FAKE_AUTH_FAIL) { console.error('Failed to authenticate. API Error: 401 OAuth access token is invalid.'); process.exit(1); }
+  if (a[1] && a[1].startsWith('Reply with exactly')) { console.log('OK'); process.exit(0); }
   fs.mkdirSync('evals/agent-case/graders', { recursive: true });
   fs.writeFileSync('evals/agent-case/prompt.md', '---\\nruns: 3\\n---\\nagent wrote this\\n');
   fs.writeFileSync('.cdc.yml', 'track: pinned\\n');
@@ -79,4 +81,14 @@ test('fails plainly outside a git repo', async () => {
   const r = spawnSync('node', [TOOL, dir], { encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /not a git repository/);
+});
+
+
+test('agent mode: a dead token fails the preflight in seconds, nothing written', async () => {
+  const { dir, env } = await repo();
+  const r = spawnSync('node', [TOOL, dir], { encoding: 'utf8', env: { ...env, FAKE_AUTH_FAIL: '1' } });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /auth check failed/);
+  assert.match(r.stderr, /claude setup-token/);
+  assert.ok(!existsSync(path.join(dir, '.cdc.yml')), 'nothing was written');
 });

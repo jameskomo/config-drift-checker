@@ -126,6 +126,14 @@ examples/komo-stack/    a full example suite with .cdc.yml and baseline results
 docs/                   user guide · architecture · eval format & runner · runbook · security
 ```
 
+## Hosted tier (waitlist)
+
+Self-hosting is free forever, that never changes. A managed tier (we run the canaries, fleet
+dashboards and alerts; you get the PRs and the pages) gets built when enough teams want it:
+[join the waitlist](https://github.com/jameskomo/config-drift-checker/issues/new?template=hosted-waitlist.yml),
+two questions, no commitment. [Discussions are open](https://github.com/jameskomo/config-drift-checker/discussions)
+for everything else.
+
 ## Documentation
 
 Start with the [user guide](docs/user-guide.md) (`.cdc.yml` reference [here](docs/user-guide.md#cdcyml)); full index in [docs/](docs/README.md).
