@@ -81,7 +81,7 @@ a release ships, at most every 72 h, never past the budget, and opens a bump PR 
 
 Copy `${CLAUDE_PLUGIN_ROOT}/ci/config-drift-checker.yml` to `.github/workflows/config-drift-checker.yml`
 **as is**. It is generic: it checks out the published `jameskomo/config-drift-checker` for the watch job
-and uses `jameskomo/config-drift-checker/action@v0` with `plugin-dir: .`. Only adjust the `paths:` filters
+and uses `jameskomo/config-drift-checker/action@v1` with `plugin-dir: .`. Only adjust the `paths:` filters
 to the directories that hold this repo's CLAUDE.md, skills, hooks and source. Never point it at
 in-repo tool paths. If `gh` is available and authenticated, offer to run
 `gh secret set ANTHROPIC_API_KEY` (the user pastes the key; never echo it) and

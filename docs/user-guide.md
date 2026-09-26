@@ -92,7 +92,7 @@ jobs:
     env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }   # your key; runs bill to you
     steps:
       - uses: actions/checkout@v7
-      - uses: jameskomo/config-drift-checker/action@v0             # ← the whole check
+      - uses: jameskomo/config-drift-checker/action@v1             # ← the whole check
         with:
           plugin-dir: .                        # where .claude-plugin/plugin.json lives
           track: ${{ inputs.track || 'pinned' }}

@@ -50,9 +50,11 @@ yourself. Add one secret
 Already have a suite in the `claude plugin eval` format? One step:
 
 ```yaml
-- uses: jameskomo/config-drift-checker/action@v0
+- uses: jameskomo/config-drift-checker/action@v1
   with: { plugin-dir: . }
 ```
+
+(`@v0` keeps working; both moving tags point at the same latest release.)
 
 ## What you get
 
