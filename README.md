@@ -66,18 +66,18 @@ Already have a suite in the `claude plugin eval` format? One step:
 
 Every row is shipped and tested; where a public receipt exists, it's linked.
 
-**Detect** — know the moment behaviour moves
+**Detect**: know the moment behaviour moves
 
 | | |
 |---|---|
 | Pinned baseline + canary | the baseline never moves under you; the canary tests each new Claude Code release and alias model before your team meets it |
 | Noise bands with guards | each case's allowed wobble is learned from its own history; a real break can't hide in the band (no recovering run, or a persisting drop, stays red) |
 | Refusal labels | a model guardrail change is labelled a refusal, never blamed on your setup |
-| Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging — [watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
+| Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging. [Watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
 | Efficiency drift | slower, pricier, longer gets flagged even when every case still passes |
 | Coverage | which of your rules have no test: a percentage, a badge, and a `coverage-min` gate |
 
-**Diagnose** — red comes with answers, not homework
+**Diagnose**: red comes with answers, not homework
 
 | | |
 |---|---|
@@ -86,27 +86,27 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | `trace-keeper` | preserves the official runner's transcripts, which it otherwise deletes on exit |
 | What a setup is worth | the same tasks with and without your setup, published: [the guard hook measures +0.75](https://jameskomo.github.io/config-drift-checker/worth/report.html) |
 
-**Repair** — and prove the fix
+**Repair**: and prove the fix
 
 | | |
 |---|---|
-| Autonomous repair | on red, the smallest setup edit that restores the behaviour, verified by re-running the failing cases — [a real repair, $0.28, first attempt green](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
+| Autonomous repair | on red, the smallest setup edit that restores the behaviour, verified by re-running the failing cases. [A real repair, $0.28, first attempt green](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
 | Bump and pin PRs | two proven-green canaries open the PR that moves your pins, evidence attached, never auto-merged |
 
-**Operate** — it runs itself, and reports to you
+**Operate**: it runs itself, and reports to you
 
 | | |
 |---|---|
-| The observatory | stat tiles, a stability streak, and a verdict timeline per Claude Code release — [ours, live](https://jameskomo.github.io/config-drift-checker/drift/) |
+| The observatory | stat tiles, a stability streak, and a verdict timeline per Claude Code release. [Ours, live](https://jameskomo.github.io/config-drift-checker/drift/) |
 | The drift wire | [a subscribable Atom feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml) plus `verdicts.json`: one behavioural verdict per release, the changelog nobody else publishes |
 | The status badge | embeddable like a coverage badge: green "cc2.1.269 · 3 releases clean", red naming the version the day something breaks |
 | Digest and post, pre-written | every publish regenerates a weekly digest and [the release announcement ready to paste](https://jameskomo.github.io/config-drift-checker/drift/post.txt); a workflow can post it to Bluesky/Mastodon automatically |
 | Hard budget caps | per run and per month, enforced from a ledger; $0 API on a Claude Pro/Max subscription token |
 | One-command onboarding | `cdc-bootstrap` runs the whole setup headlessly with an auth preflight, or scaffolds everything for $0 with `--no-agent` |
-| Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller — no hosted server, ever |
+| Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller. No hosted server, ever |
 | Community suites | maintained setups with published worth numbers ([Spring Boot first](docs/community-suites.md)); a [hosted-tier waitlist](https://github.com/jameskomo/config-drift-checker/issues/new?template=hosted-waitlist.yml) decides what we run for you |
 
-**Across agents** — one suite, three CLIs
+**Across agents**: one suite, three CLIs
 
 | | |
 |---|---|
