@@ -9,6 +9,7 @@ tells you the moment something stops working: when, why, and what moved.
 
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
+[![agent setup](https://raw.githubusercontent.com/jameskomo/config-drift-checker/eval-results/docs/status.svg)](https://jameskomo.github.io/config-drift-checker/drift/)
 
 **Proof it works: [we broke our own setup](https://jameskomo.github.io/config-drift-checker/example-break/report.html), and [the repair skill fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).**
 A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.56,
@@ -22,7 +23,7 @@ behaviour on its own and proved it with a green re-run, for $0.28. Both artifact
 |---|---|
 | [**The sabotage report**](https://jameskomo.github.io/config-drift-checker/example-break/report.html) | what a real break looks like: a deliberately broken skill trigger, the tripwire at 0.00, the report naming the cause itself | 
 | [**The repair that fixed it**](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) | the repair skill's own PR-ready summary from fixing that break live: what drifted, the smallest edit, the green re-run as evidence, $0.28 spent |
-| [**The drift observatory**](https://jameskomo.github.io/config-drift-checker/drift/) | this plugin's own suite re-run on every Claude Code release: trend per case, versions covered, every run's report linked |
+| [**The drift observatory**](https://jameskomo.github.io/config-drift-checker/drift/) | this plugin's own suite re-run on every Claude Code release, with a live stability streak, and [a subscribable feed of per-release verdicts](https://jameskomo.github.io/config-drift-checker/drift/feed.xml): the behavioural changelog nobody publishes |
 | [**The demo repo**](https://github.com/jameskomo/config-drift-checker-demo) | a small Spring Boot API whose whole setup (cases, config, workflow) was written by `/config-drift-checker:setup` unattended, kept exactly as generated |
 | [**The demo's drift index**](https://jameskomo.github.io/config-drift-checker-demo/) | the same observatory for that demo repo, built by its own CI |
 | [**What a setup is worth**](docs/community-suites.md) | the first community suite (Spring Boot conventions) with a published with/without measurement: the guard hook is worth +0.75, [the run itself](https://jameskomo.github.io/config-drift-checker/worth/report.html) |

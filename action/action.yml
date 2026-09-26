@@ -278,6 +278,7 @@ runs:
         STEM: ${{ steps.run.outputs.stem }}
         PAGES: ${{ inputs.pages }}
         PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        REPORT_BASE_URL: ${{ inputs.report-base-url }}
         REPO: ${{ github.repository }}
         SERVER_URL: ${{ github.server_url }}
         RUN_ID: ${{ github.run_id }}
@@ -315,8 +316,9 @@ runs:
           [ -s baseline.json ] && cp baseline.json docs/baseline.json || true
           [ -s spend.json ] && cp spend.json docs/spend.json || true
           [ -s canary/streak.json ] && cp canary/streak.json docs/streak.json || true
+          page_args=(); [ -n "$REPORT_BASE_URL" ] && page_args=(--page-url "${REPORT_BASE_URL%/history*}")
           node "$TOOLS/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "$REPO" \
-            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" >/dev/null
+            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" "${page_args[@]}" >/dev/null
           touch docs/.nojekyll
           echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $BRANCH, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
         fi

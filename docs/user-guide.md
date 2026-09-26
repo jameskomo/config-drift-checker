@@ -296,6 +296,12 @@ Source: branch `eval-results`, folder `/docs`. Turn it off with `pages: 'false'`
 
 - Ours: https://jameskomo.github.io/config-drift-checker/drift/
 - Coverage badge: `![agent-config coverage](https://raw.githubusercontent.com/<you>/<repo>/eval-results/docs/coverage.svg)`
+- Status badge (live: latest Claude Code tested, releases-clean streak, red on drift):
+  `![agent setup](https://raw.githubusercontent.com/<you>/<repo>/eval-results/docs/status.svg)`
+- The drift wire: next to the index the dashboard writes `verdicts.json` (one verdict per Claude
+  Code version) and `feed.xml`, an Atom feed anyone can subscribe to: your suite's behavioural
+  changelog of Claude Code releases. Set the Action's `report-base-url` (or `--page-url` locally)
+  so the feed carries absolute links.
 - Locally: `node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html`
 
 ## 10. Local commands

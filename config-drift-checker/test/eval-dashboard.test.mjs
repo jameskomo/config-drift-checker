@@ -69,3 +69,33 @@ test('dashboard: legend wraps below the chart with full case names', async () =>
   assert.doesNotMatch(legend, /…/);
   assert.doesNotMatch(html, /class="lbl"/, 'no clipped right-edge labels any more');
 });
+
+test('drift wire: verdicts.json, Atom feed and the adopter badge are emitted next to the page', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'wire-'));
+  const hist = path.join(dir, 'history');
+  await fs.mkdir(hist);
+  for (const [i, cc] of [[1, '2.1.250'], [2, '2.1.251'], [3, '2.1.252']]) {
+    const red = cc === '2.1.252';
+    const r = result({ a: red ? [0.2, 0.2, 0.2] : [1, 1, 1] }, { at: `2026-09-0${i}T10:00:00Z`, cc });
+    await fs.writeFile(path.join(hist, `2026090${i}T100000Z-cc${cc}-shim-pinned.json`), JSON.stringify(r));
+  }
+  const base = path.join(dir, 'baseline.json');
+  await fs.writeFile(base, JSON.stringify(result({ a: [1, 1, 1] }, { at: '2026-08-30T10:00:00Z', cc: '2.1.249' })));
+  const out = path.join(dir, 'index.html');
+  const r = spawnSync('node', [TOOL, hist, '--baseline', base, '--out', out, '--title', 'wiresuite', '--page-url', 'https://x.example/drift'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const v = JSON.parse(await fs.readFile(path.join(dir, 'verdicts.json'), 'utf8'));
+  assert.equal(v.verdicts[0].claudeCode, '2.1.252', 'newest first');
+  assert.equal(v.verdicts[0].verdict, 'drift');
+  assert.deepEqual(v.verdicts[0].casesMoved, ['a']);
+  assert.equal(v.verdicts[1].verdict, 'held');
+  const feed = await fs.readFile(path.join(dir, 'feed.xml'), 'utf8');
+  assert.match(feed, /Claude Code 2\.1\.252: drift on a/);
+  assert.match(feed, /Claude Code 2\.1\.251: behaviour held/);
+  assert.match(feed, /rel="self" href="https:\/\/x\.example\/drift\/feed\.xml"/);
+  const badge = await fs.readFile(path.join(dir, 'status.svg'), 'utf8');
+  assert.match(badge, /drift on cc2\.1\.252/, 'red drift badge names the version');
+  assert.match(badge, /#f85149/);
+  const html = await fs.readFile(out, 'utf8');
+  assert.match(html, /Subscribe to the verdicts feed/);
+});
