@@ -1,12 +1,11 @@
 name: dependabot-automerge
 # Merge Dependabot PRs that are safe by construction: semver patch/minor only (majors stay open for a
-# human), and only after every check on the PR has finished green. Squash-merges with the workflow token;
-# when the merge touched the plugin or the Action, cuts a patch release (merges by the token do not
-# trigger the bump workflow on their own).
+# human; Spring Boot majors are filtered out in dependabot.yml anyway), and only after every check on
+# the PR has finished green.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-permissions: { contents: write, pull-requests: write, actions: write }
+permissions: { contents: write, pull-requests: write }
 jobs:
   automerge:
     if: github.actor == 'dependabot[bot]'
@@ -35,7 +34,6 @@ jobs:
         run: |
           set -euo pipefail
           for i in $(seq 1 40); do   # up to ~20 min
-            # every check run on this commit except this workflow's own job
             state=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs?per_page=100" --jq '[.check_runs[] | select(.name != "automerge")] | map(if .status != "completed" then "pending" elif .conclusion == "success" or .conclusion == "skipped" or .conclusion == "neutral" then "ok" else "bad" end) | if length == 0 then "none" elif any(. == "bad") then "bad" elif any(. == "pending") then "pending" else "ok" end')
             echo "checks: $state"
             case "$state" in
@@ -47,14 +45,3 @@ jobs:
           [ "$state" = "ok" ] || [ "$state" = "none" ] || { echo "::warning::checks still pending after 20 min — not merging"; exit 0; }
           gh pr merge "$PR" --squash --delete-branch --repo "$REPO"
           echo "merged #$PR" >> "$GITHUB_STEP_SUMMARY"
-      - name: Release if the plugin or Action changed
-        if: steps.decide.outputs.ok == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          if [ "$(gh pr view "$PR" --repo "$REPO" --json state --jq .state)" != "MERGED" ]; then exit 0; fi
-          if gh pr view "$PR" --repo "$REPO" --json files --jq '.files[].path' | grep -qE '^(action/|config-drift-checker/(tools|skills|ci|\.claude-plugin)/)'; then
-            gh workflow run bump.yml --repo "$REPO" -f level=patch && echo "patch release dispatched" >> "$GITHUB_STEP_SUMMARY"
-          fi
