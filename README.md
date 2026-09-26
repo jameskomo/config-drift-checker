@@ -17,6 +17,8 @@ the tripwire case read 0.00, and the report named the cause itself: the skill wa
 never invoked*, so fix the trigger wording, not the packaging. Then the repair skill restored the
 behaviour on its own and proved it with a green re-run, for $0.28. Both artifacts are unedited.
 
+![The whole story in 20 seconds: a careless PR breaks a skill, the suite goes red, the report names the cause, the repair skill fixes it](docs/demo.svg)
+
 ## See it live
 
 | | What you're looking at |
