@@ -34,8 +34,8 @@ jobs:
           node -e "for (const f of ['config-drift-checker/.claude-plugin/plugin.json','config-drift-checker/package.json']) { const fs=require('fs'); const j=JSON.parse(fs.readFileSync(f,'utf8')); j.version='$next'; fs.writeFileSync(f, JSON.stringify(j,null,2)+'\n'); }"
           git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A && git commit -qm "chore(release): v$next [skip ci]"
-          git tag "v$next" && git tag -f v0
-          git push -q origin main && git push -q origin "v$next" && git push -q --force origin v0
+          git tag "v$next" && git tag -f v0 && git tag -f "v$a"
+          git push -q origin main && git push -q origin "v$next" && git push -q --force origin v0 "v$a"
           gh release create "v$next" --title "v$next" --generate-notes --latest
           echo "released v$next (was $cur, $level)"
           echo "version=$next" >> "$GITHUB_OUTPUT"
