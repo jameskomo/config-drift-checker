@@ -54,7 +54,7 @@ const newest = v.verdicts[0] ?? null;
 let post = '';
 if (newest) {
   if (newest.verdict === 'held') {
-    post = `Claude Code ${newest.claudeCode} tested against our reference agent setup: behaviour held. That makes ${streak.versions} release${streak.versions === 1 ? '' : 's'} clean in a row (~${streak.days} days).
+    post = `Claude Code ${newest.claudeCode} tested against our reference agent setup: behaviour held. That makes ${streak.versions} release${streak.versions === 1 ? '' : 's'} clean in a row, about ${streak.days} days.
 
 Every release gets this treatment, automatically.${page ? ` Verdicts feed: ${page}feed.xml` : ''}`;
   } else if (newest.verdict === 'drift') {

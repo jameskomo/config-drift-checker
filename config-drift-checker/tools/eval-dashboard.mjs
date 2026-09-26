@@ -184,7 +184,7 @@ const streakDays = streakRuns && firstClean?.at ? Math.max(0, Math.round((Date.n
 
 // hero tiles + the verdict timeline (status colors are state, never series; table view = run list)
 const tiles = [
-  ['releases clean', String(cleanCc.size), streakRuns ? `${streakRuns} runs · ~${streakDays} days` : 'no streak yet', latestStatus === 'regressed' || latestStatus === 'errored' ? 'fail' : 'pass'],
+  ['releases clean', String(cleanCc.size), streakRuns ? `${streakRuns} runs · about ${streakDays} days` : 'no streak yet', latestStatus === 'regressed' || latestStatus === 'errored' ? 'fail' : 'pass'],
   ['versions covered', String(versions.length), 'Claude Code releases tested', ''],
   ['coverage', coverage?.pct != null ? coverage.pct + '%' : '—', 'setup rules with a case', ''],
   ['spend this month', spentMonth != null ? '$' + spentMonth.toFixed(2) : '—', cap ? `of $${cap} cap` : 'ledger on the results branch', ''],
@@ -240,4 +240,4 @@ const badgeColor = !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestS
 const lw = 8 + badgeLabel.length * 6.3, vw = 12 + badgeValue.length * 6.5, bw = Math.round(lw + vw);
 await fs.writeFile(path.join(outDir, 'status.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="20" role="img" aria-label="${esc(badgeLabel)}: ${esc(badgeValue)}"><title>${esc(badgeLabel)}: ${esc(badgeValue)}</title><rect rx="3" width="${bw}" height="20" fill="#555"/><rect rx="3" x="${lw.toFixed(1)}" width="${vw.toFixed(1)}" height="20" fill="${badgeColor}"/><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,sans-serif" font-size="11"><text x="${(lw / 2).toFixed(1)}" y="14">${esc(badgeLabel)}</text><text x="${(lw + vw / 2).toFixed(1)}" y="14">${esc(badgeValue)}</text></g></svg>\n`);
 await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts }, null, 2) + '\n');
-console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, ~${streakDays} days clean)` : ''}`);
+console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, about ${streakDays} days clean)` : ''}`);

@@ -95,6 +95,6 @@ if (isMain) {
   console.log(`\nFirst bad Claude Code version: ${firstBad}`);
   const lastGoodIdx = candidates.indexOf(firstBad) - 1;
   console.log(`Last good: ${lastGoodIdx >= 0 ? candidates[lastGoodIdx] : opt.good}`);
-  console.log(`Steps: ${steps.length} · spend ~$${spent.toFixed(2)} (notional; $0 API on a subscription token)`);
+  console.log(`Steps: ${steps.length} · spend about $${spent.toFixed(2)} (notional; $0 API on a subscription token)`);
   console.log(`\nFor the bug report: "our agent setup's case '${opt.case}' regressed at Claude Code ${firstBad}; last good ${lastGoodIdx >= 0 ? candidates[lastGoodIdx] : opt.good}. Pin harness.pinned until adapted."`);
 }
