@@ -112,11 +112,11 @@ test('errored runs are still counted and surfaced (credit exhausted), score null
   assert.equal(report.cases[0].arms.with[0].score, null); assert.equal(report.cases[0].arms.with[1].score, 1);
 });
 
-test('--agent other than claude exits 1 with a clear message', async () => {
+test('--agent outside the supported set exits with a clear message', async () => {
   const plugin = await makePlugin();
-  const r = spawnSync('node', [SHIM, plugin, '--agent', 'codex', '--ablation', 'none'], { encoding: 'utf8' });
-  assert.equal(r.status, 1);
-  assert.match(r.stderr, /agent "codex" is not supported yet/);
+  const r = spawnSync('node', [SHIM, plugin, '--agent', 'gemini', '--ablation', 'none'], { encoding: 'utf8' });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown agent 'gemini' \(claude \| codex\)/);
 });
 
 test('--regrade keeps working and carries the source harness version through', async () => {
@@ -163,4 +163,35 @@ test('discovery snapshot: every SKILL.md under the plugin is recorded, malformed
   assert.equal(good.name, 'Conventions'); assert.equal(good.malformed, false);
   const bad = skills.find((s) => s.dir === 'skills/broken');
   assert.equal(bad.malformed, true, 'SKILL.md without name/description is flagged');
+});
+
+test('codex agent (experimental): runs via codex exec, bridges AGENTS.md, skips Skill indicators, stamps agent', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  // a Claude-only indicator that must be skipped, not failed, on codex
+  await fs.writeFile(path.join(plugin, 'evals/case-a/graders/skill-fired.md'), '---\ntype: tool_used\ntool: Skill\nmin: 1\n---\nSkill fired.\n');
+  // the scaffold plants a fake codex into .eval-bin (the shim puts it on PATH) and a CLAUDE.md to bridge
+  const caseYaml = `scaffold_script: |
+  mkdir -p .eval-bin
+  cat > .eval-bin/codex << 'SH'
+  #!/bin/sh
+  [ -f AGENTS.md ] && A=yes || A=no
+  echo '{"type":"item.completed","item":{"type":"command_execution","command":"ls","exit_code":0,"output":"ok"}}'
+  echo "{\\"type\\":\\"item.completed\\",\\"item\\":{\\"type\\":\\"agent_message\\",\\"text\\":\\"DONE AGENTSMD=$A\\"}}"
+  echo '{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":20}}'
+  SH
+  chmod +x .eval-bin/codex
+  echo house rules > CLAUDE.md
+`;
+  await fs.writeFile(path.join(plugin, 'evals/case-a/case.yaml'), caseYaml);
+  const { report } = await runShim(plugin, ['--agent', 'codex', '--scaffold']);
+  assert.equal(report.agent, 'codex');
+  const run = report.cases[0].arms.with[0];
+  assert.match(run.response, /DONE AGENTSMD=yes/, 'CLAUDE.md was bridged to AGENTS.md');
+  assert.ok(run.toolUses.some((u) => u.tool === 'Bash' && u.input === 'ls'), 'command_execution mapped to Bash');
+  const done = run.graders.find((g) => g.name === 'done');
+  assert.equal(done.verdict, 'pass', 'regex grader scores the codex reply');
+  const skill = run.graders.find((g) => g.name === 'skill-fired');
+  assert.equal(skill.scored, false, 'Skill indicator skipped on codex');
+  assert.match(skill.reason, /does not exist on codex/);
+  assert.equal(report.cases[0].summary.score, 1, 'skipped indicator does not drag the score');
 });

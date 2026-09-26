@@ -61,8 +61,8 @@ const log = (...m) => { if (opt.json !== '-') console.error(...m); };
 const cdc = loadConfig(pluginDir);
 let track;
 try { track = resolveTrack(cdc, opt.track ?? cdc.track); } catch (e) { die(e.message); }
-const agent = opt.agent ?? track.agent;
-if (agent !== 'claude') die(`agent "${agent}" is not supported yet — only claude ships in this version (Codex/Gemini adapters are on the roadmap)`);
+const agent = opt.agent ?? track.agent ?? 'claude';
+if (!['claude', 'codex'].includes(agent)) { die(`unknown agent '${agent}' (claude | codex)`); }
 opt.judgeModel ??= track.judgeModel;
 opt.expand ??= track.expandOnDeviation;
 opt.budget ??= track.budget.per_run_usd;
@@ -178,8 +178,40 @@ async function runAgent(c, arm) {
     if (!opt.scaffold) log(`    (scaffold_script present but --scaffold not given: skipping)`);
     else { const r = await exec('bash', ['-euo', 'pipefail', '-c', c.scaffoldScript], { cwd: ws, env: { ...process.env, EVAL_PLUGIN_ROOT: pluginDir, EVAL_CASE: c.dir }, timeout: 120_000 }); if (r.code !== 0) log(`    scaffold failed: ${r.stderr.slice(-300)}`); }
   }
+  // codex reads AGENTS.md, not CLAUDE.md: bridge whatever the scaffold provided, so the same
+  // cases exercise the same instructions on both agents (skills stay Claude-only; see graders)
+  if (agent === 'codex' && existsSync(path.join(ws, 'CLAUDE.md')) && !existsSync(path.join(ws, 'AGENTS.md'))) await fs.copyFile(path.join(ws, 'CLAUDE.md'), path.join(ws, 'AGENTS.md'));
   const before = await snapshot(ws);
   const cfg = await makeConfigDir();
+  if (agent === 'codex') {
+    // EXPERIMENTAL: fixture-tested; field shapes calibrated defensively against codex exec --json
+    const cargs = ['exec', '--json', '--skip-git-repo-check', '--sandbox', 'workspace-write', c.prompt];
+    const cenv = { ...process.env };
+    if (existsSync(path.join(ws, '.eval-bin'))) cenv.PATH = path.join(ws, '.eval-bin') + path.delimiter + (cenv.PATH ?? '');
+    const t0 = Date.now();
+    const { stdout, stderr, code, timedOut } = await exec('codex', cargs, { cwd: ws, env: cenv, timeout: c.timeout });
+    const events = stdout.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    const texts = [], toolUses = [], toolResults = [];
+    let inTok = null, outTok = null, errored = false, model = null;
+    for (const e of events) {
+      const item = e.item ?? e.msg ?? e;
+      const t = item?.type ?? e.type;
+      if ((t === 'agent_message' || t === 'assistant_message') && (item.text ?? item.message)) texts.push(String(item.text ?? item.message));
+      if (['command_execution', 'exec_command_end', 'local_shell_call', 'shell_call'].includes(t)) { toolUses.push({ tool: 'Bash', input: String(item.command ?? item.cmd ?? '').slice(0, 500) }); if (item.output ?? item.aggregated_output) toolResults.push({ error: (item.exit_code ?? 0) !== 0, text: String(item.output ?? item.aggregated_output).slice(0, 600) }); }
+      if (['file_change', 'patch_apply_end', 'apply_patch'].includes(t)) toolUses.push({ tool: 'Edit', input: String(item.path ?? (item.changes ?? []).map((x) => x.path).join(',')).slice(0, 500) });
+      if (['token_count', 'turn.completed', 'turn_complete'].includes(t)) { const u = item.usage ?? item.info ?? item; inTok = u.input_tokens ?? inTok; outTok = u.output_tokens ?? outTok; }
+      if (t === 'error' || t === 'turn.failed' || e.type === 'error') errored = true;
+      model = item.model ?? e.model ?? model;
+    }
+    const after0 = await snapshot(ws);
+    const files0 = [...after0.keys()].filter((f) => !before.has(f) || before.get(f) !== after0.get(f));
+    const fileContents0 = {};
+    for (const f of files0) { try { const st = await fs.stat(path.join(ws, f)); if (st.size < 200_000) fileContents0[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
+    if (cfg) await fs.rm(cfg, { recursive: true, force: true });
+    await fs.rm(ws, { recursive: true, force: true });
+    const isErr = errored || (code !== 0 && texts.length === 0) || (texts.length === 0 && toolUses.length === 0);
+    return { lastMessage: texts.join('\n\n'), finalMessage: texts.at(-1) ?? '', texts, toolUses, toolResults, files: files0, fileContents: fileContents0, trace: events, costUsd: null, inputTokens: inTok, outputTokens: outTok, numTurns: texts.length || null, isError: isErr, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: isErr ? stdout.slice(-1500) : '', model: model ?? 'codex' };
+  }
   const args = ['-p', c.prompt, '--output-format', 'stream-json', '--verbose', '--setting-sources', opt.safetyNet && cfg ? 'user' : '', '--permission-mode', 'dontAsk', '--max-turns', String(c.maxTurns), '--model', c.model];
   if (arm === 'with') args.push('--plugin-dir', pluginDir);
   if (c.allowedTools.length) args.push('--allowedTools', ...c.allowedTools);
@@ -259,6 +291,7 @@ async function grade(g, run, arm, ablating) {
     return { ...base, score: pass ? 1 : 0, verdict: pass ? 'pass' : 'fail' };
   }
   if (g.type === 'tool_used') {
+    if (agent !== 'claude' && g.tool === 'Skill') return { ...base, score: null, verdict: 'skipped', scored: false, reason: `the Skill tool does not exist on ${agent}; Claude-only indicator` };
     const im = g.input_match ? new RegExp(String(g.input_match), 's') : null;
     const n = run.toolUses.filter((u) => u.tool === g.tool && (!im || im.test(typeof u.input === 'string' ? u.input : JSON.stringify(u.input)))).length;
     const max = g.max, min = g.min ?? (max === 0 ? 0 : 1);

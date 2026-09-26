@@ -398,8 +398,12 @@ Results stay in your repo's `eval-results` branch and the workflow artifact. We 
 **Can I test CLAUDE.md rules?** Yes. Cases copy your `CLAUDE.md` into the workspace via
 `scaffold_script`, so the rule is in force during the run and the grader checks the outcome.
 
-**Codex / Gemini / Cursor?** Planned. The runner is "spawn a headless agent, grade the trace"; the
-case format and `.cdc.yml` are agent-agnostic (`agent:` is reserved).
+**Codex / Gemini / Cursor?** Codex is in, experimental: `--agent codex` on the shim runs the same
+cases through OpenAI's Codex CLI (`codex exec`), bridges your `CLAUDE.md` to `AGENTS.md` in the
+workspace, and grades with the same graders; Claude-only indicators like `tool_used: Skill` are
+skipped, not failed, so scores stay comparable. Codex has no subscription-token equivalent here,
+so runs bill your OpenAI account. Gemini is next; the case format and `.cdc.yml` stay
+agent-agnostic.
 
 **Licence?** FSL-1.1-Apache-2.0: free to use, modify and self-host in your own CI; not to be
 offered as a competing commercial service; each release becomes Apache-2.0 two years after
