@@ -14,7 +14,9 @@ const oauth = {
 const paramStr = Object.keys(oauth).sort().map((k) => `${enc(k)}=${enc(oauth[k])}`).join('&');
 const baseStr = `POST&${enc(url)}&${enc(paramStr)}`;
 const signingKey = `${enc(process.env.X_CONSUMER_SECRET)}&${enc(process.env.X_ACCESS_SECRET)}`;
-oauth.oauth_signature = crypto.createHmac('sha1', signingKey).update(baseStr).digest('base64');
+// OAuth 1.0a request signing REQUIRES HMAC-SHA1 (RFC 5849); this is a transport signature,
+// not password storage, so the password-hash rule does not apply here.
+oauth.oauth_signature = crypto.createHmac('sha1', signingKey).update(baseStr).digest('base64'); // codeql[js/insufficient-password-hash]
 const header = 'OAuth ' + Object.keys(oauth).sort().map((k) => `${enc(k)}="${enc(oauth[k])}"`).join(', ');
 const text = (process.env.TEXT ?? '').slice(0, 279);
 const res = await fetch(url, { method: 'POST', headers: { Authorization: header, 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
