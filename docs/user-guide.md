@@ -336,9 +336,11 @@ Source: branch `eval-results`, folder `/docs`. Turn it off with `pages: 'false'`
   Code version) and `feed.xml`, an Atom feed anyone can subscribe to: your suite's behavioural
   changelog of Claude Code releases. Set the Action's `report-base-url` (or `--page-url` locally)
   so the feed carries absolute links.
-- Digest and post: every publish also writes `digest.md` (the week's verdicts, streak and spend,
-  paste-ready for Slack or a standup) and `post.txt` (the release announcement for the newest
-  verdict, ready for any social platform); `tools/drift-digest.mjs` regenerates both locally.
+- Digest and posts: `node tools/drift-digest.mjs <drift-docs> --md digest.md --posts-dir posts/`
+  writes the week's digest plus full per-platform announcements for the newest verdict (`x.txt`
+  sized to the limit, `linkedin.txt`, `bluesky-mastodon.txt`, and `reddit.md` only when a release
+  actually drifted). Marketing copy is yours to keep private; only the data (`verdicts.json`,
+  `feed.xml`) is published.
 - Locally: `node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html`
 
 ## 10. Local commands

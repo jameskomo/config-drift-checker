@@ -44,7 +44,8 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
         run: |
           set -euo pipefail
-          text=$(cat docs/drift/post.txt)
+          node config-drift-checker/tools/drift-digest.mjs docs/drift --post "$RUNNER_TEMP/post.txt" >/dev/null 2>&1
+          text=$(cat "$RUNNER_TEMP/post.txt")
           posted=false
           if [ -n "$BSKY_ID" ] && [ -n "$BSKY_PW" ]; then
             short=$(printf '%s' "$text" | head -c 290)

@@ -100,7 +100,7 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | The observatory | stat tiles, a stability streak, and a verdict timeline per Claude Code release. [Ours, live](https://jameskomo.github.io/config-drift-checker/drift/) |
 | The drift wire | [a subscribable Atom feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml) plus `verdicts.json`: one behavioural verdict per release, the changelog nobody else publishes |
 | The status badge | embeddable like a coverage badge: green "cc2.1.269 · 3 releases clean", red naming the version the day something breaks |
-| Digest and post, pre-written | every publish regenerates a weekly digest and [the release announcement ready to paste](https://jameskomo.github.io/config-drift-checker/drift/post.txt); a workflow can post it to Bluesky/Mastodon automatically |
+| Posts and digest, pre-written | `drift-digest` turns every new verdict into ready-to-paste posts per platform (X, LinkedIn, Reddit when something actually broke) plus a weekly digest; a workflow can post to Bluesky/Mastodon automatically |
 | Hard budget caps | per run and per month, enforced from a ledger; $0 API on a Claude Pro/Max subscription token |
 | One-command onboarding | `cdc-bootstrap` runs the whole setup headlessly with an auth preflight, or scaffolds everything for $0 with `--no-agent` |
 | Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller. No hosted server, ever |
