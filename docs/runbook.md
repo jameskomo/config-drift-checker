@@ -104,7 +104,8 @@ node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out
 node tools/fleet.mjs --config fleet.yml --out fleet.html    # many repos, one dashboard + pin policy
 node tools/drift-digest.mjs docs/drift --md digest.md --post post.txt   # weekly digest + the release-verdict post, pre-written
 node tools/drift-bisect.mjs komo-stack --case 'spring-work*' --good 2.1.258 --bad 2.1.274   # which release broke this case? log2(N) runs
-node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # EXPERIMENTAL: same suite through Codex CLI (bills OpenAI)
+node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # EXPERIMENTAL: same suite through Codex CLI
+node tools/eval-shim.mjs komo-stack --agent gemini --ablation none --scaffold  # EXPERIMENTAL: through Gemini CLI (free Google tier)
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
 node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 node tools/trace-keeper.mjs out.json --clean   # after --keep-temp: keep transcripts inline (enables refusal labels on native runs)

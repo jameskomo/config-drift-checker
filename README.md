@@ -6,9 +6,9 @@ them moves without asking: Claude Code ships ~25 releases a month, and the model
 can change server-side with no changelog
 ([it already has, silently, for weeks](https://www.anthropic.com/engineering/april-23-postmortem)).
 This runs your eval suite on every PR and every release, diffs it against a pinned baseline, and
-tells you the moment something stops working: when, why, and what moved. The same cases can also
-run through OpenAI's Codex CLI (experimental), so the rules you wrote once stay testable wherever
-your team's agent goes next.
+tells you the moment something stops working: when, why, and what moved. The same cases can also run
+through OpenAI's Codex CLI and Google's Gemini CLI (both experimental), so the rules you wrote
+once stay testable wherever your team's agent goes next.
 
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)

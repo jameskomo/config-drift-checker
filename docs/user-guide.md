@@ -403,8 +403,10 @@ Results stay in your repo's `eval-results` branch and the workflow artifact. We 
 cases through OpenAI's Codex CLI (`codex exec`), bridges your `CLAUDE.md` to `AGENTS.md` in the
 workspace, and grades with the same graders; Claude-only indicators like `tool_used: Skill` are
 skipped, not failed, so scores stay comparable. Codex has no subscription-token equivalent here,
-so runs bill your OpenAI account. Gemini is next; the case format and `.cdc.yml` stay
-agent-agnostic.
+so runs use your ChatGPT plan's included usage (or bill an OpenAI key). Gemini is in too:
+`--agent gemini` runs headlessly with `GEMINI.md` bridging on the free Google tier; it emits no
+machine-readable tool calls, so tool-use indicators are skipped and the content graders carry
+the score. The case format and `.cdc.yml` stay agent-agnostic.
 
 **Licence?** FSL-1.1-Apache-2.0: free to use, modify and self-host in your own CI; not to be
 offered as a competing commercial service; each release becomes Apache-2.0 two years after
