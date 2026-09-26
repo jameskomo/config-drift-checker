@@ -9,7 +9,7 @@ tells you the moment something stops working: when, why, and what moved.
 
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
-[![agent setup](https://raw.githubusercontent.com/jameskomo/config-drift-checker/eval-results/docs/status.svg)](https://jameskomo.github.io/config-drift-checker/drift/)
+[![agent setup](https://raw.githubusercontent.com/jameskomo/config-drift-checker/main/docs/drift/status.svg)](https://jameskomo.github.io/config-drift-checker/drift/)
 
 **Proof it works: [we broke our own setup](https://jameskomo.github.io/config-drift-checker/example-break/report.html), and [the repair skill fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).**
 A skill's trigger description rewritten the way a careless PR would: the suite fell 1.00 → 0.56,
