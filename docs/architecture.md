@@ -53,7 +53,7 @@ flowchart LR
 | `release-watch.mjs` | did Claude Code (npm) or the model list (`/v1/models`) move since last time; is the pin still listed | `.release-watch.json` on results branch |
 | `cdc-gate.mjs` | refuse a run past the monthly budget or sooner than the canary interval; record spend after a run | `spend.json`, `canary/streak.json` on results branch |
 | `action.yml` | config → coverage → results → gate → install pinned Claude Code → detect runner → run → diff → report → store → PR → repair → notify → exit | none (stateless per run) |
-| `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance | temp dirs only |
+| `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance. `--agent codex` (AGENTS.md bridge, exec events parsed) and `--agent gemini` (GEMINI.md bridge, headless text) run the same cases on other CLIs, experimental | temp dirs only |
 | `eval-diff.mjs` | baseline vs current → score drift and efficiency drift → markdown + JSON + exit code by `fail_on` | none |
 | `eval-classify.mjs` | the shared per-case verdict (noise band, escalations) used by diff, report and dashboard; `normalizeResult()` maps official-runner JSON (v1) to the 1.1 shape at load, so all three read either | none |
 | `canary-promote.mjs` | green streak on the same model+version → bump decision; unpinned green pinned run → pin decision; PR title/body | `canary/streak.json` |

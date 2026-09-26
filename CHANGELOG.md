@@ -2,6 +2,20 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.1.0 / v1.1.1 — 2026-09-26
+One suite, three agents: the Codex adapter (`--agent codex`, `AGENTS.md` bridging) and the Gemini
+adapter (`--agent gemini`, `GEMINI.md` bridging, free Google tier), both live-calibrated the day
+they shipped and labeled experimental until full published comparisons. Claude-only indicators
+are skipped with a reason on other agents, never failed. README and guide rebuilt around the
+grouped capability tables and the everything-in-the-box index.
+
+## v1.0.0 — 2026-09-26
+The stability promise: the `v1`/`v0` moving tags never break your workflow. The Drift Wire
+(per-release verdicts as `verdicts.json` and a subscribable Atom feed), the live stability streak
+and embeddable status badge, `drift-bisect` (binary-search Claude Code releases for the one that
+broke a case), the pre-written weekly digest and release post, the hosted-tier waitlist,
+SECURITY.md, issue templates, an auth preflight in `cdc-bootstrap`, and the animated README demo.
+
 ## v0.7.0 — 2026-09-16
 One-command onboarding (`cdc-bootstrap`, headless or `--no-agent` $0 scaffold). Fleet mode
 (`fleet.mjs` + `ci/fleet.yml`): one dashboard and pin policy across repos. Org rollout without a
