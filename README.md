@@ -116,7 +116,9 @@ One sentence: their command answers "does my plugin work right now on my machine
 
 ## Trust
 
-Zero npm dependencies (Node builtins only), 88 tests that run against a fake `claude` with no API
+**Stable since v1.0**: the `v0`/`v1` moving tag never breaks your workflow; breaking changes mean
+a new major with an upgrade note in [CHANGELOG.md](CHANGELOG.md).
+Zero npm dependencies (Node builtins only), 96 tests that run against a fake `claude` with no API
 key, every third-party action pinned to a verified commit SHA, CodeQL on every push. Runs on your
 runner with your key; nothing is sent to us, because there is no us to send it to. Details in
 [docs/security.md](docs/security.md).
