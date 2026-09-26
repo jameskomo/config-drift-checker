@@ -1,14 +1,17 @@
 # config-drift-checker
 
-**CI for your agent setup. Built for Claude Code, and your conventions outlive any one vendor.**
-Your `CLAUDE.md`, skills and hooks are how your code gets written now, and everything underneath
-them moves without asking: Claude Code ships ~25 releases a month, and the model behind `sonnet`
-can change server-side with no changelog
+**Your agent conventions are code. This is their CI.** The rules your team taught its coding
+agent (`CLAUDE.md` or `AGENTS.md`, skills, hooks) decide how your software gets written now, and
+everything underneath them moves without asking: Claude Code alone ships about 25 releases a
+month, and the model behind an alias changes server-side with no changelog
 ([it already has, silently, for weeks](https://www.anthropic.com/engineering/april-23-postmortem)).
-This runs your eval suite on every PR and every release, diffs it against a pinned baseline, and
-tells you the moment something stops working: when, why, and what moved. The same cases can also run
-through OpenAI's Codex CLI and Google's Gemini CLI (both experimental), so the rules you wrote
-once stay testable wherever your team's agent goes next.
+This turns those rules into eval cases, runs them on every PR and every release against a pinned
+baseline, and tells you the moment something stops working: when, why, and what moved.
+
+**One suite, three agents.** First-class on Claude Code (skills, hooks, release canaries, the
+whole drift machinery); the same cases also run through OpenAI's Codex and Google's Gemini CLIs,
+with live passing runs on all three, experimental labels on the newer two until full published
+comparisons.
 
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)
@@ -61,37 +64,55 @@ Already have a suite in the `claude plugin eval` format? One step:
 
 ## What you get
 
-- **A pinned baseline and a canary.** Pinned model + Claude Code version is what every PR is
-  diffed against. The canary runs the alias your developers actually get, on the latest Claude
-  Code, only when a release actually shipped. It catches what changes underneath you before it
-  reaches everyone.
-- **A diff that doesn't cry wolf.** Each case has a noise band learned from its own history: a dip
-  inside the band warns instead of failing the build, and guards make sure a real break can never
-  hide in the band. Model refusals are labelled as refusals, not setup drift.
-- **Red cases that diagnose themselves.** Every run snapshots which skills the agent could see, so
-  a failed skill case says which repair it needs: *discovered but never invoked* (fix the trigger
-  wording) or *not discovered* (fix the packaging). [Watch it happen on a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html).
-- **Reports that show their work.** Every report lists the whole suite including cases a filter or
-  budget skipped, every discovered skill and whether it fired, and exactly which checks ran beyond
-  a bare `claude plugin eval` run. And `trace-keeper` preserves the official runner's transcripts,
-  which it otherwise deletes on exit.
-- **Red check, PR comment, Slack alert, HTML report, drift index.** Every grader's verdict with
-  its reason, tool calls, cost and turns per case, and a Pages-served index of every case across
-  every version.
-- **Bump PRs.** Two green canaries on a new model or version open a PR that moves your pins, with
-  the runs attached as evidence. Renovate did this for packages; nobody did it for models.
-- **Hard budget caps.** `.cdc.yml` caps spend per run and per month; the Action refuses to start
-  past the cap. A busy release week cannot drain your key. On a Pro/Max subscription token, runs
-  cost $0 API credit.
-- **Ablation, coverage, repair.** With/without-plugin deltas show what each skill is worth;
-  coverage shows which of your rules have no test (`coverage-min` gates it); on a red run a skill
-  proposes the smallest setup fix and proves it by re-running the failing cases.
-- **`drift-bisect`: git bisect for agent behaviour.** A case passed on 2.1.258 and fails today?
-  One command binary-searches the Claude Code releases in between (throwaway installs, log2(N)
-  runs) and names the exact version that broke you, plus the sentence for the bug report.
-- **Fleet and org rollout, serverless.** One reusable workflow in your org's `.github` repo plus a
-  three-line caller installs the check on every repo; `fleet.mjs` folds all their published
-  results into one dashboard with a pin policy, and skew from the policy is flagged per repo.
+Every row is shipped and tested; where a public receipt exists, it's linked.
+
+**Detect** — know the moment behaviour moves
+
+| | |
+|---|---|
+| Pinned baseline + canary | the baseline never moves under you; the canary tests each new Claude Code release and alias model before your team meets it |
+| Noise bands with guards | each case's allowed wobble is learned from its own history; a real break can't hide in the band (no recovering run, or a persisting drop, stays red) |
+| Refusal labels | a model guardrail change is labelled a refusal, never blamed on your setup |
+| Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging — [watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
+| Efficiency drift | slower, pricier, longer gets flagged even when every case still passes |
+| Coverage | which of your rules have no test: a percentage, a badge, and a `coverage-min` gate |
+
+**Diagnose** — red comes with answers, not homework
+
+| | |
+|---|---|
+| Reports that show their work | every report lists the whole suite including skipped cases, every discovered skill and whether it fired, and exactly which checks ran beyond a bare `claude plugin eval` |
+| `drift-bisect` | a case passed weeks ago and fails today: binary-search the Claude Code releases in between, log2(N) runs, get the culprit version and the bug-report sentence |
+| `trace-keeper` | preserves the official runner's transcripts, which it otherwise deletes on exit |
+| What a setup is worth | the same tasks with and without your setup, published: [the guard hook measures +0.75](https://jameskomo.github.io/config-drift-checker/worth/report.html) |
+
+**Repair** — and prove the fix
+
+| | |
+|---|---|
+| Autonomous repair | on red, the smallest setup edit that restores the behaviour, verified by re-running the failing cases — [a real repair, $0.28, first attempt green](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
+| Bump and pin PRs | two proven-green canaries open the PR that moves your pins, evidence attached, never auto-merged |
+
+**Operate** — it runs itself, and reports to you
+
+| | |
+|---|---|
+| The observatory | stat tiles, a stability streak, and a verdict timeline per Claude Code release — [ours, live](https://jameskomo.github.io/config-drift-checker/drift/) |
+| The drift wire | [a subscribable Atom feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml) plus `verdicts.json`: one behavioural verdict per release, the changelog nobody else publishes |
+| The status badge | embeddable like a coverage badge: green "cc2.1.269 · 3 releases clean", red naming the version the day something breaks |
+| Digest and post, pre-written | every publish regenerates a weekly digest and [the release announcement ready to paste](https://jameskomo.github.io/config-drift-checker/drift/post.txt); a workflow can post it to Bluesky/Mastodon automatically |
+| Hard budget caps | per run and per month, enforced from a ledger; $0 API on a Claude Pro/Max subscription token |
+| One-command onboarding | `cdc-bootstrap` runs the whole setup headlessly with an auth preflight, or scaffolds everything for $0 with `--no-agent` |
+| Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller — no hosted server, ever |
+| Community suites | maintained setups with published worth numbers ([Spring Boot first](docs/community-suites.md)); a [hosted-tier waitlist](https://github.com/jameskomo/config-drift-checker/issues/new?template=hosted-waitlist.yml) decides what we run for you |
+
+**Across agents** — one suite, three CLIs
+
+| | |
+|---|---|
+| Claude Code | first-class: skills, hooks, plugins, release canaries, the whole drift machinery |
+| Codex (experimental) | `--agent codex` with `AGENTS.md` bridging; live-calibrated on a ChatGPT plan |
+| Gemini (experimental) | `--agent gemini` with `GEMINI.md` bridging; live run scored 1.00 on the free Google tier |
 
 ## How this relates to `claude plugin eval`
 

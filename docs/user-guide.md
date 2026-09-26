@@ -7,6 +7,30 @@ Claude Code is the first-class agent throughout; the experimental Codex path is 
 Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
 plugin's own suite on every Claude Code release) · [a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [the repair that fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo)
 
+## 0. Everything in the box
+
+One row per capability, with where this guide covers it. If you can't find a feature here, we
+didn't ship it.
+
+| Capability | Where |
+|---|---|
+| One-command setup, headless or $0 scaffold (`cdc-bootstrap`) | §2 |
+| Ready-made community suites with published worth numbers | §2 |
+| CI wiring, secrets, branch gating, useful Action inputs | §3, §4 |
+| Pins, canary cadence, thresholds, budgets (`.cdc.yml`) | §5 |
+| Release watch, canary runs, bump and pin PRs | §6 |
+| Reading reports: noise bands, refusals, discovered vs invoked, panels | §7 |
+| Which release broke it (`drift-bisect`) | §7 |
+| Autonomous repair: when it runs, its hard limits, a live example | §7 |
+| Fleet dashboard and pin policy across repos | §8 |
+| Org-wide rollout with a reusable workflow, no hosted app | §8 |
+| The observatory, stability streak, status badge, drift-wire feed | §9 |
+| Weekly digest and the pre-written release post | §9 |
+| Local commands for every tool, including `trace-keeper` | §10 |
+| Measured costs and the levers that cap them | §11 |
+| Safety: workspaces, the safety-net hook, third-party suites | §12 |
+| Codex and Gemini (experimental): same cases, other agents | §14 (FAQ) |
+
 ## 1. Install (once per machine)
 
 ```bash
@@ -312,6 +336,9 @@ Source: branch `eval-results`, folder `/docs`. Turn it off with `pages: 'false'`
   Code version) and `feed.xml`, an Atom feed anyone can subscribe to: your suite's behavioural
   changelog of Claude Code releases. Set the Action's `report-base-url` (or `--page-url` locally)
   so the feed carries absolute links.
+- Digest and post: every publish also writes `digest.md` (the week's verdicts, streak and spend,
+  paste-ready for Slack or a standup) and `post.txt` (the release announcement for the newest
+  verdict, ready for any social platform); `tools/drift-digest.mjs` regenerates both locally.
 - Locally: `node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html`
 
 ## 10. Local commands
