@@ -244,6 +244,15 @@ In one sentence: a green report asks nothing of you; a red one tells you which o
 happened (the model refused, the setup regressed, the grader was wrong, or the run was flaky) and
 what to do.
 
+### Which release broke it: `drift-bisect`
+
+When a case that passed weeks ago fails today and several Claude Code releases shipped in
+between, `tools/drift-bisect.mjs <plugin> --case <glob> --good <version> --bad <version>` finds
+the culprit: it binary-searches the published versions, installing each midpoint into a throwaway
+prefix (your global install is untouched) and running just that case. Twenty releases cost four
+or five runs. The output names the first bad and last good version, ready for a bug report or a
+`harness.pinned` decision. `--budget` caps the total spend; a subscription token makes it $0 API.
+
 ### When and how repair runs
 
 Repair never runs on its own. It runs in exactly two situations: you invoke
