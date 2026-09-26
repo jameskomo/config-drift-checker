@@ -1,11 +1,14 @@
 # config-drift-checker
 
-**CI for your Claude Code setup.** Your `CLAUDE.md`, skills and hooks are how your code gets
-written now, and everything underneath them moves without asking: Claude Code ships ~25 releases a
-month, and the model behind `sonnet` can change server-side with no changelog
+**CI for your agent setup. Built for Claude Code, and your conventions outlive any one vendor.**
+Your `CLAUDE.md`, skills and hooks are how your code gets written now, and everything underneath
+them moves without asking: Claude Code ships ~25 releases a month, and the model behind `sonnet`
+can change server-side with no changelog
 ([it already has, silently, for weeks](https://www.anthropic.com/engineering/april-23-postmortem)).
 This runs your eval suite on every PR and every release, diffs it against a pinned baseline, and
-tells you the moment something stops working: when, why, and what moved.
+tells you the moment something stops working: when, why, and what moved. The same cases can also
+run through OpenAI's Codex CLI (experimental), so the rules you wrote once stay testable wherever
+your team's agent goes next.
 
 [![tests](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml/badge.svg)](https://github.com/jameskomo/config-drift-checker/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/jameskomo/config-drift-checker)](https://github.com/jameskomo/config-drift-checker/releases)

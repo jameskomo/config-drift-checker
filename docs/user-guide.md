@@ -2,6 +2,7 @@
 
 Everything from install to reading a red report. What the tool is and how it relates to
 `claude plugin eval` is in the [README](../README.md); this page assumes you want it running.
+Claude Code is the first-class agent throughout; the experimental Codex path is in the FAQ.
 
 Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
 plugin's own suite on every Claude Code release) · [a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [the repair that fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo)
