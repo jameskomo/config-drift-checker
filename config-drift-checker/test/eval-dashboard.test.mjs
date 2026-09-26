@@ -99,3 +99,14 @@ test('drift wire: verdicts.json, Atom feed and the adopter badge are emitted nex
   const html = await fs.readFile(out, 'utf8');
   assert.match(html, /Subscribe to the verdicts feed/);
 });
+
+test('hero tiles and the verdict timeline render with status colors and per-version tooltips', async () => {
+  const html = await fixture();
+  assert.match(html, /class="tiles"/);
+  assert.match(html, /releases clean/);
+  assert.match(html, /versions covered/);
+  assert.match(html, /Verdict per Claude Code release/);
+  assert.match(html, /<title>cc2\.1\.259 · held · b/, 'the tooltip names the wobbling case');
+  assert.match(html, /fill="var\(--warn\)"><title>cc2\.1\.259/, 'an in-band wobble wears the warn status color, not red');
+  assert.match(html, /fill="var\(--pass\)"><title>cc2\.1\.250/, 'clean versions are green');
+});

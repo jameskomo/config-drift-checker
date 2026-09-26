@@ -136,6 +136,16 @@ a{color:inherit;text-decoration:none}a:hover{color:var(--track)}.wrap{max-width:
 h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-weight:600;display:flex;gap:14px;align-items:baseline}h1 .mark{font-size:26px}h1.pass .mark{color:var(--pass)}h1.fail .mark{color:var(--fail)}h1.warn .mark{color:var(--warn)}h1.muted .mark{color:var(--muted)}
 .lede{font-size:16px;color:var(--muted);margin:0;max-width:58ch}
 .obs{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:70ch}.obs a{color:inherit}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
+.tile .tl{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tile .tb{font-size:26px;font-weight:600;line-height:1.25;font-feature-settings:"tnum"}
+.tile .tb.pass{color:var(--pass)}.tile .tb.fail{color:var(--fail)}
+.tile .ts{font-size:12px;color:var(--muted)}
+.tlp{margin:0 0 18px;padding:12px 14px}
+.tlh{font-size:12.5px;color:var(--muted);margin:0 0 8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.tlk i{font-style:normal;font-size:10px}.tlk .pass{color:var(--pass)}.tlk .warn{color:var(--warn)}.tlk .fail{color:var(--fail)}
+.tlt{font:11px "IBM Plex Mono",monospace;fill:var(--muted)}
 .stamp{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px;box-shadow:var(--shadow);position:relative}.stamp::before{content:"";position:absolute;inset:6px;border:1px dashed var(--rule);border-radius:5px;pointer-events:none}
 .stamp dt{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;padding-top:2px}.stamp dd{margin:0}.stamp b{font-weight:600}.from{color:var(--muted)}
 .meter{display:block;width:100%;max-width:220px;height:6px;background:var(--code);border-radius:3px;margin-top:5px;overflow:hidden}.meter i{display:block;height:100%;background:var(--pass)}.meter i.warn{background:var(--warn)}.meter i.fail{background:var(--fail)}
@@ -155,6 +165,36 @@ th.case{writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;vertic
 .foot{color:var(--muted);font-size:12px;margin-top:22px}:focus-visible{outline:2px solid var(--track);outline-offset:2px}
 @media (max-width:820px){.verdict{grid-template-columns:1fr}h1{font-size:28px}.rrow{grid-template-columns:1fr}.rval{text-align:left}.wrap{padding:20px 16px 60px}}`;
 
+// one verdict per Claude Code version (newest run on it) + the stability streak — used by the
+// hero tiles, the verdict timeline, and the drift-wire files below
+const byVersion = new Map();
+for (const r of runs) if (r.cc) byVersion.set(r.cc, r); // runs are oldest→newest; last wins
+const verdictsAsc = [...byVersion.entries()].map(([cc, r]) => {
+  const st = runStatus(r);
+  const moved = r.json.cases.filter((c) => ['regressed', 'noisy'].includes(caseStatus(c, r))).map(key);
+  return { claudeCode: cc, at: r.at ?? null, track: r.track ?? null, runner: r.json.shim ? 'shim' : 'official',
+    verdict: st === 'errored' ? 'errored' : st === 'regressed' ? 'drift' : 'held',
+    wobble: ['noisy', 'below', 'warn'].includes(st),
+    overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null };
+});
+let streakRuns = 0; const cleanCc = new Set();
+for (let i = runs.length - 1; i >= 0; i--) { const st = runStatus(runs[i]); if (['pass', 'warn', 'noisy', 'below'].includes(st)) { streakRuns++; if (runs[i].cc) cleanCc.add(runs[i].cc); } else break; }
+const firstClean = runs[runs.length - streakRuns];
+const streakDays = streakRuns && firstClean?.at ? Math.max(0, Math.round((Date.now() - new Date(firstClean.at).getTime()) / 86400000)) : 0;
+
+// hero tiles + the verdict timeline (status colors are state, never series; table view = run list)
+const tiles = [
+  ['releases clean', String(cleanCc.size), streakRuns ? `${streakRuns} runs · ~${streakDays} days` : 'no streak yet', latestStatus === 'regressed' || latestStatus === 'errored' ? 'fail' : 'pass'],
+  ['versions covered', String(versions.length), 'Claude Code releases tested', ''],
+  ['coverage', coverage?.pct != null ? coverage.pct + '%' : '—', 'setup rules with a case', ''],
+  ['spend this month', spentMonth != null ? '$' + spentMonth.toFixed(2) : '—', cap ? `of $${cap} cap` : 'ledger on the results branch', ''],
+  ['latest verdict', verdictsAsc.at(-1) ? (verdictsAsc.at(-1).verdict === 'held' ? 'held' : verdictsAsc.at(-1).verdict) : '—', verdictsAsc.at(-1) ? `cc${verdictsAsc.at(-1).claudeCode}` : '', verdictsAsc.at(-1)?.verdict === 'held' ? 'pass' : verdictsAsc.at(-1) ? 'fail' : ''],
+];
+const tilesHtml = `<div class="tiles">${tiles.map(([label, big, sub, tone2]) => `<div class="tile"><div class="tl">${esc(label)}</div><div class="tb ${tone2}">${esc(big)}</div><div class="ts">${esc(sub)}</div></div>`).join('')}</div>`;
+const TLW = 1000, TLH = 26, seg = verdictsAsc.length ? TLW / verdictsAsc.length : TLW;
+const timelineHtml = verdictsAsc.length < 2 ? '' : `<div class="panel tlp"><div class="tlh">Verdict per Claude Code release <span class="tlk"><i class="pass">●</i> held <i class="warn">●</i> wobble, within noise <i class="fail">●</i> drift / errored</span></div>
+<svg viewBox="0 0 ${TLW} ${TLH + 18}" width="100%" role="img" aria-label="one verdict per Claude Code release">${verdictsAsc.map((v, i) => `<rect x="${(i * seg + 1).toFixed(1)}" y="0" width="${Math.max(seg - 2, 2).toFixed(1)}" height="${TLH}" rx="4" fill="${v.verdict === 'held' && !v.wobble ? 'var(--pass)' : v.verdict === 'held' ? 'var(--warn)' : 'var(--fail)'}"><title>cc${esc(v.claudeCode)} · ${v.verdict}${v.casesMoved.length ? ' · ' + esc(v.casesMoved.join(', ')) : ''} · overall ${v.overall === null ? 'n/a' : Number(v.overall).toFixed(2)}</title></rect>`).join('')}<text x="1" y="${TLH + 14}" class="tlt">cc${esc(verdictsAsc[0].claudeCode)}</text><text x="${TLW - 1}" y="${TLH + 14}" class="tlt" text-anchor="end">cc${esc(verdictsAsc.at(-1).claudeCode)}</text></svg></div>`;
+
 const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(suite)} · drift index</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}</style></head><body><div class="wrap">
 <header class="verdict">
@@ -166,6 +206,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 </header>
 <h2>Every case, every run</h2>
 <div class="panel">${ribbon || '<p class="muted">No runs yet.</p>'}${ribbonAxis}</div>
+${tilesHtml}
+${timelineHtml}
 ${runs.length > 1 ? `<h2>Score per case over Claude Code versions</h2><div class="panel">${svg}${legend}</div>` : ''}
 <h2>Runs</h2>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>when</th><th>track</th><th>claude code</th><th>model</th><th>overall</th>${caseNames.map((nm) => `<th class="case" title="${esc(nm)}">${esc(nm)}</th>`).join('')}<th>cost</th><th></th></tr></thead><tbody>${runRows}</tbody></table></div>
@@ -173,19 +215,9 @@ ${runs.length > 1 ? `<h2>Score per case over Claude Code versions</h2><div class
 </div></body></html>`;
 await fs.writeFile(outPath, html); console.log(outPath);
 
-// ---- the drift wire: one verdict per Claude Code version (latest run on it), machine-readable
-// and subscribable. verdicts.json for programs, feed.xml (Atom) for humans and readers.
-const byVersion = new Map();
-for (const r of runs) if (r.cc) byVersion.set(r.cc, r); // runs are oldest→newest; last wins
-const verdicts = [...byVersion.entries()].map(([cc, r]) => {
-  const st = runStatus(r);
-  const moved = r.json.cases.filter((c) => ['regressed', 'noisy'].includes(caseStatus(c, r))).map(key);
-  return { claudeCode: cc, at: r.at ?? null, track: r.track ?? null, runner: r.json.shim ? 'shim' : 'official',
-    verdict: st === 'errored' ? 'errored' : st === 'regressed' ? 'drift' : 'held',
-    overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null };
-}).reverse(); // newest first
+// ---- the drift wire: machine-readable + subscribable (computed above)
+const verdicts = [...verdictsAsc].reverse(); // newest first
 const outDir = path.dirname(outPath);
-// (verdicts.json written below, once the streak is known)
 const pageUrl = opt.pageUrl ? opt.pageUrl.replace(/\/$/, '') : null;
 const entries = verdicts.slice(0, 25).map((v) => `  <entry>
     <id>urn:config-drift-checker:${esc(suite)}:cc${esc(v.claudeCode)}</id>
@@ -201,11 +233,7 @@ await fs.writeFile(path.join(outDir, 'feed.xml'), `<?xml version="1.0" encoding=
 ${entries}
 </feed>\n`);
 
-// ---- the stability streak + the adopter badge (status.svg, embeddable like a coverage badge)
-let streakRuns = 0; const cleanCc = new Set();
-for (let i = runs.length - 1; i >= 0; i--) { const st = runStatus(runs[i]); if (['pass', 'warn', 'noisy', 'below'].includes(st)) { streakRuns++; if (runs[i].cc) cleanCc.add(runs[i].cc); } else break; }
-const firstClean = runs[runs.length - streakRuns];
-const streakDays = streakRuns && firstClean?.at ? Math.max(0, Math.round((Date.now() - new Date(firstClean.at).getTime()) / 86400000)) : 0;
+// ---- the adopter badge (streak computed above)
 const badgeLabel = 'agent setup';
 const badgeValue = !latest ? 'no runs' : latestStatus === 'errored' ? 'runs errored' : latestStatus === 'regressed' ? `drift on cc${latest.cc ?? '?'}` : `\u2713 cc${latest.cc ?? '?'} \u00b7 ${cleanCc.size} release${cleanCc.size === 1 ? '' : 's'} clean`;
 const badgeColor = !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestStatus === 'errored' ? '#f85149' : '#3fb950';
