@@ -1,6 +1,6 @@
 ---
 name: repair
-description: After a red eval run, propose the smallest change to the agent setup (CLAUDE.md, a skill, a hook) that restores the drifted behaviour, verify it by re-running only the failing cases, and write a PR-ready summary. Use when the user says "fix the regression", "repair the setup", "make the eval green again", or when the config-drift-checker Action runs with repair: true.
+description: "After a red eval run, propose the smallest change to the agent setup (CLAUDE.md, a skill, a hook) that restores the drifted behaviour, verify it by re-running only the failing cases, and write a PR-ready summary. Use when the user says \"fix the regression\", \"repair the setup\", \"make the eval green again\", or when the config-drift-checker Action runs with repair: true."
 ---
 
 # config-drift-checker: repair

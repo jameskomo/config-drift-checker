@@ -125,7 +125,10 @@ async function discoverSkills(root) {
         const t = await fs.readFile(p, 'utf8');
         const name = (t.match(/^---[\s\S]*?^name:\s*(.+)$/m) ?? [])[1]?.trim() ?? null;
         const description = (t.match(/^---[\s\S]*?^description:\s*(.+)$/m) ?? [])[1]?.trim() ?? null;
-        out.push({ dir: path.relative(root, path.dirname(p)), name: name ?? path.basename(path.dirname(p)), description, malformed: !name || !description });
+        // an unquoted ': ' in a plain scalar is invalid strict YAML (issue #14): flag it, since
+        // linters, indexers and other agents' loaders reject the whole frontmatter over it
+        const strictInvalid = [name, description].some((v) => v && !/^["'>|]/.test(v) && v.includes(': '));
+        out.push({ dir: path.relative(root, path.dirname(p)), name: name ?? path.basename(path.dirname(p)), description, malformed: !name || !description || strictInvalid });
       }
     }
   };

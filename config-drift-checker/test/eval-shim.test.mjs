@@ -220,3 +220,26 @@ test('gemini agent (experimental): headless text run, GEMINI.md bridged, tool in
   assert.match(acted.reason, /no machine-readable tool calls/);
   assert.equal(report.cases[0].summary.score, 1);
 });
+
+test('discovery: an unquoted colon-space in a SKILL.md description is malformed (issue #14)', async () => {
+  const plugin = await makePlugin();
+  await fs.mkdir(path.join(plugin, 'skills/colon'), { recursive: true });
+  await fs.writeFile(path.join(plugin, 'skills/colon/SKILL.md'), '---\nname: colon\ndescription: runs with repair: true sometimes\n---\nbody\n');
+  const { report } = await runShim(plugin, ['--runs', '1']);
+  const sk = report.discovered.skills.find((s) => s.dir === 'skills/colon');
+  assert.equal(sk.malformed, true, 'strict-YAML-invalid frontmatter is flagged');
+});
+
+test('every SKILL.md this repo ships has strictly quoted frontmatter values', async () => {
+  const roots = [new URL('../skills', import.meta.url).pathname];
+  for (const root of roots) {
+    for (const d of await fs.readdir(root)) {
+      const t = await fs.readFile(path.join(root, d, 'SKILL.md'), 'utf8');
+      const fm = t.match(/^---\r?\n([\s\S]*?)\r?\n---/)[1];
+      for (const line of fm.split('\n')) {
+        const m = line.match(/^(name|description):\s*(.+)$/);
+        if (m && !/^["'>|]/.test(m[2])) assert.ok(!m[2].includes(': '), `${d}/SKILL.md ${m[1]}: unquoted ': ' breaks strict YAML`);
+      }
+    }
+  }
+});
