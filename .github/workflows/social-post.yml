@@ -6,6 +6,9 @@ name: social-post
 #   BLUESKY_APP_PASSWORD  Settings → App passwords (never the account password)
 #   MASTODON_INSTANCE   e.g. https://fosstodon.org
 #   MASTODON_TOKEN      Preferences → Development → New application → write:statuses
+#   X_CONSUMER_KEY / X_CONSUMER_SECRET / X_ACCESS_TOKEN / X_ACCESS_SECRET
+#                       developer.x.com → create an app (free tier posts up to ~500/month) →
+#                       Keys and tokens → generate all four with Read and Write permissions
 # State (the last version posted) lives on the eval-results branch, so re-runs never double-post.
 on:
   schedule:
@@ -33,6 +36,10 @@ jobs:
           BSKY_PW: ${{ secrets.BLUESKY_APP_PASSWORD }}
           MASTO_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
           MASTO_TOKEN: ${{ secrets.MASTODON_TOKEN }}
+          X_CONSUMER_KEY: ${{ secrets.X_CONSUMER_KEY }}
+          X_CONSUMER_SECRET: ${{ secrets.X_CONSUMER_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
         run: |
           set -euo pipefail
           text=$(cat docs/drift/post.txt)
@@ -50,7 +57,10 @@ jobs:
             curl -sf "$MASTO_INSTANCE/api/v1/statuses" -H "Authorization: Bearer $MASTO_TOKEN" --data-urlencode "status=$text" >/dev/null \
               && { echo "posted to Mastodon"; posted=true; } || echo "::warning::Mastodon post failed"
           fi
-          [ "$posted" = "true" ] || { echo "no social secrets set — dormant (see the header of this workflow for the 4 secrets)"; exit 0; }
+          if [ -n "$X_CONSUMER_KEY" ] && [ -n "$X_ACCESS_TOKEN" ]; then
+            TEXT="$text" node .github/scripts/x-post.mjs && posted=true || echo "::warning::X post failed"
+          fi
+          [ "$posted" = "true" ] || { echo "no social secrets set — dormant (see the header of this workflow for which to set)"; exit 0; }
       - if: steps.decide.outputs.post == 'true'
         env:
           VERSION: ${{ steps.decide.outputs.version }}
