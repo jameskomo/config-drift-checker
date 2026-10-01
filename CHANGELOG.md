@@ -2,6 +2,15 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.4.0 (2026-10-01)
+Setup health reports. Every stored run now carries its preflight results, so each run's HTML
+report has a Setup health panel (skills and eval-suite-format tiles, every finding with its fix),
+and the observatory has a Setup health section with a format-drift-per-release strip: the
+Claude Code releases where your eval suite itself stopped being valid, next to the behaviour
+timeline. `verdicts.json` carries per-release health. The suite doctor now works on older Claude
+Code (retries without `--trust-plugin`) and never claims a suite is valid when its live check did
+not run.
+
 ## v1.3.0 (2026-10-01)
 Free preflight before any model run. `skill-lint` checks every SKILL.md (frontmatter strict
 parsers reject, vague or missing trigger descriptions, overlapping skills without negative scope,
