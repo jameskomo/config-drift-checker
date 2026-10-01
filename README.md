@@ -111,6 +111,7 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 |---|---|
 | The observatory | stat tiles, a stability streak, and a verdict timeline per Claude Code release. [Ours, live](https://jameskomo.github.io/config-drift-checker/drift/) |
 | The drift wire | [a subscribable Atom feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml) plus `verdicts.json`: one behavioural verdict per release, the changelog nobody else publishes |
+| [Setup health](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free) | every run's report gets a setup-health panel (skills linted, eval suite loaded by the real runner, each finding with its fix), and the observatory adds a **format drift per Claude Code release** strip: the releases where your test suite itself stopped being valid, separate from behaviour drift |
 | The status badge | embeddable like a coverage badge: green "cc2.1.269 · 3 releases clean", red naming the version the day something breaks |
 | Posts and digest, pre-written | `drift-digest` turns every new verdict into ready-to-paste posts per platform (X, LinkedIn, Reddit when something actually broke) plus a weekly digest; a workflow can post to Bluesky/Mastodon automatically |
 | Hard budget caps | per run and per month, enforced from a ledger; on a Claude Pro/Max subscription token, $0 API, counted against the plan's usage limits |
@@ -156,7 +157,7 @@ One sentence: their command answers "does my plugin work right now on my machine
 
 **Stable since v1.0**: the `v0`/`v1` moving tag never breaks your workflow; breaking changes mean
 a new major with an upgrade note in [CHANGELOG.md](CHANGELOG.md).
-Zero npm dependencies (Node builtins only), 155 tests that run against a fake `claude` with no API
+Zero npm dependencies (Node builtins only), 170 tests that run against a fake `claude` with no API
 key, every third-party action pinned to a verified commit SHA, CodeQL on every push. Runs on your
 runner with your key; nothing is sent to us, because there is no us to send it to. Details in
 [docs/security.md](docs/security.md).

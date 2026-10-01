@@ -104,7 +104,7 @@ test('missing case is a regression; new case is not; budget-skipped case is unkn
   assert.equal(json.rows.find((r) => r.case === 'gone').status, 'missing');
   assert.equal(json.rows.find((r) => r.case === 'fresh').status, 'new');
   assert.equal(json.rows.find((r) => r.case === 'skipped').status, 'new', 'not in the baseline → new, never red');
-  assert.match(md, /■ Budget cap \$2 reached after \$2\.40 — 3 planned run\(s\) not started/);
+  assert.match(md, /■ Budget cap \$2 reached after \$2\.40, 3 planned run\(s\) not started/);
   const skippedKnown = await run(report({ cases: { a: three(), s: three() } }), report({ cases: { a: three(), s: [] } }));
   assert.equal(skippedKnown.status, 0);
   assert.equal(skippedKnown.json.rows.find((r) => r.case === 's').status, 'unknown');
@@ -136,7 +136,7 @@ test('noise: a flake-shaped drop inside the historical noise band is a ⚠ warni
   assert.equal(json.red, 0); assert.equal(json.regressed, 0);
   assert.match(md, /no regressions · ⚠ 1 noisy \(warning\)/);
   assert.match(md, /\| ⚠ \| a \| 1\.00 \| 0\.80 \| -0\.20 \| ±0\.50 \|/);
-  assert.match(md, /_1 case dropped past 0\.15 but within historical noise \(±0\.50 over the last 2 runs\) — warning, not a regression_/);
+  assert.match(md, /_1 case dropped past 0\.15 but within historical noise \(±0\.50 over the last 2 runs\), warning, not a regression_/);
 });
 
 test('noise: a quiet history keeps the same delta red', async () => {
@@ -167,7 +167,7 @@ test('baseline quality: thin and unstable baselines warn, never red', async () =
   assert.equal(status, 0);
   assert.deepEqual(json.rows.find((r) => r.case === 'a').warnings, ['thin baseline (n=2)', 'unstable baseline (±0.50)']);
   assert.deepEqual(json.rows.find((r) => r.case === 'b').warnings, []);
-  assert.match(md, /\*\*⚠ baseline quality \(never red\):\*\* `a` — thin baseline \(n=2\), unstable baseline/);
+  assert.match(md, /\*\*⚠ baseline quality \(never red\):\*\* `a`, thin baseline \(n=2\), unstable baseline/);
 });
 
 test('noise guard: a uniform in-band drop (no run reaches baseline) is a consistent shift → red', async () => {

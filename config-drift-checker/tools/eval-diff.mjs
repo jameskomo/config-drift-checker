@@ -72,9 +72,9 @@ const skillNote = (c) => {
   if (!failed) return null;
   const target = String(def.input_match ?? def.config?.input_match ?? '');
   const hit = skills.find((s) => !target || (s.dir ?? '').includes(target) || (s.name ?? '').toLowerCase().includes(target.toLowerCase()));
-  if (!hit) return `the skill it watches (\`${target || 'any'}\`) has no SKILL.md in the plugin — not discovered: packaging (renamed dir, deleted or moved file)`;
-  if (hit.malformed) return `\`${hit.dir}/SKILL.md\` lacks a parseable name/description — likely not discovered: packaging`;
-  return `\`${hit.dir}\` is on disk and parseable — discovered but never invoked: suspect the trigger description, not packaging`;
+  if (!hit) return `the skill it watches (\`${target || 'any'}\`) has no SKILL.md in the plugin, so it was not discovered: packaging (renamed dir, deleted or moved file)`;
+  if (hit.malformed) return `\`${hit.dir}/SKILL.md\` lacks a parseable name/description, likely not discovered: packaging`;
+  return `\`${hit.dir}\` is on disk and parseable, discovered but never invoked: suspect the trigger description, not packaging`;
 };
 const failedGraders = (c) => {
   const counts = {};
@@ -145,16 +145,16 @@ const md = [
   `Suite \`${cur.suite?.name ?? '?'}\`${trackLabel} · model ${mc.join(',') || '?'} (baseline ${mb.join(',') || '?'}) · Claude Code ${cur.harness?.version ?? '?'}${base.harness?.version && base.harness.version !== cur.harness?.version ? ` (baseline ${base.harness.version})` : ''} · threshold ${th.score} · overall ${f(base.aggregates?.overallScore)} → ${f(cur.aggregates?.overallScore)} · cost $${(cur.aggregates?.costUsd ?? 0).toFixed(2)}`,
   ...(moved.length ? ['', moved.join(' · ')] : []),
   ...(worth !== null ? ['', `Setup worth **${fd(worth)}** on this suite (with − without plugin, mean over ${cur.cases.filter((c) => typeof c.summary?.delta === 'number').length} case${cur.cases.length === 1 ? '' : 's'})`] : []),
-  ...(budget?.exceeded ? ['', `■ Budget cap $${budget.capUsd} reached after $${budget.spentUsd.toFixed(2)} — ${budget.skippedRuns} planned run(s) not started; cases without runs show as ❔, not as regressions`] : []),
+  ...(budget?.exceeded ? ['', `■ Budget cap $${budget.capUsd} reached after $${budget.spentUsd.toFixed(2)}, ${budget.skippedRuns} planned run(s) not started; cases without runs show as ❔, not as regressions`] : []),
   '',
   '| | case | before | after | Δ | noise | turns | cost | runs | failing graders (with-arm) |',
   '|---|---|---|---|---|---|---|---|---|---|',
   ...rows.map((r) => `| ${icon[r.status]}${r.flags.length ? ' ⚠' : ''} | ${opt.reportUrl ? `[${r.case}](${opt.reportUrl}#case-${r.case})` : r.case}${r.flags.length ? ` <sub>${r.flags.join(', ')}</sub>` : ''} | ${f(r.before)} | ${f(r.after)} | ${fd(r.delta)} | ${r.noise === null || r.noise === undefined ? '—' : `±${r.noise.toFixed(2)}`} | ${fmtEff(r.eff, 'turns', t)} | ${fmtEff(r.eff, 'cost', usd)} | ${r.runs ?? '—'} | ${r.failedGraders || ''} |`),
-  ...(noisy.length ? ['', `_${noisy.length} case${noisy.length === 1 ? '' : 's'} dropped past ${th.score} but within historical noise (±${Math.max(...noisy.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${nHist} run${nHist === 1 ? '' : 's'}) — warning, not a regression_`] : []),
+  ...(noisy.length ? ['', `_${noisy.length} case${noisy.length === 1 ? '' : 's'} dropped past ${th.score} but within historical noise (±${Math.max(...noisy.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${nHist} run${nHist === 1 ? '' : 's'}), warning, not a regression_`] : []),
   ...(rows.some((r) => r.escalated) ? ['', rows.filter((r) => r.escalated).map((r) => `_\`${r.case}\` is within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway: ${r.escalated}_`).join('\n')] : []),
-  ...(rows.some((r) => r.refusedRuns) ? ['', rows.filter((r) => r.refusedRuns).map((r) => `_\`${r.case}\`: ${r.refusedRuns} of ${r.runs} run(s) look like refusals (≤1 turn, no tool use) — likely a model guardrail change, not setup drift; read the run transcript before acting_`).join('\n')] : []),
+  ...(rows.some((r) => r.refusedRuns) ? ['', rows.filter((r) => r.refusedRuns).map((r) => `_\`${r.case}\`: ${r.refusedRuns} of ${r.runs} run(s) look like refusals (≤1 turn, no tool use), likely a model guardrail change, not setup drift; read the run transcript before acting_`).join('\n')] : []),
   ...(rows.some((r) => r.skillNote) ? ['', rows.filter((r) => r.skillNote).map((r) => `_\`${r.case}\`: ${r.skillNote}_`).join('\n')] : []),
-  ...(warned.length ? ['', `**⚠ baseline quality (never red):** ${warned.map((r) => `\`${r.case}\` — ${r.warnings.join(', ')}`).join(' · ')}. More runs per case fix this; never loosen the threshold.`] : []),
+  ...(warned.length ? ['', `**⚠ baseline quality (never red):** ${warned.map((r) => `\`${r.case}\`, ${r.warnings.join(', ')}`).join(' · ')}. More runs per case fix this; never loosen the threshold.`] : []),
   '',
   `<sub>baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]} · fail on: ${[...failOn].join(', ')} · efficiency thresholds: turns ${th.turns}, cost ${th.cost}, duration ${th.duration}</sub>`,
 ].join('\n');

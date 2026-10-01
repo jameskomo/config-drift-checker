@@ -289,6 +289,15 @@ installed, and puts both in the job summary:
   `target` on llm graders, scaffold scripts as files, `min: 0` with `max: 0`), are fixed in place
   by `--fix`, and the list of known fixes grows whenever our own canary catches a new change.
 
+Both results are kept with every run and shown in two places. Each run's HTML report has a
+**Setup health** panel: one tile for your skills and one for the eval suite format (how many cases
+the runner loaded on that Claude Code version, and whether the runner confirmed it), then every
+finding with its fix, marked when `--fix` can apply it. The observatory adds a **Setup health**
+section with a **format drift per Claude Code release** strip, styled like the behaviour timeline
+above it: green when every case loaded, amber for warnings or when the runner could not confirm,
+red when a release rejected part of your suite. `verdicts.json` carries the same per-release
+health for other tools.
+
 The Action's `preflight` input decides what happens on a finding: `warn` (default) reports it,
 `fail` stops before spending any model runs, `off` skips the checks.
 
