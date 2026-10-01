@@ -172,8 +172,16 @@ runs:
         runs_args=(); [ -n "$RUNS_INPUT" ] && runs_args=(--runs "$RUNS_INPUT")
         scaffold_args=(); [ "$SCAFFOLD" = "true" ] && scaffold_args=(--scaffold)
         if [ "$RUNNER" = "official" ]; then
+          # --trust-plugin: CI cannot answer the first-run trust prompt; the suite is this repo's own checkout
           claude plugin eval "$PLUGIN_DIR" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
-            "${runs_args[@]}" "${scaffold_args[@]}" --allow-tools Bash Write Edit --no-publish --json "$out/aggregate-result.json" || true
+            "${runs_args[@]}" "${scaffold_args[@]}" --allow-tools Bash Write Edit --no-publish --trust-plugin --json "$out/aggregate-result.json" || true
+          if [ ! -s "$out/aggregate-result.json" ]; then
+            # a CLI change in the official runner must never take the whole check down: fall back
+            echo "::warning::the official runner produced no result on Claude Code $CC_VERSION; falling back to the bundled runner for this run"
+            RUNNER=shim
+            node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
+              --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
+          fi
           # the official runner does not know tracks yet: stamp provenance so diff/store/promote can reason about it
           OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
         else
