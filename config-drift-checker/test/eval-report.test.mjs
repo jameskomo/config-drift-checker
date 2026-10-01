@@ -173,7 +173,7 @@ test('setup health: finding text is HTML-escaped', () => {
   const evil = { ...skillWarn(0), file: 'skills/<b>x</b>/SKILL.md', message: '<script>alert(1)</script> & "quoted"', fix: '<img src=x onerror=alert(1)>' };
   const suite = { ...cleanSuite, live: { status: 'failed', reason: '<svg onload=alert(1)>' }, findings: [{ ...suiteErr, case: '<i>c</i>' }] };
   const html = renderReport(withPreflight({ skills: { ...cleanSkills, warnings: 1, findings: [evil] }, suite }), base, { threshold: 0.15 });
-  assert.doesNotMatch(html, /<script|<img |<svg onload|<b>x<\/b>|<i>c<\/i>/);
+  assert.doesNotMatch(html, /<script|<img |<svg onload|<b>x<\/b>|<i>c<\/i>/i);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; &quot;quoted&quot;/);
   assert.match(html, /Fix: &lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(html, /not confirmed: &lt;svg onload=alert\(1\)&gt;/);
