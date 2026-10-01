@@ -19,6 +19,7 @@ didn't ship it.
 | CI wiring, secrets, branch gating, useful Action inputs | §3, §4 |
 | Pins, canary cadence, thresholds, budgets (`.cdc.yml`) | §5 |
 | Release watch, canary runs, bump and pin PRs | §6 |
+| Free preflight before any model run: skill linter, suite format doctor, format drift per release | §7 |
 | Reading reports: noise bands, refusals, discovered vs invoked, panels | §7 |
 | Which release broke it (`drift-bisect`) | §7 |
 | Autonomous repair: when it runs, its hard limits, a live example | §7 |
@@ -150,6 +151,7 @@ the `watch` job from the full template at `ci/config-drift-checker.yml` in the p
 | `claude-code-version: 2.1.258` | override the pin for this run |
 | `coverage-min: 80` | fail when under 80% of your rules have a case (empty = report only) |
 | `report-base-url: https://<you>.github.io/<repo>/history` | case names in the PR comment deep-link into that run's HTML report (needs Pages serving the results branch) |
+| `preflight: fail` | stop before any model run when the skill linter or suite doctor finds an error (default `warn` reports only) |
 
 **Which path is for me?**
 
@@ -270,6 +272,25 @@ every skill discovered at run start and whether any case invoked it.
 In one sentence: a green report asks nothing of you; a red one tells you which of four things
 happened (the model refused, the setup regressed, the grader was wrong, or the run was flaky) and
 what to do.
+
+### Preflight: catch broken skills and format drift for free
+
+Before any model run, the Action runs two static checks on the Claude Code version it just
+installed, and puts both in the job summary:
+
+- **Skill linter** (`tools/skill-lint.mjs <plugin>`): every SKILL.md must have frontmatter a strict
+  parser accepts (an unquoted `: ` inside a description breaks it), a name, and a description that
+  tells the agent when to use the skill and, when you ship several, when not to. It also flags
+  file references in a skill that point at nothing. `--strict` fails on warnings too.
+- **Suite doctor** (`tools/suite-doctor.mjs <plugin> [--fix]`): checks every eval case against the
+  current official format, and asks the installed Claude Code's runner to load the suite without
+  starting a single model run. Any case the new version rejects is named with the exact setting it
+  rejected. Changes we know about, like the ones Claude Code 2.1.287 made (`focus` instead of
+  `target` on llm graders, scaffold scripts as files, `min: 0` with `max: 0`), are fixed in place
+  by `--fix`, and the list of known fixes grows whenever our own canary catches a new change.
+
+The Action's `preflight` input decides what happens on a finding: `warn` (default) reports it,
+`fail` stops before spending any model runs, `off` skips the checks.
 
 ### Which release broke it: `drift-bisect`
 

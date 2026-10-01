@@ -76,6 +76,8 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging. [Watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
 | Efficiency drift | slower, pricier, longer gets flagged even when every case still passes |
 | Coverage | which of your rules have no test: a percentage, a badge, and a `coverage-min` gate |
+| Skill linter | `skill-lint` checks every SKILL.md before any model run: frontmatter that strict parsers reject, missing or vague trigger descriptions, overlapping skills without negative scope, broken file references |
+| Format drift | `suite-doctor` checks your eval cases against the runner of the Claude Code you're about to test, for free (no model runs), names every case the new version rejects, and `--fix` migrates the known changes. Runs as a preflight on every release, so a schema change shows up as "this case no longer loads", not as mysterious regressions |
 
 **Diagnose**: red comes with answers, not homework
 
@@ -144,7 +146,7 @@ One sentence: their command answers "does my plugin work right now on my machine
 
 **Stable since v1.0**: the `v0`/`v1` moving tag never breaks your workflow; breaking changes mean
 a new major with an upgrade note in [CHANGELOG.md](CHANGELOG.md).
-Zero npm dependencies (Node builtins only), 108 tests that run against a fake `claude` with no API
+Zero npm dependencies (Node builtins only), 154 tests that run against a fake `claude` with no API
 key, every third-party action pinned to a verified commit SHA, CodeQL on every push. Runs on your
 runner with your key; nothing is sent to us, because there is no us to send it to. Details in
 [docs/security.md](docs/security.md).

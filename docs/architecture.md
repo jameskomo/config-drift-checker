@@ -64,6 +64,8 @@ flowchart LR
 | `fleet.mjs` | many repos' published results → one dashboard + pin-policy skew; errored/missing repos exit red | none (reads each repo's results branch) |
 | `cdc-bootstrap.mjs` | one command to a protected repo: headless setup-skill run, or a $0 `--no-agent` scaffold | none |
 | `drift-bisect.mjs` | binary-search Claude Code releases for the one that broke a case (throwaway installs, log2 runs) | none |
+| `skill-lint.mjs` | static checks on every SKILL.md and the manifest before any model run | none |
+| `suite-doctor.mjs` | eval cases vs the current official format plus a free load check on the installed runner; `--fix` migrates known changes | edits case files only with `--fix` |
 | `drift-digest.mjs` | published verdicts → weekly digest + the pre-written release post | docs/drift/digest.md, post.txt |
 | `ci/` templates | the per-repo two-track workflow, the fleet workflow, and the org pair (reusable workflow + three-line caller) | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |

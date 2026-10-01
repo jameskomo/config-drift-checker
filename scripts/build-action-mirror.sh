@@ -87,6 +87,7 @@ way `.cdc.yml` caps spend per run and per month, and the Action refuses to start
 | `slack-webhook-url` | none | Slack alerts on regression |
 | `github-token` | `github.token` | token for results, PRs and comments |
 | `pages` | `true` | write the drift index and reports for GitHub Pages |
+| `preflight` | `warn` | free checks before any model run (skill linter, suite format doctor); `fail` stops early, `off` skips |
 
 ## More
 

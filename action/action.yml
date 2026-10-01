@@ -26,6 +26,7 @@ inputs:
   slack-webhook-url:     { description: 'Incoming-webhook URL to notify on regression (pass a secret)', default: '' }
   github-token:          { description: 'Token for pushing results, opening PRs and commenting', default: '${{ github.token }}' }
   pages:                 { description: 'Also write docs/ (dashboard, report, latest.json) to the results branch for GitHub Pages (source: results branch, /docs)', default: 'true' }
+  preflight:             { description: 'Static checks before any model run: the skill linter and the suite format doctor (including a free load check on the installed Claude Code). warn = report in the job summary; fail = stop before spending model runs; off', default: 'warn' }
 
 outputs:
   regressed:       { description: 'Number of regressed/missing cases', value: '${{ steps.diff.outputs.regressed }}' }
@@ -147,6 +148,33 @@ runs:
         # Official runner if the early-access gate is open for this account, else the shim.
         d=$(mktemp -d); out=$(cd "$d" && claude plugin eval 2>&1 || true); rm -rf "$d"
         if echo "$out" | grep -q "early access"; then echo "runner=shim" >> "$GITHUB_OUTPUT"; else echo "runner=official" >> "$GITHUB_OUTPUT"; fi
+
+    - id: preflight
+      # free: no model runs. Catches skills that will not load or trigger, and eval cases the installed
+      # Claude Code's runner will reject (format drift between releases), before a token is spent
+      if: steps.gate.outputs.skipped != 'true' && inputs.preflight != 'off'
+      shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        MODE: ${{ inputs.preflight }}
+      run: |
+        set +e
+        node "$TOOLS/skill-lint.mjs" "$PLUGIN_DIR" > "$RUNNER_TEMP/skill-lint.txt" 2>&1; sl=$?
+        node "$TOOLS/suite-doctor.mjs" "$PLUGIN_DIR" --runner "$(command -v claude)" > "$RUNNER_TEMP/suite-doctor.txt" 2>&1; sd=$?
+        {
+          echo "### Preflight on Claude Code $CC_VERSION (no model runs spent)"
+          echo; echo "**Skills** $( [ $sl -eq 0 ] && echo '✓' || echo '✗')"; echo; echo '```'; tail -40 "$RUNNER_TEMP/skill-lint.txt"; echo '```'
+          echo; echo "**Eval suite format** $( [ $sd -eq 0 ] && echo '✓' || echo '✗')"; echo; echo '```'; tail -40 "$RUNNER_TEMP/suite-doctor.txt"; echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        if [ $sl -ne 0 ] || [ $sd -ne 0 ]; then
+          echo "failed=true" >> "$GITHUB_OUTPUT"
+          msg="preflight found problems in your skills or eval cases on Claude Code $CC_VERSION; see the job summary (fix most with: node <plugin-root>/tools/suite-doctor.mjs <plugin> --fix)"
+          if [ "$MODE" = "fail" ]; then echo "::error::$msg"; exit 1; else echo "::warning::$msg"; fi
+        else
+          echo "failed=false" >> "$GITHUB_OUTPUT"
+        fi
 
     - id: run
       if: steps.gate.outputs.skipped != 'true'

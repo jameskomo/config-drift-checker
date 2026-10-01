@@ -105,6 +105,8 @@ node tools/config-coverage.mjs komo-stack --list
 node tools/eval-dashboard.mjs komo-stack/evals/results --config komo-stack --out dashboard.html
 node tools/fleet.mjs --config fleet.yml --out fleet.html    # many repos, one dashboard + pin policy
 node tools/drift-digest.mjs docs/drift --md digest.md --post post.txt   # weekly digest + the release-verdict post, pre-written
+node tools/skill-lint.mjs komo-stack                     # static checks on every SKILL.md, no model runs
+node tools/suite-doctor.mjs komo-stack --fix            # eval cases vs the installed runner's format; --fix migrates known changes
 node tools/drift-bisect.mjs komo-stack --case 'spring-work*' --good 2.1.258 --bad 2.1.274   # which release broke this case? log2(N) runs
 node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # EXPERIMENTAL: same suite through Codex CLI
 node tools/eval-shim.mjs komo-stack --agent gemini --ablation none --scaffold  # EXPERIMENTAL: through Gemini CLI (free Google tier)
