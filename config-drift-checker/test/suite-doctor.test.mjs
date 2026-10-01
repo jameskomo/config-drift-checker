@@ -51,7 +51,7 @@ test('a clean suite reports nothing, exits 0, and skips the live layer when no r
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /suite-doctor: 2 case\(s\)/);
   assert.match(r.stdout, /live load check: skipped \(no --runner given and no claude on PATH\)/);
-  assert.match(r.stdout, /summary: 0 error\(s\), 0 warning\(s\)\. Every case is valid/);
+  assert.match(r.stdout, /summary: 0 error\(s\), 0 warning\(s\)\. Static checks passed; not confirmed against the runner/);
   assert.doesNotMatch(r.stdout, /ERROR|WARN /);
 });
 
@@ -302,6 +302,9 @@ if (a[0] === '--version') { console.log('2.1.287 (Claude Code)'); process.exit(0
 fs.writeFileSync(process.env.FAKE_LOG, JSON.stringify({ argv: a, key: process.env.ANTHROPIC_API_KEY ?? null, config: process.env.CLAUDE_CONFIG_DIR }));
 const E = a[2] + '/evals';
 if (process.env.FAKE_MODE === 'crash') { console.error('Error: something broke'); process.exit(1); }
+if (process.env.FAKE_MODE === 'old' && a.includes('--trust-plugin')) { console.error("error: unknown option '--trust-plugin'"); process.exit(1); }
+if (process.env.FAKE_MODE === 'early') { console.error('plugin eval is currently in early access'); process.exit(1); }
+if (process.env.FAKE_MODE === 'nocap') { console.error("error: unknown option '--max-cost-usd'"); process.exit(1); }
 console.log('⚠ case "llm": grader "c-tool" cannot pass with the granted tools: Bash is not granted');
 console.log('✗ ' + E + "/llm: invalid case.yaml:   graders.1: Unrecognized key(s) in object: 'target'");
 console.log('✗ ' + E + '/other: invalid case.yaml:   graders.0.weight: Expected number, received string');
@@ -358,4 +361,19 @@ test('live layer: a --runner that does not exist is skipped cleanly, the static 
   assert.match(r.stdout, /live load check: skipped \(--runner .* is not an executable file\)/);
   const usage = await cli([]);
   assert.equal(usage.status, 2);
+});
+
+test('live layer on older Claude Code: retries without --trust-plugin, skips honestly when no run-free check exists', async () => {
+  const root = await suite({ fine: GOOD });
+  const { bin, log } = await fakeRunner();
+  const old = await cli([root, '--runner', bin], { FAKE_LOG: log, FAKE_MODE: 'old' });
+  const called = JSON.parse(await fs.readFile(log, 'utf8'));
+  assert.ok(!called.argv.includes('--trust-plugin'), 'the retry drops the flag the old runner rejected');
+  assert.match(old.stdout, /live load check: claude 2\.1\.287 loaded/);
+  for (const mode of ['early', 'nocap']) {
+    const r = await cli([root, '--runner', bin], { FAKE_LOG: log, FAKE_MODE: mode });
+    assert.match(r.stdout, /live load check: skipped/);
+    assert.match(r.stdout, /not confirmed against the runner/, `${mode}: never claims the suite is valid`);
+    assert.doesNotMatch(r.stdout, /Every case is valid/);
+  }
 });

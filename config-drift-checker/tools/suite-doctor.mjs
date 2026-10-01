@@ -426,10 +426,18 @@ export function liveLoadCheck(suite, runnerPath, { timeoutMs = 180_000 } = {}) {
     for (const k of ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN']) delete env[k];
     const version = (spawnSync(runnerPath, ['--version'], { encoding: 'utf8', env, timeout: 30_000 }).stdout ?? '').trim().split(/\s+/)[0] || null;
     const json = path.join(work, 'result.json');
-    const args = ['plugin', 'eval', suite.pluginDir, '--max-cost-usd', '0', '--trust-plugin', '--no-publish',
-      '--output-dir', path.join(work, 'out'), '--report', path.join(work, 'report.html'), '--json', json];
-    const r = spawnSync(runnerPath, args, { encoding: 'utf8', env, cwd: work, timeout: timeoutMs });
-    const output = `${r.stdout ?? ''}\n${r.stderr ?? ''}`;
+    const run = (trust) => {
+      const args = ['plugin', 'eval', suite.pluginDir, '--max-cost-usd', '0', ...(trust ? ['--trust-plugin'] : []), '--no-publish',
+        '--output-dir', path.join(work, 'out'), '--report', path.join(work, 'report.html'), '--json', json];
+      const r = spawnSync(runnerPath, args, { encoding: 'utf8', env, cwd: work, timeout: timeoutMs });
+      return { r, output: `${r.stdout ?? ''}\n${r.stderr ?? ''}` };
+    };
+    let { r, output } = run(true);
+    // versions before the trust prompt existed reject the flag; they need no trust either
+    if (/unknown option '--trust-plugin'/.test(output)) ({ r, output } = run(false));
+    // never retry without the cost ceiling: without it the load check would start real runs
+    if (/unknown option '--max-cost-usd'/.test(output)) return { status: 'skipped', reason: `Claude Code ${version ?? '?'} has no --max-cost-usd, so a run-free load check is not possible`, runner: runnerPath, version };
+    if (/early access/i.test(output)) return { status: 'skipped', reason: `Claude Code ${version ?? '?'} has no official eval runner yet (early access)`, runner: runnerPath, version };
     const parsed = parseRunnerOutput(output, suite);
     let result = null;
     try { result = JSON.parse(readFileSync(json, 'utf8')); } catch { /* checked below */ }
@@ -478,7 +486,11 @@ export function formatReport(res) {
     if (lv.notes.length > shown.length) out.push(`  (${lv.notes.length - shown.length} runner note(s) about tool grants and scaffolds omitted: they depend on the eval flags you run with; see --json)`);
   }
   const s = res.summary;
-  out.push(`summary: ${s.errors} error(s), ${s.warnings} warning(s)${res.fixApplied ? `, ${s.fixed} fixed` : s.fixable ? `, ${s.fixable} fixable with --fix` : ''}. ${s.errors ? 'Some cases will not load under the official runner.' : 'Every case is valid for the official runner.'}`);
+  const confirmed = res.live?.status === 'ok';
+  const verdict = s.errors ? 'Some cases will not load under the official runner.'
+    : confirmed ? 'Every case is valid for the official runner.'
+    : 'Static checks passed; not confirmed against the runner because the live load check did not run.';
+  out.push(`summary: ${s.errors} error(s), ${s.warnings} warning(s)${res.fixApplied ? `, ${s.fixed} fixed` : s.fixable ? `, ${s.fixable} fixable with --fix` : ''}. ${verdict}`);
   return out.join('\n');
 }
 
