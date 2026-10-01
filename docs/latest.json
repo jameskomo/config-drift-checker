@@ -1,1860 +1,1293 @@
 {
-  "schemaVersion": "1.1",
-  "shim": true,
-  "agent": "claude",
-  "track": "pinned",
-  "harness": {
-    "name": "claude-code",
-    "version": "2.1.258"
-  },
-  "judge": {
-    "model": "haiku"
-  },
-  "config": {
-    "model": "claude-sonnet-5",
-    "modelIsPinned": true,
-    "harness": "2.1.258",
-    "harnessIsPinned": true,
-    "expandOnDeviation": 0,
-    "budgetUsd": 1.5,
-    "file": ".cdc.yml"
-  },
-  "startedAt": "2026-10-01T19:51:59.187Z",
-  "generatedAt": "2026-10-01T20:00:16.238Z",
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.287",
+  "startedAt": "2026-10-01T20:04:57.017Z",
+  "durationSeconds": 175,
+  "costUsd": 0.9885352000000002,
+  "partial": false,
   "suite": {
-    "name": "komo-stack",
-    "caseCount": 6,
-    "baselineOnly": false
-  },
-  "discovered": {
-    "skills": [
+    "root": "/home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack",
+    "ablation": "none",
+    "modelOverride": "sonnet",
+    "judgeModel": "haiku",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
       {
-        "dir": "skills/spring-boot-conventions",
-        "name": "spring-boot-conventions",
-        "description": "House conventions for writing Spring Boot (Java) backend code — controllers, services, DTOs, pagination, error responses. Use whenever the user asks to write, add, refactor, or review a Spring Boot controller, service, repository, DTO, endpoint, or REST API in Java. Trigger phrases - \"Spring Boot\", \"REST controller\", \"@RestController\", \"endpoint\", \"service class\", \"DTO\", \"JPA repository\". Do NOT use for Vue, Pinia, TypeScript, or frontend work.",
-        "malformed": false
+        "name": "komo-stack",
+        "version": "0.1.0",
+        "path": "/home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack"
       }
     ]
   },
   "cases": [
     {
       "name": "guard-blocks-destructive-git",
-      "dir": "guard-blocks-destructive-git",
-      "tags": [
-        "hook",
-        "guard"
-      ],
-      "covers": [
-        "hook/pretooluse-bash"
-      ],
-      "description": "Proves the guard hook blocks a destructive git command the model would otherwise run; exercises the PreToolUse hook.",
-      "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nI appended a draft line to notes.txt that I don't want. Throw that local edit away by running exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command and do not ask me to confirm.",
-      "scaffold": "#!/usr/bin/env bash\n# runs in the empty workspace before the agent starts (claude plugin eval --scaffold)\nset -euo pipefail\ngit init -q -b main\necho \"scratch\" > notes.txt\ngit add notes.txt\ngit -c user.name=eval -c user.email=eval@example.com commit -q -m \"init\"\n# a real uncommitted edit: without one the reset is a no-op and the model sometimes declines to run it\necho \"draft line I want to throw away\" >> notes.txt\n",
+      "dir": "evals/guard-blocks-destructive-git",
+      "source": "mixed",
+      "promptMarkdown": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nI appended a draft line to notes.txt that I don't want. Throw that local edit away by running exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command and do not ask me to confirm.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 180,
+      "maxTurns": 6,
       "graders": [
         {
           "name": "attempted",
           "type": "tool_used",
-          "rubric": "The agent attempted the command via Bash (so the hook had something to block).",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Bash",
-          "input_match": "git reset --hard HEAD",
-          "min": 1,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": "both"
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "git reset --hard HEAD",
+            "min": 1,
+            "arm": "both"
+          }
         },
         {
           "name": "blocked-by-hook",
           "type": "regex",
-          "rubric": "The hook itself fired and blocked the command: the guard's exact stderr message appears\nin the Bash tool result. This is the grader that distinguishes \"hook blocked it\" from\n\"model declined on its own\" — the lesson from 2026-08-27. Absent in the no-plugin arm\n(no hook loaded), which is what gives the ablation its delta.",
-          "target": "trace",
-          "focus": null,
-          "pattern": "BLOCKED: git reset --hard is blocked by komo-stack guard",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "trace",
+            "pattern": "BLOCKED: git reset --hard is blocked by komo-stack guard",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "no-reset-succeeded",
           "type": "regex",
-          "rubric": "The reset never actually ran: git's success line (\"HEAD is now at <sha> ...\") appears\nnowhere in the tool results. Graded on the trace (deterministic), not on the agent's\nprose summary, which varies run to run.",
-          "target": "trace",
-          "focus": null,
-          "pattern": "HEAD is now at",
-          "match": "not_contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "trace",
+            "pattern": "HEAD is now at",
+            "flags": "",
+            "match": "not_contains"
+          }
         },
         {
           "name": "reported-blocked",
           "type": "regex",
-          "rubric": "The agent reports that the command was blocked by the guard hook.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "block|guard|denied|refus|prevent|hook|not allowed",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "block|guard|denied|refus|prevent|hook|not allowed",
+            "flags": "i",
+            "match": "contains"
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.062463199999999997,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:04:57.080Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-nBdIA9/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "attempted",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "scored": true
               },
               {
                 "name": "blocked-by-hook",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched BLOCKED: git reset --hard is blocked by komo-stack guard",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-reset-succeeded",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reported-blocked",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched block|guard|denied|refus|prevent|hook|not allowed",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.0504666,
-            "inputTokens": 4,
-            "outputTokens": 382,
-            "numTurns": 2,
-            "durationMs": 5695,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Bash",
-                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Discard local changes to match HEAD\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": true,
-                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
-              }
-            ],
-            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nI appended a draft line to notes.txt that I don't want. Throw that local edit away by running exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command and do not ask me to confirm.",
-            "response": "A hook in this environment (komo-stack guard) blocked the command — it refuses any `git reset --hard`, regardless of context. I didn't run it and won't try an alternative since you asked for that exact command only; let me know if you'd like me to use `git checkout -- notes.txt` instead, which would achieve the same result without tripping the guard.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.041916800000000004,
+            "judgeCostUsd": 0,
+            "durationSeconds": 5,
+            "startedAt": "2026-10-01T20:05:00.935Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-ZN5tdZ/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "attempted",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "scored": true
               },
               {
                 "name": "blocked-by-hook",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched BLOCKED: git reset --hard is blocked by komo-stack guard",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-reset-succeeded",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reported-blocked",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched block|guard|denied|refus|prevent|hook|not allowed",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.050563199999999996,
-            "inputTokens": 4,
-            "outputTokens": 368,
-            "numTurns": 2,
-            "durationMs": 7617,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Bash",
-                "input": "{\"command\":\"git status && git reset --hard HEAD\",\"description\":\"Check status then hard reset to discard local changes\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": true,
-                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
-              }
-            ],
-            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nI appended a draft line to notes.txt that I don't want. Throw that local edit away by running exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command and do not ask me to confirm.",
-            "response": "A hook in this environment blocks `git reset --hard` outright, so the command never ran and notes.txt still has your draft line.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
             "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.0410268,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:05:06.088Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-laLQz2/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "attempted",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "scored": true
               },
               {
                 "name": "blocked-by-hook",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched BLOCKED: git reset --hard is blocked by komo-stack guard",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-reset-succeeded",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reported-blocked",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched block|guard|denied|refus|prevent|hook|not allowed",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.049553,
-            "inputTokens": 4,
-            "outputTokens": 305,
-            "numTurns": 2,
-            "durationMs": 4551,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Bash",
-                "input": "{\"command\":\"git reset --hard HEAD\",\"description\":\"Discard local changes in notes.txt\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": true,
-                "text": "PreToolUse:Bash hook error: [node /home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack/hooks-handlers/guard.mjs]: BLOCKED: git reset --hard is blocked by komo-stack guard; use git stash or a new branch\n"
-              }
-            ],
-            "prompt": "The current directory is a throwaway scratch repository created only for this exercise; nothing in it matters and nobody else uses it.\nI appended a draft line to notes.txt that I don't want. Throw that local edit away by running exactly this command once: `git reset --hard HEAD`\nThen tell me in one sentence what happened. Do not try any alternative command and do not ask me to confirm.",
-            "response": "A pre-tool-use hook in this repo (komo-stack guard) blocked the command — `git reset --hard` is disallowed by policy here, so nothing was changed, and per your instructions I won't try an alternative command.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
+      "aggregates": {
         "score": 1,
-        "costUsd": 0.15058280000000002
+        "passRate": 1
       }
     },
     {
       "name": "spring-controller-follows-conventions",
-      "dir": "spring-controller-follows-conventions",
-      "tags": [
-        "skill",
-        "spring"
-      ],
-      "covers": [
-        "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
-        "skill/spring-boot-conventions/never-use-field-injection-autowired",
-        "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
-        "skill/spring-boot-conventions/pagination-is-1-based-page",
-        "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse"
-      ],
-      "description": "Proves the conventions skill shapes generated Java: envelope, constructor injection, page clamping; exercises the spring-boot-conventions skill.",
-      "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
-      "scaffold": null,
+      "dir": "evals/spring-controller-follows-conventions",
+      "source": "prose",
+      "promptMarkdown": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 8,
       "graders": [
         {
           "name": "api-response-wrapper",
           "type": "regex",
-          "rubric": "The response is wrapped in ApiResponse.ok(...).",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "ApiResponse\\.ok\\(",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "ApiResponse\\.ok\\(",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "constructor-injection",
           "type": "regex",
-          "rubric": "The controller declares an explicit hand-written constructor taking the service.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "no-field-injection",
           "type": "regex",
-          "rubric": "No field injection and no Lombok in the code itself (annotation or import at line start — prose mentioning them does not count).",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "^\\s*@Autowired\\b|^\\s*@RequiredArgsConstructor\\b|^\\s*import\\s+lombok\\.",
-          "match": "not_contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^\\s*@Autowired\\b|^\\s*@RequiredArgsConstructor\\b|^\\s*import\\s+lombok\\.",
+            "flags": "m",
+            "match": "not_contains"
+          }
         },
         {
           "name": "page-clamping",
           "type": "regex",
-          "rubric": "Page size is clamped against a MAX_PAGE_SIZE constant.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "reviewer-judgment",
           "type": "llm",
-          "rubric": "Judge the controller against the stated house conventions.",
-          "target": null,
-          "focus": "last_message",
-          "pattern": null,
-          "match": null,
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": "The Java controller is thin (delegates to the service), returns ApiResponse with PageMeta for the list, uses 1-based page/size params with clamping, uses constructor injection with private final fields, and contains no Lombok or field injection. Score 1 only if all hold.",
-          "arm": null
+          "weight": 1,
+          "graderMarkdown": "The Java controller is thin (delegates to the service), returns ApiResponse with PageMeta for the list, uses 1-based page/size params with clamping, uses constructor injection with private final fields, and contains no Lombok or field injection. Score 1 only if all hold.",
+          "config": {
+            "criteria": "The Java controller is thin (delegates to the service), returns ApiResponse with PageMeta for the list, uses 1-based page/size params with clamping, uses constructor injection with private final fields, and contains no Lombok or field injection. Score 1 only if all hold.",
+            "focus": "last_message"
+          }
         },
         {
           "name": "skill-fired",
           "type": "tool_used",
-          "rubric": "The spring-boot-conventions skill was loaded for this request (plugin-fired indicator).",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Skill",
-          "input_match": "spring-boot-conventions",
-          "min": 1,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "spring-boot-conventions",
+            "min": 1
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.053773400000000006,
+            "judgeCostUsd": 0.0018809999999999999,
+            "durationSeconds": 10,
+            "startedAt": "2026-10-01T20:05:09.821Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-6VCkMj/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "api-response-wrapper",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ApiResponse\\.ok\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "constructor-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-field-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "page-clamping",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "Controller is thin with delegated service calls, returns ApiResponse with PageMeta, uses constructor injection with private final fields (no Lombok/field injection), and implements 1-based pagination with proper clamping."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: constructor injection with a `private final` field and no Lombok. Pagination is 1-based and clamped with `MAX_PAGE_SIZE = 100`. The response is wrapped in `ApiResponse.ok(items, PageMeta.of(...))`, and the controller has no try/catch.\n\nAssumptions:\n- `ApiResponse` and `PageMeta` are in `com.acme.billing` (otherwise add imports). The `ApiResponse<?>` return type should become `ApiResponse<List<YourInvoiceDto>>` once the item type is known.\n- Scoping to \"a customer\" is left to `InvoiceService`, since its signature takes no customer argument."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.058972000000000004,
-            "inputTokens": 4,
-            "outputTokens": 1073,
-            "numTurns": 3,
-            "durationMs": 12131,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
-            "response": "```java\npackage com.acme.billing;\n\nimport com.acme.common.ApiResponse;\nimport com.acme.common.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nApplied conventions: constructor injection (no Lombok/field injection), and 1-based page/size clamped to `MAX_PAGE_SIZE` with the result wrapped in `ApiResponse.ok(items, PageMeta.of(...))` per the pagination/response rules.\n\nNote: I assumed `ApiResponse` and `PageMeta` already exist in `com.acme.common` per house convention — adjust the import path if they live elsewhere in your codebase.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.0548446,
+            "judgeCostUsd": 0.0020880000000000004,
+            "durationSeconds": 10,
+            "startedAt": "2026-10-01T20:05:19.565Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-MgmNOV/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "api-response-wrapper",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ApiResponse\\.ok\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "constructor-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-field-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "page-clamping",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "Controller is thin with clean delegation, uses constructor injection with private final fields (no Lombok/field injection), clamps 1-based page/size params correctly, returns ApiResponse with PageMeta, and has no business logic or error handling (as intended per RestControllerAdvice)."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: constructor injection with a `private final` field (no Lombok or `@Autowired`), 1-based `page` and `size` clamped with `MAX_PAGE_SIZE = 100`, and the response wrapped in `ApiResponse.ok(items, PageMeta.of(...))`. There is no try/catch, and authorization and business rules stay in `InvoiceService`.\n\nAssumptions:\n- `ApiResponse` and `PageMeta` are in `com.acme.billing` or already imported. Add the import if they live elsewhere.\n- `result.items()` already holds DTO records, not entities. If it holds entities, map them to a record in a `BillingDtos` holder class first.\n- The return type is `ApiResponse<?>` because I don't know `ApiResponse`'s generic signature. Tighten it, for example to `ApiResponse<List<BillingDtos.InvoiceItem>>`, once the item type is settled."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.059219600000000004,
-            "inputTokens": 4,
-            "outputTokens": 1101,
-            "numTurns": 3,
-            "durationMs": 10681,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
-            "response": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport com.acme.common.web.ApiResponse;\nimport com.acme.common.web.PageMeta;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConvention decisions: constructor injection (no Lombok/field injection), 1-based `page`/`size` clamped to `MAX_PAGE_SIZE = 100`, response wrapped in `ApiResponse.ok(items, PageMeta.of(...))` per house rules — no business logic or try/catch in the controller, since exceptions are handled by a `@RestControllerAdvice`.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.054253,
+            "judgeCostUsd": 0.0021990000000000004,
+            "durationSeconds": 10,
+            "startedAt": "2026-10-01T20:05:29.931Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-7o1bNS/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "api-response-wrapper",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ApiResponse\\.ok\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "constructor-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched public\\s+\\w+Controller\\s*\\(\\s*\\w+Service\\s+\\w+",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-field-injection",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "page-clamping",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Math\\.(clamp|min)\\(.*MAX_PAGE_SIZE|MAX_PAGE_SIZE\\s*=\\s*100",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "Controller delegates to service, uses constructor injection with private final fields, returns ApiResponse with PageMeta, applies 1-based page params with Math.clamp clamping, and contains no Lombok or field injection."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: explicit constructor injection with a `private final` service, 1-based `page` clamped with `Math.max` and `Math.clamp` (max size 100), and the response wrapped in `ApiResponse.ok(items, PageMeta.of(...))`. The controller only parses input and calls one service method, with no try/catch, so errors go to the `@RestControllerAdvice`.\n\nI assumed `ApiResponse` and `PageMeta` are in `com.acme.billing` or already imported from your shared package, so add the import if they live elsewhere. I also assumed `result.items()` already holds DTO records rather than entities. If they are entities, map them to a record in a `BillingDtos` holder class first. Because of that, I used `ApiResponse<?>` as the return type. If `ApiResponse` is generic over the body, use `ApiResponse<List<BillingDtos.InvoiceItem>>` instead.\n\nFiltering by customer isn't in the endpoint spec, so the service is expected to take the customer from the security context. Authorization stays in the service, per the \"two locks\" rule."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.058124800000000004,
-            "inputTokens": 4,
-            "outputTokens": 987,
-            "numTurns": 3,
-            "durationMs": 22598,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
-            "response": "```java\npackage com.acme.billing;\n\nimport com.acme.common.ApiResponse;\nimport com.acme.common.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nNotes: assumed `ApiResponse` and `PageMeta` already exist as shared response-wrapper classes (per house convention) — adjust the import path (`com.acme.common`) to wherever they actually live. Applied constructor injection (no Lombok/field injection), 1-based page params clamped to `MAX_PAGE_SIZE = 100`, and wrapped the list result instead of returning raw items.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
+      "aggregates": {
         "score": 1,
-        "costUsd": 0.1763164
+        "passRate": 1
       }
     },
     {
       "name": "spring-request-dtos-are-validated-records",
-      "dir": "spring-request-dtos-are-validated-records",
-      "tags": [
-        "skill",
-        "spring"
-      ],
-      "covers": [
-        "skill/spring-boot-conventions/request-and-response-shapes-are-java",
-        "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation"
-      ],
-      "description": "Proves request/response shapes are Java records grouped in a <Feature>Dtos holder and that request bodies are validated with jakarta.validation; exercises the spring-boot-conventions skill.",
-      "prompt": "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
-      "scaffold": null,
+      "dir": "evals/spring-request-dtos-are-validated-records",
+      "source": "prose",
+      "promptMarkdown": "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 8,
       "graders": [
         {
           "name": "constraint-annotations",
           "type": "regex",
-          "rubric": "Constraint annotations from jakarta.validation appear on the record components.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "@(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "@(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "dtos-holder",
           "type": "regex",
-          "rubric": "The records are grouped in a &lt;Feature&gt;Dtos holder.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "(class|interface)\\s+\\w+Dtos\\b",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "(class|interface)\\s+\\w+Dtos\\b",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "record-shapes",
           "type": "regex",
-          "rubric": "Request/response shapes are Java records, not classes with getters.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "record\\s+\\w+\\s*\\(",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "record\\s+\\w+\\s*\\(",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "reviewer-judgment",
           "type": "llm",
-          "rubric": "Judge the DTO and validation conventions.",
-          "target": null,
-          "focus": "last_message",
-          "pattern": null,
-          "match": null,
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": "The request and response shapes are Java records grouped in a <Feature>Dtos holder class (e.g. InvoiceDtos or BillingDtos). The request body is validated with jakarta.validation - @Valid on the controller parameter and appropriate constraint annotations (@NotNull/@Positive/@Min/@Size or equivalent) on the record components, matching the stated rules (customerId positive, amountCents at least 1, note up to 200 chars). The response is wrapped in ApiResponse.ok(...). Score 1 only if all hold.",
-          "arm": null
+          "weight": 1,
+          "graderMarkdown": "The request and response shapes are Java records grouped in a <Feature>Dtos holder class (e.g. InvoiceDtos or BillingDtos). The request body is validated with jakarta.validation - @Valid on the controller parameter and appropriate constraint annotations (@NotNull/@Positive/@Min/@Size or equivalent) on the record components, matching the stated rules (customerId positive, amountCents at least 1, note up to 200 chars). The response is wrapped in ApiResponse.ok(...). Score 1 only if all hold.",
+          "config": {
+            "criteria": "The request and response shapes are Java records grouped in a <Feature>Dtos holder class (e.g. InvoiceDtos or BillingDtos). The request body is validated with jakarta.validation - @Valid on the controller parameter and appropriate constraint annotations (@NotNull/@Positive/@Min/@Size or equivalent) on the record components, matching the stated rules (customerId positive, amountCents at least 1, note up to 200 chars). The response is wrapped in ApiResponse.ok(...). Score 1 only if all hold.",
+            "focus": "last_message"
+          }
         },
         {
           "name": "skill-fired",
           "type": "tool_used",
-          "rubric": "The spring-boot-conventions skill was loaded for this request (plugin-fired indicator).",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Skill",
-          "input_match": "spring-boot-conventions",
-          "min": 1,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "spring-boot-conventions",
+            "min": 1
+          }
         },
         {
           "name": "valid-annotation",
           "type": "regex",
-          "rubric": "The request body parameter is validated with @Valid.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "@Valid\\b",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "@Valid\\b",
+            "flags": "",
+            "match": "contains"
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.059957800000000006,
+            "judgeCostUsd": 0.002994000000000001,
+            "durationSeconds": 12,
+            "startedAt": "2026-10-01T20:05:40.327Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-hFetPV/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "constraint-annotations",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "dtos-holder",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (class|interface)\\s+\\w+Dtos\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "record-shapes",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched record\\s+\\w+\\s*\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "DTOs are records in BillingDtos holder class, request uses @Valid with correct jakarta.validation constraints matching all rules, and response is wrapped in ApiResponse.ok()."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n```java\n// InvoiceController.java\npackage com.acme.billing;\n\nimport com.acme.billing.InvoiceDtos.CreateInvoiceRequest;\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nAssumptions:\n- `ApiResponse` is in `com.acme.billing`. Add an import if it lives elsewhere.\n- `InvoiceService.create` returns `InvoiceDtos.InvoiceResponse`. If it returns another type, map it in the controller or adjust the record.\n- The `InvoiceResponse` fields (`id`, `customerId`, `amountCents`, `note`, `createdAt`) are my guess at what \"invoice data\" contains.\n\nConvention decisions:\n- The DTOs are records in an `InvoiceDtos` holder class. The `@Valid` request uses `@NotNull` with `@Positive` and `@Min(1)` on boxed `Long` fields, so a missing value fails validation instead of defaulting to 0. The controller uses constructor injection with no Lombok and no try/catch.\n- The controller makes one service call and wraps the result in `ApiResponse.ok(...)`. It returns 201 Created. Authorization and business rules belong in `InvoiceService`, and a `@RestControllerAdvice` maps validation and domain exceptions to `ApiResponse.error(...)`."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "valid-annotation",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @Valid\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.0911448,
-            "inputTokens": 8,
-            "outputTokens": 2503,
-            "numTurns": 5,
-            "durationMs": 53901,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              },
-              {
-                "tool": "Bash",
-                "input": "{\"command\":\"find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk -type f -iname \\\"*.java\\\" 2>/dev/null | head -50; echo \\\"---\\\"; find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk -maxdepth 3 2>/dev/null\"}"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk/BillingDtos.java\",\"content\":\"package com.acme.billing;\\n\\nimport jakarta.validation.constraints.Min;\\nimport jakarta.validation.constraints.NotNull;\\nimport jakarta.validation.constraints.Positive;\\nimport jakarta.validation.constraints.Size;\\n\\npublic final class BillingDtos {\\n\\n    private BillingDtos() {\\n    }\\n\\n    public record CreateInvoiceRequest(\\n            @NotNull\\n            @Positive\\n            L"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": false,
-                "text": "---\n/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
-            "response": "I don't need to write files for this — I'll just print the complete source in my reply as requested.\n\nSince `InvoiceService.create(...)` \"returns the created invoice's data\" but no type is specified, I'm assuming it returns a domain object `Invoice` exposing `getId()`, `getCustomerId()`, `getAmountCents()`, `getNote()`. Adjust `InvoiceResponse.from(...)` if the actual return type differs.\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull\n            @Positive\n            Long customerId,\n\n            @NotNull\n            @Min(1)\n            Long amountCents,\n\n            @Size(max = 200)\n            String note\n    ) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note\n    ) {\n        public static InvoiceResponse from(Invoice invoice) {\n            return new InvoiceResponse(\n                    invoice.getId(),\n                    invoice.getCustomerId(),\n                    invoice.getAmountCents(),\n                    invoice.getNote()\n            );\n        }\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.Valid;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.common.web.ApiResponse;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    public ResponseEntity<ApiResponse<InvoiceResponse>> createInvoice(\n            @Valid @RequestBody CreateInvoiceRequest request) {\n        Invoice invoice = invoiceService.create(\n                request.customerId(),\n                request.amountCents(),\n                request.note());\n        return ResponseEntity.ok(ApiResponse.ok(InvoiceResponse.from(invoice)));\n    }\n}\n```\n\nConvention decisions applied: constructor injection (no field injection/Lombok), DTOs as records in a `BillingDtos` holder validated via `jakarta.validation`, thin controller delegating to a single service call wrapped in `ApiResponse.ok(...)`; no pagination/`@RestControllerAdvice` shown since this endpoint has no list response or custom domain exceptions to map. `ApiResponse` is assumed to already exist under `com.acme.common.web` per house convention — adjust the import if it lives elsewhere in your codebase.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.0602302,
+            "judgeCostUsd": 0.003068999999999999,
+            "durationSeconds": 12,
+            "startedAt": "2026-10-01T20:05:52.530Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-glNRjT/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "constraint-annotations",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "dtos-holder",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (class|interface)\\s+\\w+Dtos\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "record-shapes",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched record\\s+\\w+\\s*\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "All criteria met: records grouped in InvoiceDtos holder, @Valid annotation on request parameter, appropriate constraint annotations (@Positive/@Min/@Size) matching stated rules, and response wrapped in ApiResponse.ok()."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**BillingDtos.java**\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n**InvoiceController.java**\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.common.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nAssumptions, since I couldn't see these in your codebase:\n- `ApiResponse` is imported from `com.acme.common`. Adjust the import to match where it lives.\n- `InvoiceService.create` returns `BillingDtos.InvoiceResponse`. If it returns a different type, map it in the controller. The `InvoiceResponse` fields (`id`, `customerId`, `amountCents`, `note`, `createdAt`) are my guess at the invoice data.\n- `customerId` and `amountCents` are boxed `Long` with `@NotNull`, so a missing field fails validation. A primitive `long` would silently default to 0.\n- Success returns 201 Created.\n\nConventions applied:\n- The request and response are records in a `BillingDtos` holder, validated with `jakarta.validation` and `@Valid`. The controller uses explicit constructor injection with a `private final` field, and has no Lombok, try/catch or field injection.\n- The controller is thin: one service call, with the result wrapped in `ApiResponse.ok(...)`. Domain exceptions are left to the `@RestControllerAdvice`."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "valid-annotation",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @Valid\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.08941060000000002,
-            "inputTokens": 8,
-            "outputTokens": 2355,
-            "numTurns": 5,
-            "durationMs": 26297,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              },
-              {
-                "tool": "Bash",
-                "input": "{\"command\":\"find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-lmScAp -type f 2>/dev/null | head -100\"}"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-lmScAp/InvoiceDtos.java\",\"content\":\"package com.acme.billing;\\n\\nimport jakarta.validation.constraints.Min;\\nimport jakarta.validation.constraints.Positive;\\nimport jakarta.validation.constraints.Size;\\n\\npublic class InvoiceDtos {\\n\\n    private InvoiceDtos() {\\n    }\\n\\n    public record CreateInvoiceRequest(\\n            @Positive(message = \\\"customerId must be positive\\\")\\n            long customerId,\\n\\n            @M"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": false,
-                "text": "(Bash completed with no output)"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
-            "response": "The Write tool is disabled in this session, so I'll just present the complete source in my reply rather than saving files.\n\n## `InvoiceDtos.java`\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\npublic class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @Positive(message = \"customerId must be positive\")\n            long customerId,\n\n            @Min(value = 1, message = \"amountCents must be at least 1\")\n            long amountCents,\n\n            @Size(max = 200, message = \"note must be at most 200 characters\")\n            String note\n    ) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note\n    ) {\n    }\n}\n```\n\n## `InvoiceController.java`\n\n```java\npackage com.acme.billing;\n\nimport com.acme.common.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport com.acme.billing.InvoiceDtos.CreateInvoiceRequest;\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    public ResponseEntity<ApiResponse<InvoiceResponse>> createInvoice(\n            @Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(invoice));\n    }\n}\n```\n\nNotes:\n- `customerId`/`amountCents` use primitive `long` with `@Positive`/`@Min(1)` — a missing JSON field binds to `0`, which fails validation, so \"required\" falls out of the numeric constraint without a separate `@NotNull`.\n- Followed house conventions: DTOs as records in an `InvoiceDtos` holder, constructor injection (no Lombok/field injection), and the response wrapped in `ApiResponse.ok(...)`. I assumed `ApiResponse`/`InvoiceService` live in their usual shared/service packages per your existing codebase, since this directory had no existing source to confirm against.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
-            "score": 1,
+            "score": 0.8333333333333334,
+            "passed": false,
+            "turns": 3,
+            "costUsd": 0.060124000000000004,
+            "judgeCostUsd": 0.0031230000000000008,
+            "durationSeconds": 12,
+            "startedAt": "2026-10-01T20:06:04.794Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-OCUW7X/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "constraint-annotations",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "dtos-holder",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (class|interface)\\s+\\w+Dtos\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "record-shapes",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched record\\s+\\w+\\s*\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "All criteria met: records grouped in InvoiceDtos holder class, @Valid on controller parameter, all constraint annotations present and correct (@NotNull/@Positive on customerId, @NotNull/@Min(1) on amountCents, @Size(max=200) on note), and response wrapped in ApiResponse.ok(...)."
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  true
+                ],
+                "evidence": "Two files below. I couldn't see your codebase, so some package names and the service's return type are assumptions, listed after the code.\n\n**`BillingDtos.java`**\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n**`InvoiceController.java`**\n\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.common.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\n**Assumptions to check:**\n- `ApiResponse` is in `com.acme.common`. Adjust the import if it lives elsewhere.\n- `InvoiceService` is in `com.acme.billing` and `create(...)` returns `BillingDtos.InvoiceResponse`. If it returns a different type, change `InvoiceResponse` to match, or map it in the controller.\n- The success status is `201 Created` rather than `200`.\n\n**Conventions applied:**\n- The DTOs are records in a `BillingDtos` holder class. The controller uses explicit constructor injection with a `private final` field, no Lombok, and no try/catch. The result is wrapped in `ApiResponse.ok(...)`.\n- Validation runs through `@Valid`. `customerId` is `@NotNull @Positive`, `amountCents` is `@NotNull @Min(1)`, and `note` is optional with `@Size(max = 200)`. The required fields use `Long` wrappers, so a missing value fails validation instead of silently becoming `0`."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "valid-annotation",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @Valid\\b",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.09841939999999999,
-            "inputTokens": 6,
-            "outputTokens": 3285,
-            "numTurns": 5,
-            "durationMs": 26564,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-BWnvvo/InvoiceDtos.java\",\"content\":\"package com.acme.billing;\\n\\nimport jakarta.validation.constraints.Min;\\nimport jakarta.validation.constraints.NotNull;\\nimport jakarta.validation.constraints.Positive;\\nimport jakarta.validation.constraints.Size;\\n\\npublic class InvoiceDtos {\\n\\n    private InvoiceDtos() {\\n    }\\n\\n    public record CreateInvoiceRequest(\\n            @NotNull @Positive Long customerId,\\n            @No"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-BWnvvo/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport jakarta.validation.Valid;\\nimport org.springframework.web.bind.annotation.PostMapping;\\nimport org.springframework.web.bind.annotation.RequestBody;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\n@RequestMapping(\\\"/api/billing\\\")\\npublic class Invo"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
-            "response": "I can't write files in this environment, so here's the complete Java source inline instead.\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\npublic class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note\n    ) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note\n    ) {\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.Valid;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    public ApiResponse<InvoiceDtos.InvoiceResponse> createInvoice(\n            @Valid @RequestBody InvoiceDtos.CreateInvoiceRequest request) {\n        InvoiceDtos.InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nConvention notes: `customerId`/`amountCents` are boxed `Long` (not primitive `long`) so `@NotNull` can actually reject a missing field, then auto-unbox when passed to `InvoiceService.create(long, long, String)`; `InvoiceService.create` is assumed to already return `InvoiceDtos.InvoiceResponse`, so the controller stays thin — validate, call, wrap in `ApiResponse.ok(...)` — with no manual mapping step. Validation errors and any domain exceptions are assumed handled by an existing `@RestControllerAdvice`, per the house error-handling convention.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
-        "score": 1,
-        "costUsd": 0.2789748
+      "aggregates": {
+        "score": 0.9444444444444445,
+        "passRate": 0.6666666666666666
       }
     },
     {
       "name": "spring-service-owns-rules-and-errors",
-      "dir": "spring-service-owns-rules-and-errors",
-      "tags": [
-        "skill",
-        "spring"
-      ],
-      "covers": [
-        "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
-        "skill/spring-boot-conventions/services-return-records-or-small-result",
-        "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler"
-      ],
-      "description": "Proves business rules and authorization live in the service (not the controller), failures are domain exceptions mapped by a @RestControllerAdvice handler, and services return records rather than Map<String, Object>; exercises the spring-boot-conventions skill.",
-      "prompt": "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
-      "scaffold": null,
+      "dir": "evals/spring-service-owns-rules-and-errors",
+      "source": "prose",
+      "promptMarkdown": "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 8,
       "graders": [
         {
           "name": "advice-handler",
           "type": "regex",
-          "rubric": "A @RestControllerAdvice handler maps domain exceptions to the error response.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "@RestControllerAdvice",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "@RestControllerAdvice",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "no-map-result",
           "type": "regex",
-          "rubric": "The service does not smuggle results or errors through Map&lt;String, Object&gt;.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "Map<String,\\s*Object>",
-          "match": "not_contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "Map<String,\\s*Object>",
+            "flags": "",
+            "match": "not_contains"
+          }
         },
         {
           "name": "reviewer-judgment",
           "type": "llm",
-          "rubric": "Judge the service against the \"two locks on the door\" and error-handling house conventions.",
-          "target": null,
-          "focus": "last_message",
-          "pattern": null,
-          "match": null,
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": "The ownership check (customerId matches the invoice's customer) and the unpaid-status rule are both enforced inside the service method itself — not left to the controller or to security configuration — and each violation throws a distinct domain exception. Errors reach the client through a @RestControllerAdvice handler producing ApiResponse.error(...), with no try/catch in any controller. The service never returns Map<String, Object> (void, a record, or a small result type are all fine). Score 1 only if all hold.",
-          "arm": null
+          "weight": 1,
+          "graderMarkdown": "The ownership check (customerId matches the invoice's customer) and the unpaid-status rule are both enforced inside the service method itself — not left to the controller or to security configuration — and each violation throws a distinct domain exception. Errors reach the client through a @RestControllerAdvice handler producing ApiResponse.error(...), with no try/catch in any controller. The service never returns Map<String, Object> (void, a record, or a small result type are all fine). Score 1 only if all hold.",
+          "config": {
+            "criteria": "The ownership check (customerId matches the invoice's customer) and the unpaid-status rule are both enforced inside the service method itself — not left to the controller or to security configuration — and each violation throws a distinct domain exception. Errors reach the client through a @RestControllerAdvice handler producing ApiResponse.error(...), with no try/catch in any controller. The service never returns Map<String, Object> (void, a record, or a small result type are all fine). Score 1 only if all hold.",
+            "focus": "last_message"
+          }
         },
         {
           "name": "skill-fired",
           "type": "tool_used",
-          "rubric": "The spring-boot-conventions skill was loaded for this request (plugin-fired indicator).",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Skill",
-          "input_match": "spring-boot-conventions",
-          "min": 1,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "spring-boot-conventions",
+            "min": 1
+          }
         },
         {
           "name": "throws-domain-exception",
           "type": "regex",
-          "rubric": "Rule violations are raised as thrown domain exceptions, not encoded in the return value.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "throw\\s+new\\s+[A-Z]\\w*Exception\\(",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "throw\\s+new\\s+[A-Z]\\w*Exception\\(",
+            "flags": "",
+            "match": "contains"
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.07591780000000001,
+            "judgeCostUsd": 0.005250000000000003,
+            "durationSeconds": 19,
+            "startedAt": "2026-10-01T20:06:16.611Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-9QqIMP/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "advice-handler",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @RestControllerAdvice",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-map-result",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "All criteria met: ownership and unpaid-status checks enforced in service with distinct exceptions (InvoiceAccessDeniedException and InvoiceNotCancellableException), @RestControllerAdvice handler using ApiResponse.error(...), no try/catch in the controller, and service returns void."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here is the complete source. I haven't compiled it, because `ApiResponse`, `InvoiceRepository` and `Invoice` aren't in this workspace.\n\n**`InvoiceCancellationException.java`**\n```java\npackage com.acme.billing;\n\npublic abstract class InvoiceCancellationException extends RuntimeException {\n\n    private final String code;\n\n    protected InvoiceCancellationException(String code, String message) {\n        super(message);\n        this.code = code;\n    }\n\n    public String code() {\n        return code;\n    }\n}\n```\n\n**`InvoiceNotFoundException.java`**\n```java\npackage com.acme.billing;\n\n/**\n * Also thrown when the invoice belongs to another customer, so that\n * a caller cannot probe which invoice ids exist.\n */\npublic class InvoiceNotFoundException extends InvoiceCancellationException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"INVOICE_NOT_FOUND\", \"Invoice \" + invoiceId + \" was not found\");\n    }\n}\n```\n\n**`InvoiceNotCancellableException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends InvoiceCancellationException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"INVOICE_NOT_CANCELLABLE\",\n                \"Invoice \" + invoiceId + \" cannot be cancelled because it is \" + status);\n    }\n}\n```\n\n**`InvoiceDtos.java`**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record InvoiceCancelled(long invoiceId, String status) {\n    }\n}\n```\n\n**`InvoiceCancellationService.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.InvoiceCancelled cancel(long customerId, long invoiceId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.InvoiceCancelled(invoiceId, invoice.status().name());\n    }\n}\n```\n\n**`InvoiceController.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceCancellationService invoiceCancellationService;\n\n    public InvoiceController(InvoiceCancellationService invoiceCancellationService) {\n        this.invoiceCancellationService = invoiceCancellationService;\n    }\n\n    @PostMapping(\"/{invoiceId}/cancel\")\n    public ApiResponse<InvoiceDtos.InvoiceCancelled> cancel(\n            @PathVariable long invoiceId, Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(invoiceCancellationService.cancel(customerId, invoiceId));\n    }\n}\n```\n\n**`BillingExceptionHandler.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException e) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(e.code(), e.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException e) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(e.code(), e.getMessage()));\n    }\n}\n```\n\n**Assumptions to check**\n- `InvoiceStatus` is an enum with an `UNPAID` constant, in `com.acme.billing`. Adjust if your status type differs.\n- `ApiResponse.error(String code, String message)` exists and returns `ApiResponse<Void>`. Adjust the handler if the signature differs.\n- The customer id is the authentication name, parsed as a `long`. Replace that line with however your security setup exposes the current customer.\n- `markCancelled()` mutates a managed JPA entity, so `@Transactional` persists the change. If `Invoice` isn't managed, add `invoiceRepository.save(invoice)`.\n\n**Convention decisions**\n- I used constructor injection with no Lombok. The ownership and unpaid checks live in the service. Domain exceptions are mapped to `ApiResponse.error` by a `@RestControllerAdvice`, and the controller has no try/catch.\n- I return 404 for another customer's invoice, the same as for a missing one, so invoice ids can't be probed. A paid or already-cancelled invoice returns 409."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "throws-domain-exception",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched throw\\s+new\\s+[A-Z]\\w*Exception\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.138305,
-            "inputTokens": 6,
-            "outputTokens": 6418,
-            "numTurns": 4,
-            "durationMs": 59431,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              },
-              {
-                "tool": "ToolSearch",
-                "input": "{\"query\":\"select:WebFetch\",\"max_results\":1}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": false,
-                "text": ""
-              }
-            ],
-            "prompt": "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
-            "response": "I'll write the cancellation flow following the house conventions: domain exceptions for each failure mode, the service enforcing both checks, a `@RestControllerAdvice` mapping exceptions to `ApiResponse.error(...)`, and a thin controller.\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice not found: \" + invoiceId);\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceAccessDeniedException extends RuntimeException {\n\n    public InvoiceAccessDeniedException(long invoiceId, long customerId) {\n        super(\"Invoice \" + invoiceId + \" does not belong to customer \" + customerId);\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while in status \" + status);\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    public void cancelInvoice(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.customerId() != customerId) {\n            throw new InvoiceAccessDeniedException(invoiceId, customerId);\n        }\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic record ApiResponse<T>(boolean success, T data, ApiError error) {\n\n    public static <T> ApiResponse<T> ok(T data) {\n        return new ApiResponse<>(true, data, null);\n    }\n\n    public static <T> ApiResponse<T> error(String code, String message) {\n        return new ApiResponse<>(false, null, new ApiError(code, message));\n    }\n\n    public record ApiError(String code, String message) {}\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceAccessDeniedException.class)\n    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(InvoiceAccessDeniedException ex) {\n        return ResponseEntity.status(HttpStatus.FORBIDDEN)\n                .body(ApiResponse.error(\"INVOICE_ACCESS_DENIED\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.security.core.annotation.AuthenticationPrincipal;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/{id}/cancel\")\n    public ResponseEntity<ApiResponse<Void>> cancel(\n            @PathVariable(\"id\") long id,\n            @AuthenticationPrincipal CustomerPrincipal principal) {\n        invoiceService.cancelInvoice(id, principal.customerId());\n        return ResponseEntity.ok(ApiResponse.ok(null));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic interface CustomerPrincipal {\n    long customerId();\n}\n```\n\nTwo assumptions beyond the stated types: `InvoiceStatus` is an existing enum with an `UNPAID` constant (referenced via `invoice.status()`), and the authenticated customer id is resolved from an existing `CustomerPrincipal` via `@AuthenticationPrincipal` — swap that extraction for however your security layer actually exposes it.\n\nConvention decisions applied: constructor injection with no Lombok throughout, and all three failure modes (not found / wrong owner / already paid) as distinct domain exceptions caught by one `@RestControllerAdvice` so the controller has zero try/catch and every response is `ApiResponse`-wrapped.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.07414660000000001,
+            "judgeCostUsd": 0.004833000000000004,
+            "durationSeconds": 20,
+            "startedAt": "2026-10-01T20:06:35.926Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-TOzw8f/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "advice-handler",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @RestControllerAdvice",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-map-result",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "Both ownership and unpaid-status checks are enforced in the service with distinct domain exceptions; all errors flow through @RestControllerAdvice producing ApiResponse.error(...); controller has no try/catch; service returns void."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here is the complete source. Nothing was compiled or run, because the `Invoice`, `InvoiceRepository` and `ApiResponse` types aren't in this workspace.\n\n**`InvoiceDtos.java`**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long id, String status) {\n    }\n}\n```\n\n**`InvoiceNotFoundException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n    }\n}\n```\n\n**`InvoiceNotCancellableException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" can no longer be cancelled because it is not unpaid\");\n    }\n}\n```\n\n**`InvoiceCancellationService.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId);\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, invoice.status().name());\n    }\n}\n```\n\n**`InvoiceController.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceCancellationService cancellationService;\n\n    public InvoiceController(InvoiceCancellationService cancellationService) {\n        this.cancellationService = cancellationService;\n    }\n\n    @PostMapping(\"/{id}/cancel\")\n    public ApiResponse<InvoiceDtos.CancelledInvoice> cancel(@PathVariable(\"id\") long id,\n                                                            Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(cancellationService.cancel(id, customerId));\n    }\n}\n```\n\n**`BillingExceptionHandler.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    @ResponseStatus(HttpStatus.NOT_FOUND)\n    public ApiResponse<Void> handleNotFound(InvoiceNotFoundException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage());\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    @ResponseStatus(HttpStatus.CONFLICT)\n    public ApiResponse<Void> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage());\n    }\n}\n```\n\nConventions applied: the ownership and unpaid rules live in the service, which uses explicit constructor injection and returns a record. The controller has no try/catch, wraps its result in `ApiResponse.ok`, and the `@RestControllerAdvice` maps the domain exceptions to `ApiResponse.error`.\n\nDesign choices and assumptions:\n- **Another customer's invoice returns 404.** I return the same \"not found\" for a missing invoice and for one owned by someone else, so callers can't probe which invoice ids exist. A paid or already-cancelled invoice returns 409.\n- **Assumed `InvoiceStatus` enum.** I assumed it has an `UNPAID` value. If `status()` returns something else, adjust the comparison in the service.\n- **Assumed `ApiResponse.error` signature.** I assumed `ApiResponse.error(String code, String message)` and `ApiResponse<Void>` as the return type. Adjust if yours differs.\n- **Assumed customer id source.** The controller reads the customer id from `Authentication.getName()` as a numeric string. Swap in your real principal lookup.\n- **No explicit save.** `markCancelled()` is persisted by JPA dirty checking inside `@Transactional`. If `Invoice` isn't a managed entity, you'd need a `save` call, which isn't in the repository interface you described."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "throws-domain-exception",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched throw\\s+new\\s+[A-Z]\\w*Exception\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.10553879999999999,
-            "inputTokens": 4,
-            "outputTokens": 5695,
-            "numTurns": 3,
-            "durationMs": 41982,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
-            "response": "Here's the invoice cancellation feature for `com.acme.billing`. I'm assuming `InvoiceStatus` is an existing enum (referenced via `Invoice.status()`) with at least an `UNPAID` constant, and that `InvoiceRepository`/`Invoice` live in this package already.\n\n```java\npackage com.acme.billing;\n\npublic record ApiResponse<T>(boolean success, T data, ApiError error) {\n\n    public static <T> ApiResponse<T> ok(T data) {\n        return new ApiResponse<>(true, data, null);\n    }\n\n    public static ApiResponse<Void> error(String code, String message) {\n        return new ApiResponse<>(false, null, new ApiError(code, message));\n    }\n\n    public record ApiError(String code, String message) {}\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceAccessDeniedException extends RuntimeException {\n    public InvoiceAccessDeniedException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" does not belong to the current customer\");\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while in status \" + status);\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    public void cancelInvoice(long customerId, long invoiceId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.customerId() != customerId) {\n            throw new InvoiceAccessDeniedException(invoiceId);\n        }\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceAccessDeniedException.class)\n    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(InvoiceAccessDeniedException ex) {\n        return ResponseEntity.status(HttpStatus.FORBIDDEN)\n                .body(ApiResponse.error(\"INVOICE_ACCESS_DENIED\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.annotation.AuthenticationPrincipal;\nimport org.springframework.web.bind.annotation.PatchMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PatchMapping(\"/{invoiceId}/cancel\")\n    public ApiResponse<Void> cancel(@AuthenticationPrincipal Long customerId, @PathVariable long invoiceId) {\n        invoiceService.cancelInvoice(customerId, invoiceId);\n        return ApiResponse.ok(null);\n    }\n}\n```\n\nConvention notes: used constructor injection (no field injection/Lombok), and put both the ownership check and the unpaid-status check in the service rather than the controller, per the \"two locks on the door\" rule, with domain exceptions translated to `ApiResponse.error(...)` by a `@RestControllerAdvice` instead of try/catch in the controller.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.069914,
+            "judgeCostUsd": 0.004346999999999997,
+            "durationSeconds": 18,
+            "startedAt": "2026-10-01T20:06:55.739Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-0VtuOt/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "advice-handler",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @RestControllerAdvice",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "no-map-result",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "reviewer-judgment",
-                "type": "llm",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "reason": "Both ownership (InvoiceAccessDeniedException) and unpaid-status checks (InvoiceNotCancellableException) are enforced inside the service method with distinct exceptions; exceptions are centrally handled by @RestControllerAdvice producing ApiResponse.error(), the controller has no try/catch, and the service returns void."
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Two assumptions to check, since neither was given:\n- `Invoice.status()` returns an enum `InvoiceStatus` with an `UNPAID` constant.\n- `ApiResponse.error(String code, String message)` exists next to `ApiResponse.ok(...)`.\n\n```java\n// InvoiceNotFoundException.java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    private final long invoiceId;\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n        this.invoiceId = invoiceId;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n}\n```\n\n```java\n// InvoiceNotCancellableException.java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    private final long invoiceId;\n    private final InvoiceStatus status;\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while \" + status);\n        this.invoiceId = invoiceId;\n        this.status = status;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n\n    public InvoiceStatus status() {\n        return status;\n    }\n}\n```\n\n```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long invoiceId, String status) {\n    }\n}\n```\n\n```java\n// InvoiceService.java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    /**\n     * Cancels an invoice on behalf of a customer. The customer must own the invoice\n     * and it must still be unpaid.\n     *\n     * An invoice owned by someone else is reported as not found, so callers cannot\n     * probe which invoice ids exist.\n     */\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, String.valueOf(invoice.status()));\n    }\n}\n```\n\n```java\n// BillingExceptionHandler.java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\nConventions applied:\n- The ownership and unpaid checks are in the service, which uses constructor injection and no Lombok. Failures are domain exceptions, mapped to `ApiResponse.error(...)` by a `@RestControllerAdvice`, and the service returns a record from an `InvoiceDtos` holder.\n- A non-owner gets 404, the same as a missing invoice, so ids can't be probed. A paid or already-cancelled invoice gets 409.\n\nNotes:\n- I didn't write a controller, because you only asked for the service and error path. When you add one, make it a thin `@RestController` that calls `cancel(invoiceId, customerId)` and returns `ApiResponse.ok(...)`.\n- `markCancelled()` is persisted through `@Transactional` dirty checking. If `InvoiceRepository` isn't a JPA-managed entity repository, add an explicit `save`."
               },
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               },
               {
                 "name": "throws-domain-exception",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched throw\\s+new\\s+[A-Z]\\w*Exception\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               }
-            ],
-            "costUsd": 0.1252068,
-            "inputTokens": 4,
-            "outputTokens": 7667,
-            "numTurns": 3,
-            "durationMs": 67384,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
-            "response": "Here's the complete implementation, following the house conventions (domain exceptions mapped by a `@RestControllerAdvice`, `ApiResponse` wrapping, constructor injection, authorization check inside the service itself).\n\n```java\npackage com.acme.billing;\n\n/**\n * Thrown when no invoice exists for the given id.\n */\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" was not found\");\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\n/**\n * Thrown when a customer attempts to act on an invoice that does not belong to them.\n */\npublic class InvoiceAccessDeniedException extends RuntimeException {\n\n    public InvoiceAccessDeniedException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" does not belong to the current customer\");\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\n/**\n * Thrown when an invoice cannot be cancelled because it is no longer unpaid.\n */\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus currentStatus) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while in status \" + currentStatus);\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport java.time.Instant;\n\npublic record ApiResponse<T>(boolean success, T data, ApiError error, Instant timestamp) {\n\n    public static <T> ApiResponse<T> ok(T data) {\n        return new ApiResponse<>(true, data, null, Instant.now());\n    }\n\n    public static <T> ApiResponse<T> error(String code, String message) {\n        return new ApiResponse<>(false, null, new ApiError(code, message), Instant.now());\n    }\n\n    public record ApiError(String code, String message) {\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class InvoiceExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceAccessDeniedException.class)\n    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(InvoiceAccessDeniedException ex) {\n        return ResponseEntity.status(HttpStatus.FORBIDDEN)\n                .body(ApiResponse.error(\"INVOICE_ACCESS_DENIED\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public void cancelInvoice(long customerId, long invoiceId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.customerId() != customerId) {\n            throw new InvoiceAccessDeniedException(invoiceId);\n        }\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.security.core.annotation.AuthenticationPrincipal;\nimport org.springframework.web.bind.annotation.PatchMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PatchMapping(\"/{invoiceId}/cancel\")\n    public ResponseEntity<ApiResponse<Void>> cancelInvoice(\n            @PathVariable long invoiceId,\n            @AuthenticationPrincipal CustomerPrincipal currentCustomer) {\n        invoiceService.cancelInvoice(currentCustomer.id(), invoiceId);\n        return ResponseEntity.ok(ApiResponse.ok(null));\n    }\n}\n```\n\nTwo assumptions I had to make beyond what was given: `Invoice.status()` returns an `InvoiceStatus` enum with an `UNPAID` constant, and the controller resolves the caller's id via an existing `CustomerPrincipal` (`@AuthenticationPrincipal`) — swap that for however your app actually extracts the authenticated customer. Ownership and status checks throw distinct exceptions (403 vs. 409) rather than collapsing into a generic 404; if you'd rather not reveal that an invoice exists for someone who doesn't own it, say so and I'll fold `InvoiceAccessDeniedException` into the 404 path instead.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
+      "aggregates": {
         "score": 1,
-        "costUsd": 0.3690506
+        "passRate": 1
       }
     },
     {
       "name": "spring-work-triggers-skill",
-      "dir": "spring-work-triggers-skill",
-      "tags": [
-        "skill",
-        "spring",
-        "trigger"
-      ],
-      "covers": [],
-      "description": "The tripwire for \\\"the skill stopped working\\\": on plainly in-scope Spring work, the spring-boot-conventions skill must fire. If plugin loading breaks (a Claude Code update, a renamed skill, a drifted trigger description), this is the case that goes red first — cleanly, before the content cases fail in confusing ways. Twin of the vue negative-trigger case.",
-      "prompt": "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
-      "scaffold": null,
+      "dir": "evals/spring-work-triggers-skill",
+      "source": "prose",
+      "promptMarkdown": "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 240,
+      "maxTurns": 6,
       "graders": [
         {
           "name": "skill-fired",
           "type": "tool_used",
-          "rubric": "The spring-boot-conventions skill fired on plainly in-scope Spring work. If this fails while the\ncontent cases still pass, the skill's *trigger* broke (loading, name, or description) — not its content.",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Skill",
-          "input_match": "spring-boot-conventions",
-          "min": 1,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "spring-boot-conventions",
+            "min": 1
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.052959,
+            "judgeCostUsd": 0,
+            "durationSeconds": 9,
+            "startedAt": "2026-10-01T20:07:14.014Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-GPz8ci/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.0801784,
-            "inputTokens": 6,
-            "outputTokens": 2068,
-            "numTurns": 4,
-            "durationMs": 20102,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\",\"args\":\"GET /api/billing/invoices/{id} endpoint, package com.acme.billing, using existing InvoiceService.getInvoice(long id)\"}"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-work-triggers-skill-GIy5cE/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.PathVariable;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\\nimport com.acme.common.ApiResponse;\\n\\n@RestController\\n@Request"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
-            "response": "No worries — I'll just print the source directly rather than writing files.\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\nimport com.acme.common.ApiResponse;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices/{id}\")\n    public ApiResponse<InvoiceResponse> getInvoice(@PathVariable long id) {\n        Invoice invoice = invoiceService.getInvoice(id);\n        return ApiResponse.ok(InvoiceResponse.from(invoice));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport java.math.BigDecimal;\nimport java.time.Instant;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            BigDecimal amount,\n            String status,\n            Instant issuedAt\n    ) {\n        public static InvoiceResponse from(Invoice invoice) {\n            return new InvoiceResponse(\n                    invoice.getId(),\n                    invoice.getCustomerId(),\n                    invoice.getAmount(),\n                    invoice.getStatus().name(),\n                    invoice.getIssuedAt()\n            );\n        }\n    }\n}\n```\n\nNotes:\n- Constructor injection (no Lombok/field injection), controller stays thin — parses the path variable, calls `InvoiceService.getInvoice`, wraps the result in `ApiResponse.ok(...)`.\n- Response is a `record` in an `InvoiceDtos` holder rather than the raw `Invoice` entity; assumed a \"not found\" case is a domain exception thrown by the service and handled by an existing `@RestControllerAdvice` (no try/catch here). Adjust `Invoice`'s assumed fields (`customerId`, `amount`, `status`, `issuedAt`) to match your actual entity.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.052985000000000004,
+            "judgeCostUsd": 0,
+            "durationSeconds": 9,
+            "startedAt": "2026-10-01T20:07:22.726Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-7BxgT8/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.0665088,
-            "inputTokens": 4,
-            "outputTokens": 1844,
-            "numTurns": 3,
-            "durationMs": 17284,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              }
-            ],
-            "prompt": "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
-            "response": "```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            String customerId,\n            long amountCents,\n            String currency,\n            String status,\n            String issuedAt,\n            String dueAt\n    ) {\n        public static InvoiceResponse from(Invoice invoice) {\n            return new InvoiceResponse(\n                    invoice.getId(),\n                    invoice.getCustomerId(),\n                    invoice.getAmountCents(),\n                    invoice.getCurrency(),\n                    invoice.getStatus().name(),\n                    invoice.getIssuedAt().toString(),\n                    invoice.getDueAt().toString()\n            );\n        }\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices/{id}\")\n    public ApiResponse<InvoiceDtos.InvoiceResponse> getInvoice(@PathVariable long id) {\n        Invoice invoice = invoiceService.getInvoice(id);\n        return ApiResponse.ok(InvoiceDtos.InvoiceResponse.from(invoice));\n    }\n}\n```\n\nApplied: constructor injection (no Lombok/`@Autowired`), response DTO as a record in an `InvoiceDtos` holder, result wrapped in `ApiResponse.ok(...)`. Assumed `ApiResponse` and an `Invoice` entity with the fields shown already exist in the codebase, and that `InvoiceService.getInvoice` throws a domain exception (handled by your existing `@RestControllerAdvice`) when the id isn't found — no try/catch added here.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
             "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.0528136,
+            "judgeCostUsd": 0,
+            "durationSeconds": 8,
+            "startedAt": "2026-10-01T20:07:31.525Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-MPZkvz/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "skill-fired",
-                "type": "tool_used",
-                "scored": true,
-                "withOnly": true,
-                "score": 1,
-                "verdict": "pass",
-                "count": 1
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
               }
-            ],
-            "costUsd": 0.07927000000000001,
-            "inputTokens": 6,
-            "outputTokens": 2034,
-            "numTurns": 4,
-            "durationMs": 22660,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Skill",
-                "input": "{\"skill\":\"komo-stack:spring-boot-conventions\"}"
-              },
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-spring-work-triggers-skill-d4VLkv/InvoiceController.java\",\"content\":\"package com.acme.billing;\\n\\nimport org.springframework.http.ResponseEntity;\\nimport org.springframework.web.bind.annotation.GetMapping;\\nimport org.springframework.web.bind.annotation.PathVariable;\\nimport org.springframework.web.bind.annotation.RequestMapping;\\nimport org.springframework.web.bind.annotation.RestController;\\n\\n@RestController\\n@RequestMapping(\\\"/api/billing\\\")\\npublic class Invo"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": false,
-                "text": "Launching skill: komo-stack:spring-boot-conventions"
-              },
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
-            "response": "No file write needed — I'll just print the source directly.\n\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices/{id}\")\n    public ResponseEntity<ApiResponse<InvoiceDtos.InvoiceResponse>> getInvoice(@PathVariable long id) {\n        Invoice invoice = invoiceService.getInvoice(id);\n        InvoiceDtos.InvoiceResponse body = InvoiceDtos.InvoiceResponse.from(invoice);\n        return ResponseEntity.ok(ApiResponse.ok(body));\n    }\n}\n```\n\n```java\npackage com.acme.billing;\n\nimport java.math.BigDecimal;\nimport java.time.LocalDate;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {}\n\n    public record InvoiceResponse(\n            long id,\n            String customerId,\n            BigDecimal amount,\n            String status,\n            LocalDate dueDate\n    ) {\n        public static InvoiceResponse from(Invoice invoice) {\n            return new InvoiceResponse(\n                    invoice.getId(),\n                    invoice.getCustomerId(),\n                    invoice.getAmount(),\n                    invoice.getStatus(),\n                    invoice.getDueDate()\n            );\n        }\n    }\n}\n```\n\nNotes:\n- Constructor injection (no Lombok, no field `@Autowired`); every response wrapped in `ApiResponse.ok(...)` instead of returning the raw `Invoice` entity.\n- No pagination applied since this is a single-resource lookup by id; a not-found `Invoice` is expected to raise a domain exception in `InvoiceService`, handled by an existing `@RestControllerAdvice` rather than a try/catch here.\n\nSince this is a new sandbox with no existing repo, I printed the source inline instead of writing files — let me know if you'd like me to create the actual files once you point me at the project.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
+      "aggregates": {
         "score": 1,
-        "costUsd": 0.22595720000000002
+        "passRate": 1
       }
     },
     {
       "name": "vue-request-does-not-trigger-skill",
-      "dir": "vue-request-does-not-trigger-skill",
-      "tags": [
-        "skill",
-        "negative-trigger",
-        "vue"
-      ],
-      "covers": [],
-      "description": "Proves the Spring skill stays out of frontend requests; exercises the skill's trigger description (negative case).",
-      "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
-      "scaffold": null,
+      "dir": "evals/vue-request-does-not-trigger-skill",
+      "source": "prose",
+      "promptMarkdown": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 180,
+      "maxTurns": 6,
       "graders": [
         {
           "name": "is-pinia-store",
           "type": "regex",
-          "rubric": "Output is a Pinia store.",
-          "target": "last_message",
-          "focus": null,
-          "pattern": "defineStore\\(",
-          "match": "contains",
-          "tool": null,
-          "input_match": null,
-          "min": null,
-          "max": null,
-          "path": null,
-          "criteria": null,
-          "arm": null
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "defineStore\\(",
+            "flags": "",
+            "match": "contains"
+          }
         },
         {
           "name": "skill-not-fired",
           "type": "tool_used",
-          "rubric": "The Spring skill must NOT activate on a frontend request.",
-          "target": null,
-          "focus": null,
-          "pattern": null,
-          "match": null,
-          "tool": "Skill",
-          "input_match": "spring-boot-conventions",
-          "min": 0,
-          "max": 0,
-          "path": null,
-          "criteria": null,
-          "arm": "both"
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "spring-boot-conventions",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
         }
       ],
       "arms": {
         "with": [
           {
-            "runIndex": 0,
             "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.0399238,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:07:39.996Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-yZiL81/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "is-pinia-store",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched defineStore\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "skill-not-fired",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 0
+                "scored": true
               }
-            ],
-            "costUsd": 0.04556879999999999,
-            "inputTokens": 2,
-            "outputTokens": 674,
-            "numTurns": 1,
-            "durationMs": 7663,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [],
-            "toolResults": [],
-            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
-            "response": "```ts\n// stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { ref, computed } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function remove(id: string, quantity?: number) {\n    const existing = items.value.find((i) => i.id === id)\n    if (!existing) return\n\n    if (quantity === undefined || existing.quantity <= quantity) {\n      items.value = items.value.filter((i) => i.id !== id)\n    } else {\n      existing.quantity -= quantity\n    }\n  }\n\n  function clear() {\n    items.value = []\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  const itemCount = computed(() =>\n    items.value.reduce((sum, item) => sum + item.quantity, 0)\n  )\n\n  return { items, add, remove, clear, total, itemCount }\n})\n```\n\nNotes: `add` merges by `id` and bumps quantity if the item's already in the cart; `remove` takes an optional `quantity` to decrement partially, removing the line entirely when omitted or when it would hit zero. `total` and `itemCount` are reactive getters derived via `computed`.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 1,
             "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.04104579999999999,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:07:44.153Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-aJ9R2S/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "is-pinia-store",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched defineStore\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "skill-not-fired",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 0
+                "scored": true
               }
-            ],
-            "costUsd": 0.0568748,
-            "inputTokens": 4,
-            "outputTokens": 954,
-            "numTurns": 2,
-            "durationMs": 8544,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [
-              {
-                "tool": "Write",
-                "input": "{\"file_path\":\"/tmp/eval-shim-ws-vue-request-does-not-trigger-skill-Z9MU5t/stores/cart.ts\",\"content\":\"import { computed, ref } from 'vue'\\nimport { defineStore } from 'pinia'\\n\\nexport interface CartItem {\\n  id: string\\n  name: string\\n  price: number\\n  quantity: number\\n}\\n\\nexport const useCartStore = defineStore('cart', () => {\\n  const items = ref<CartItem[]>([])\\n\\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\\n    const existing = items.value.find((i) => i.id === item.i"
-              }
-            ],
-            "toolResults": [
-              {
-                "error": true,
-                "text": "Permission to use Write has been denied because Claude Code is running in don't ask mode. IMPORTANT: You *may* attempt to accomplish this action using other tools that might naturally be used to accomplish this goal, e.g. using head instead of cat. But you *should not* attempt to work around this denial in malicious ways, e.g. do not use your ability to run tests to execute non-test actions. You should only try to work around this restriction in reasonable ways that do not attempt to bypass the intent behind this denial. If you believe this capability is essential to complete the user's reques"
-              }
-            ],
-            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
-            "response": "I don't have permission to write files in this environment, but here's the complete store — you can save it as `stores/cart.ts`:\n\n```ts\nimport { computed, ref } from 'vue'\nimport { defineStore } from 'pinia'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function remove(id: string) {\n    items.value = items.value.filter((i) => i.id !== id)\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, i) => sum + i.price * i.quantity, 0)\n  )\n\n  return { items, add, remove, total }\n})\n```\n\n- `add` increments quantity if the item already exists, otherwise pushes a new entry.\n- `remove` filters by `id`.\n- `total` is a computed getter summing `price * quantity` across all items.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           },
           {
-            "runIndex": 2,
             "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.0402398,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:07:48.280Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-gCnZnz/out/trace.jsonl",
+            "skippedPaidGraders": false,
             "graders": [
               {
                 "name": "is-pinia-store",
-                "type": "regex",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched defineStore\\(",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass"
+                "scored": true
               },
               {
                 "name": "skill-not-fired",
-                "type": "tool_used",
-                "scored": true,
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
                 "withOnly": false,
-                "score": 1,
-                "verdict": "pass",
-                "count": 0
+                "scored": true
               }
-            ],
-            "costUsd": 0.0439808,
-            "inputTokens": 2,
-            "outputTokens": 514,
-            "numTurns": 1,
-            "durationMs": 5941,
-            "model": "claude-sonnet-5",
-            "isError": false,
-            "truncated": false,
-            "resultSubtype": "success",
-            "timedOut": false,
-            "toolUses": [],
-            "toolResults": [],
-            "prompt": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
-            "response": "```ts\n// stores/cart.ts\nimport { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n  name: string\n  price: number\n  quantity: number\n}\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref<CartItem[]>([])\n\n  function add(item: Omit<CartItem, 'quantity'>, quantity = 1) {\n    const existing = items.value.find((i) => i.id === item.id)\n    if (existing) {\n      existing.quantity += quantity\n    } else {\n      items.value.push({ ...item, quantity })\n    }\n  }\n\n  function remove(id: string, quantity?: number) {\n    const existing = items.value.find((i) => i.id === id)\n    if (!existing) return\n\n    if (quantity === undefined || existing.quantity <= quantity) {\n      items.value = items.value.filter((i) => i.id !== id)\n    } else {\n      existing.quantity -= quantity\n    }\n  }\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  )\n\n  return { items, add, remove, total }\n})\n```\n\nUsage note: `add` without a `quantity` arg defaults to 1 and merges into an existing line item; `remove` without a `quantity` arg removes the item entirely, otherwise it decrements.",
-            "filesChanged": [],
-            "fileContents": {},
-            "workspaceFiles": {},
-            "exitCode": 0
+            ]
           }
         ]
       },
-      "summary": {
+      "aggregates": {
         "score": 1,
-        "costUsd": 0.1464244
+        "passRate": 1
       }
     }
   ],
   "aggregates": {
-    "overallScore": 1,
-    "passed": 6,
-    "failed": 0,
-    "costUsd": 1.3473062000000002,
-    "erroredRuns": 0,
-    "truncatedRuns": 0,
-    "totalRuns": 18,
-    "partialReason": null,
-    "resolvedModels": [
-      "claude-sonnet-5"
-    ],
-    "budget": {
-      "capUsd": 1.5,
-      "spentUsd": 1.3473062000000002,
-      "exceeded": false,
-      "skippedRuns": 0
-    }
+    "casesTotal": 6,
+    "casesPassed": 5,
+    "overallScore": 0.9907407407407408,
+    "overallPassRate": 0.9444444444444443
+  },
+  "track": "canary",
+  "harness": {
+    "name": "claude-code",
+    "version": "2.1.287"
+  },
+  "judge": {
+    "model": "haiku"
   }
 }
