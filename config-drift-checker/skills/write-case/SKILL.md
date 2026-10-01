@@ -1,6 +1,6 @@
 ---
 name: write-case
-description: Author or fix an eval case (prompt.md, graders/*.md, case.yaml) for a Claude Code plugin, skill, or hook in the official `claude plugin eval` format. Use when the user says "write an eval for", "add a test case for this skill/hook", "my grader is wrong", or "how do I assert the hook fired".
+description: Author or fix an eval case (prompt.md, graders/*.md, case.yaml) for a Claude Code plugin, skill, or hook in the official `claude plugin eval` format. Use when the user says "write an eval for", "add a test case for this skill/hook", "my grader is wrong", or "how do I assert the hook fired". Do not use to run the suite or explain a red result (that is run), or to fix the setup after a regression (that is repair).
 ---
 
 # config-drift-checker: write-case

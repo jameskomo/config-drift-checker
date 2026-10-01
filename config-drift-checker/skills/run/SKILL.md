@@ -1,6 +1,6 @@
 ---
 name: run
-description: Run the agent-config eval suite locally and compare with the stored baseline; explain why a case went red. Use when the user says "run the evals", "run config-drift-checker", "did the Claude Code update break my setup", "why is the eval red", or "compare against baseline".
+description: Run the agent-config eval suite locally and compare with the stored baseline; explain why a case went red. Use when the user says "run the evals", "run config-drift-checker", "did the Claude Code update break my setup", "why is the eval red", or "compare against baseline". Do not use to change the setup itself (that is repair) or to write new cases (that is write-case).
 ---
 
 # config-drift-checker: run

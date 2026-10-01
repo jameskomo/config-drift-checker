@@ -1,6 +1,6 @@
 ---
 name: spring-boot-conventions
-description: House conventions for writing Spring Boot (Java) backend code — controllers, services, DTOs, pagination, error responses. Use whenever the user asks to write, add, refactor, or review a Spring Boot controller, service, repository, DTO, endpoint, or REST API in Java. Trigger phrases - "Spring Boot", "REST controller", "@RestController", "endpoint", "service class", "DTO", "JPA repository". Do NOT use for Vue, Pinia, TypeScript, or frontend work.
+description: House conventions for writing Spring Boot (Java) backend code, covering controllers, services, DTOs, pagination, error responses. Use whenever the user asks to write, add, refactor, or review a Spring Boot controller, service, repository, DTO, endpoint, or REST API in Java. Trigger phrases - "Spring Boot", "REST controller", "@RestController", "endpoint", "service class", "DTO", "JPA repository". Do NOT use for Vue, Pinia, TypeScript, or frontend work.
 ---
 
 # Spring Boot conventions (example house rules)
