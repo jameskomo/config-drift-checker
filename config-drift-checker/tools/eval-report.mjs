@@ -79,9 +79,9 @@ export function renderReport(cur, base = null, opt = {}) {
   let tone, mark, headline, lede;
   if (errored && errored === a.totalRuns) { tone = 'fail'; mark = '■'; headline = 'Nothing ran'; lede = `Every agent run errored: ${a.partialReason ?? 'see the run cards'}. Usually no prepaid API credit on the key, or a Claude Code startup failure. Nothing was stored.`; }
   else if (errored) { tone = 'fail'; mark = '■'; headline = `${errored} of ${a.totalRuns} runs errored`; lede = `${a.partialReason ?? ''} Scores below are partial; nothing was stored as a baseline.`; }
-  else if (base && regressed) { tone = 'fail'; mark = '▼'; headline = `${regressed} case${regressed === 1 ? '' : 's'} regressed vs baseline`; lede = 'Open the red cases below: each failing run shows which check failed and why. Classify before you fix — refused before acting, skill/hook did not fire, wrong thing, or grader wrong.'; }
+  else if (base && regressed) { tone = 'fail'; mark = '▼'; headline = `${regressed} case${regressed === 1 ? '' : 's'} regressed vs baseline`; lede = 'Open the red cases below: each failing run shows which check failed and why. Classify before you fix, refused before acting, skill/hook did not fire, wrong thing, or grader wrong.'; }
   else if (!base && failing) { tone = 'fail'; mark = '▼'; headline = `${failing} case${failing === 1 ? '' : 's'} below 1.00`; lede = 'No baseline to compare with yet. Read the failing runs, fix the setup or the grader, then re-run with promote-baseline to record the first baseline.'; }
-  else if (base && (flagged || noisyN)) { tone = 'warn'; mark = '◆'; headline = `No regressions · ${[noisyN ? `${noisyN} noisy` : null, flagged ? `${flagged} efficiency drift${flagged === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')}`; lede = [noisyN ? 'A case dropped past the threshold but stayed within its historical noise band — a warning, not a regression; more runs per case shrink the band.' : null, flagged ? 'Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.' : null].filter(Boolean).join(' '); }
+  else if (base && (flagged || noisyN)) { tone = 'warn'; mark = '◆'; headline = `No regressions · ${[noisyN ? `${noisyN} noisy` : null, flagged ? `${flagged} efficiency drift${flagged === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')}`; lede = [noisyN ? 'A case dropped past the threshold but stayed within its historical noise band, a warning, not a regression; more runs per case shrink the band.' : null, flagged ? 'Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.' : null].filter(Boolean).join(' '); }
   else if (base) { tone = 'pass'; mark = '●'; headline = improved ? `No drift · ${improved} improved` : 'No drift'; lede = `${a.passed ?? rows.filter((r) => r.score === 1).length} of ${cases.length} cases hold against the baseline. Nothing to do.`; }
   else { tone = a.overallScore === 1 ? 'pass' : 'warn'; mark = '●'; headline = a.overallScore === 1 ? 'Baseline recorded · all cases pass' : 'Baseline recorded'; lede = 'This run is the reference. From now on every run is diffed against it; a drop of more than the threshold turns the check red.'; }
   if (budget?.exceeded) lede += ` The per-run budget cap ($${budget.capUsd}) stopped this run early; ${budget.skippedRuns} planned run${budget.skippedRuns === 1 ? '' : 's'} did not start.`;
@@ -117,22 +117,22 @@ export function renderReport(cur, base = null, opt = {}) {
   const noisyRows = rows.filter((r) => r.status === 'noisy');
   const warnedRows = rows.filter((r) => r.warnings?.length);
   const notes = [
-    noisyRows.length ? `<p class="note"><b class="warn">⚠ ${noisyRows.length} noisy:</b> dropped past ${th.score} but within historical noise (±${Math.max(...noisyRows.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${(opt.history ?? []).length} run${(opt.history ?? []).length === 1 ? '' : 's'}) — warning, not a regression.</p>` : '',
-    rows.filter((r) => r.escalated).map((r) => `<p class="note"><b class="fail">▼ ${esc(key(r.c))}:</b> within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway — ${esc(r.escalated)}.</p>`).join(''),
-    warnedRows.length ? `<p class="note"><b class="warn">⚠ baseline quality (never red):</b> ${warnedRows.map((r) => `<code>${esc(key(r.c))}</code> — ${esc(r.warnings.join(', '))}`).join(' · ')}. More runs per case fix this; never loosen the threshold.</p>` : '',
+    noisyRows.length ? `<p class="note"><b class="warn">⚠ ${noisyRows.length} noisy:</b> dropped past ${th.score} but within historical noise (±${Math.max(...noisyRows.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${(opt.history ?? []).length} run${(opt.history ?? []).length === 1 ? '' : 's'}), warning, not a regression.</p>` : '',
+    rows.filter((r) => r.escalated).map((r) => `<p class="note"><b class="fail">▼ ${esc(key(r.c))}:</b> within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway, ${esc(r.escalated)}.</p>`).join(''),
+    warnedRows.length ? `<p class="note"><b class="warn">⚠ baseline quality (never red):</b> ${warnedRows.map((r) => `<code>${esc(key(r.c))}</code>, ${esc(r.warnings.join(', '))}`).join(' · ')}. More runs per case fix this; never loosen the threshold.</p>` : '',
   ].filter(Boolean).join('');
 
   // ---- cases ----
   const chip = (g) => {
     const cls = !g.scored ? 'ind' : g.verdict === 'pass' ? 'pass' : g.verdict === 'fail' ? 'fail' : 'skip';
     const m = g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·';
-    const title = [g.type, g.reason, !g.scored ? (g.armOnly ? `scored in ${g.armOnly} arm only` : 'indicator (unscored)') : ''].filter(Boolean).join(' — ');
+    const title = [g.type, g.reason, !g.scored ? (g.armOnly ? `scored in ${g.armOnly} arm only` : 'indicator (unscored)') : ''].filter(Boolean).join(', ');
     return `<span class="chip ${cls}" title="${esc(title)}">${m} ${esc(g.name)}${!g.scored ? '<i>ind</i>' : ''}</span>`;
   };
   const runCard = (r, arm) => {
     const state = r.isError ? 'na' : r.score === null ? 'na' : r.score < 1 ? 'bad' : r.truncated ? 'warn' : 'ok';
     const tools = (r.toolUses ?? []).map((t) => `<li><code>${esc(t.tool)}</code> <span class="in">${esc(typeof t.input === 'string' ? t.input.slice(0, 220) : JSON.stringify(t.input).slice(0, 220))}</span></li>`).join('');
-    const reasons = (r.graders ?? []).filter((g) => g.reason).map((g) => `<li><b>${esc(g.name)}</b> — ${esc(g.reason)}</li>`).join('');
+    const reasons = (r.graders ?? []).filter((g) => g.reason).map((g) => `<li><b>${esc(g.name)}</b>, ${esc(g.reason)}</li>`).join('');
     const files = (r.filesChanged ?? r.filesCreated ?? []).map((x) => `<li><code>${esc(x)}</code></li>`).join('');
     const flagsTxt = [r.isError ? '<em class="fail">error</em>' : '', r.truncated ? '<em class="warn">max_turns</em>' : '', r.timedOut ? '<em class="fail">timeout</em>' : ''].filter(Boolean).join(' ');
     return `<article class="run ${state}">
@@ -170,12 +170,54 @@ export function renderReport(cur, base = null, opt = {}) {
     <header class="case-h"><div><h2>${esc(key(c))}</h2>${c.name && c.name !== key(c) ? `<p class="case-name">${esc(c.name)}</p>` : ''}</div>
       <div class="case-num">${spark(c)}<span class="dot ${r.status}"></span>${esc(r.status)} · <b>${f(r.score)}</b>${base && r.before !== null ? ` <span class="from">from ${f(r.before)}</span>` : ''}${r.noise !== null && r.noise !== undefined ? ` <span class="from">· noise ±${r.noise.toFixed(2)}</span>` : ''}${ablating && typeof c.summary?.delta === 'number' ? ` <span class="from">· plugin ${fd(c.summary.delta)}</span>` : ''}</div></header>
     <p class="tags">${(c.tags ?? []).map((t) => `<span>${esc(t)}</span>`).join('')}${(c.covers ?? []).map((t) => `<span class="covers" title="rule this case covers">${esc(t)}</span>`).join('')}</p>
-    <details class="about"${r.open ? '' : ''}><summary>What this case evaluates${c.description ? ` — <span class="desc">${esc(c.description)}</span>` : ''}</summary>
+    <details class="about"${r.open ? '' : ''}><summary>What this case evaluates${c.description ? `, <span class="desc">${esc(c.description)}</span>` : ''}</summary>
       ${c.prompt ? `<div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">${esc(c.prompt)}</pre></div>` : ''}
       ${(c.graders ?? []).length ? `<div class="about-b"><div class="about-h">The checks (${c.graders.length})</div><table class="checks"><tbody>${c.graders.map((g) => `<tr><td><code>${esc(g.name)}</code></td><td class="t">${esc(g.type)}</td><td>${esc(g.rubric ?? '')}<div class="how">${graderWhat(g)}</div></td></tr>`).join('')}</tbody></table></div>` : ''}
       ${c.scaffold ? `<div class="about-b"><div class="about-h">Workspace setup before each run</div><pre class="prompt">${esc(c.scaffold)}</pre></div>` : ''}
     </details>
     <div class="runs">${['with', 'without'].flatMap((arm) => runsOf(c, arm).map((x) => runCard(x, arm))).join('')}</div></section>`; }).join('');
+
+  // ---- setup health: skill-lint + suite-doctor, run before the evals, no model runs ----
+  const health = (() => {
+    const sl = cur.preflight?.skills ?? null, sd = cur.preflight?.suite ?? null;
+    if (!sl && !sd) return '';
+    const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+    const isErr = (fd) => String(fd.level).toUpperCase() === 'ERROR';
+    const counts = (fs, summary) => ({ errors: summary?.errors ?? fs.filter(isErr).length, warnings: summary?.warnings ?? fs.filter((fd) => !isErr(fd)).length });
+    const tone = ({ errors, warnings }) => (errors ? 'fail' : warnings ? 'warn' : 'pass');
+    const verdictWord = ({ errors, warnings }) => (errors ? `✖ ${[plural(errors, 'error'), warnings ? plural(warnings, 'warning') : null].filter(Boolean).join(', ')}` : warnings ? `⚠ ${plural(warnings, 'warning')}` : '✓ clean');
+    const tile = (title, c, detail) => `<div class="tile t-${tone(c)}"><span class="tile-h">${esc(title)}</span><span class="tile-v">${esc(verdictWord(c))}</span><span class="tile-s">${detail}</span></div>`;
+    const tiles = [], items = [], clean = [];
+    const live = sd?.live ?? null;
+    const confirmed = live?.status === 'ok';
+    if (sl) {
+      const fs = sl.findings ?? [], c = counts(fs, sl);
+      const n = typeof sl.skills === 'number' ? sl.skills : sl.skills?.length ?? 0;
+      tiles.push(tile('Skills', c, esc(`${plural(n, 'skill')} checked · ${plural(c.errors, 'error')} · ${plural(c.warnings, 'warning')}`)));
+      clean.push(plural(n, 'skill'));
+      for (const fd of fs) items.push({ fd, where: `${fd.file ?? '?'}${fd.line ? `:${fd.line}` : ''}`, tags: [] });
+    }
+    if (sd) {
+      const fs = sd.findings ?? [], c = counts(fs, sd.summary);
+      const n = sd.cases ?? 0;
+      const loadLine = confirmed
+        ? `loaded ${live.loaded ?? n - (live.failedCount ?? 0)} of ${plural(n, 'case')} · ${live.failedCount ? `the runner refused ${live.failedCount}` : 'confirmed by the runner'}`
+        : `${plural(n, 'case')} checked statically · not confirmed: ${live?.reason ?? 'the live load check did not run'}`;
+      const fixedNote = sd.fixApplied && sd.summary?.fixed ? ` · ${sd.summary.fixed} fixed by --fix` : '';
+      tiles.push(tile('Eval suite format', c, `${confirmed ? '' : '<span class="warn">⚠</span> '}${esc(loadLine + fixedNote)}`));
+      clean.push(plural(n, 'eval case'));
+      for (const fd of fs) items.push({ fd, where: `${fd.case ?? '?'} / ${fd.file ?? '?'}${fd.key ? ` ${fd.key}:` : ''}`, tags: [fd.fixable ? '[--fix can apply]' : null, fd.confirmedByRunner ? 'runner agrees' : null].filter(Boolean) });
+    }
+    const version = live?.version ?? cur.harness?.version ?? null;
+    const MAX = 12;
+    items.sort((x, y) => (isErr(x.fd) ? 0 : 1) - (isErr(y.fd) ? 0 : 1)); // stable: skills before suite within a level
+    const list = items.length
+      ? `<ul class="hfind">${items.slice(0, MAX).map(({ fd, where, tags }) => `<li><span class="lv ${isErr(fd) ? 'fail' : 'warn'}">${isErr(fd) ? '✖ error' : '⚠ warning'}</span><code>${esc(where)}</code> ${esc(fd.message)}${tags.map((t) => ` <span class="tag">${esc(t)}</span>`).join('')}${fd.fix ? `<span class="fx">Fix: ${esc(fd.fix)}</span>` : ''}</li>`).join('')}</ul>${items.length > MAX ? `<p class="hmore">and ${items.length - MAX} more; run skill-lint and suite-doctor locally for the full list.</p>` : ''}`
+      : `<p class="hclean"><span class="pass">✓</span> No setup problems: ${esc(clean.join(' and '))} pass every static check${confirmed ? ', and the runner loaded the suite' : ''}.</p>`;
+    return `<div class="xtr health"><b class="t">Setup health${version ? ` on Claude Code ${esc(version)}` : ''}</b> · skill frontmatter and eval suite format, checked before the run; these checks start no model runs.
+  <div class="tiles">${tiles.join('')}</div>
+  ${list}</div>`;
+  })();
 
   const css = `
 :root{--paper:#F3F5F8;--surface:#FFFFFF;--ink:#111827;--muted:#5F6B7A;--rule:#DCE1E8;--code:#EEF1F5;--pass:#1E7A4D;--pass-bg:#E3F3EA;--fail:#C1382C;--fail-bg:#FAE6E3;--warn:#A8701A;--warn-bg:#FBF0DC;--track:#2E5BD7;--track-bg:#E4EBFB;--shadow:0 1px 2px rgba(17,24,39,.05)}
@@ -225,6 +267,10 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 .foot{color:var(--muted);font-size:12px;margin-top:26px}
 .xtr{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:13px;color:var(--muted)}.xtr b.t{color:var(--ink);font-size:12.5px}.xtr .chips{margin:8px 0 0}
 .notrun{color:var(--muted);font-size:12.5px;margin:10px 0 18px}
+.tiles{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 0}.tile{flex:1 1 240px;min-width:0;display:grid;gap:2px;padding:9px 12px;border:1px solid var(--rule);border-left-width:4px;border-radius:8px;background:var(--surface)}.tile.t-pass{border-left-color:var(--pass)}.tile.t-warn{border-left-color:var(--warn)}.tile.t-fail{border-left-color:var(--fail)}
+.tile-h{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}.tile-v{font-weight:600;font-size:14.5px;color:var(--ink)}.t-pass .tile-v{color:var(--pass)}.t-warn .tile-v{color:var(--warn)}.t-fail .tile-v{color:var(--fail)}.tile-s{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.hfind{list-style:none;margin:10px 0 0;padding:0}.hfind li{padding:7px 0;border-top:1px solid var(--rule);color:var(--ink);overflow-wrap:anywhere}.hfind .lv{font-weight:600;font-size:12px;margin-right:8px;white-space:nowrap}.hfind code{margin-right:6px}.hfind .tag{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--code);color:var(--muted);white-space:nowrap}.hfind .fx{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.hclean,.hmore{margin:10px 0 0;color:var(--ink)}.hmore{color:var(--muted);font-size:12.5px}
 :focus-visible{outline:2px solid var(--track);outline-offset:2px}
 @media (max-width:820px){.verdict{grid-template-columns:1fr}h1{font-size:28px}.runs{grid-template-columns:1fr}.wrap{padding:20px 16px 60px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
@@ -246,26 +292,27 @@ ${moves ? `<div class="moves">${moves}</div>` : ''}
     [hasToolEvidence, 'refusal screening', hasToolEvidence ? 'guardrail declines are labelled, not blamed on your setup' : 'needs transcripts: bundled runner, or --keep-temp + trace-keeper'],
     [!!discovered, 'discovered vs invoked', discovered ? `${discovered.length} skill${discovered.length === 1 ? '' : 's'} snapshotted at run start` : 'recorded by the bundled runner'],
     [!!base, 'efficiency drift', 'median turns, cost and time per case against the baseline'],
+    ...(health ? [[true, 'setup health', 'skill frontmatter and eval suite format checked before the run, with no model runs']] : []),
     [!!opt.suiteDirs, 'suite completeness', opt.suiteDirs ? `${cases.length} of ${opt.suiteDirs.length} suite cases in this run` : 'run with --config to compare against the suite on disk'],
   ].map(([on, label, tip]) => `<span class="chip ${on ? 'pass' : 'ind'}" title="${esc(tip)}">${on ? '✓' : '·'} ${esc(label)}</span>`).join('')}</div></div>
-${discovered && discovered.length ? `<div class="xtr"><b class="t">Skills discovered at run start</b> · present and parseable when the agent loaded the plugin; a skill invoked nowhere deserves a look at its trigger description.
-  <div class="chips">${discovered.map((sk) => { const n = skillInvokedCases(sk); const label = String(sk.dir ?? sk.name).split('/').pop(); return sk.malformed ? `<span class="chip fail" title="SKILL.md lacks a parseable name/description — may not be discovered by the agent">✖ ${esc(label)} · malformed</span>` : n > 0 ? `<span class="chip pass" title="invoked via the Skill tool in ${n} case${n === 1 ? '' : 's'} of this run">✓ ${esc(label)} · invoked in ${n}</span>` : `<span class="chip" title="discovered but no with-arm run invoked it${hasToolEvidence ? '' : ' (no transcript evidence in this result)'}">${hasToolEvidence ? '⚠' : '·'} ${esc(label)} · ${hasToolEvidence ? 'never invoked this run' : 'invocation unknown'}</span>`; }).join('')}</div></div>` : ''}
-<details class="howto"><summary>How to read this report — and what to do</summary>
+${health ? `${health}\n` : ''}${discovered && discovered.length ? `<div class="xtr"><b class="t">Skills discovered at run start</b> · present and parseable when the agent loaded the plugin; a skill invoked nowhere deserves a look at its trigger description.
+  <div class="chips">${discovered.map((sk) => { const n = skillInvokedCases(sk); const label = String(sk.dir ?? sk.name).split('/').pop(); return sk.malformed ? `<span class="chip fail" title="SKILL.md lacks a parseable name/description, may not be discovered by the agent">✖ ${esc(label)} · malformed</span>` : n > 0 ? `<span class="chip pass" title="invoked via the Skill tool in ${n} case${n === 1 ? '' : 's'} of this run">✓ ${esc(label)} · invoked in ${n}</span>` : `<span class="chip" title="discovered but no with-arm run invoked it${hasToolEvidence ? '' : ' (no transcript evidence in this result)'}">${hasToolEvidence ? '⚠' : '·'} ${esc(label)} · ${hasToolEvidence ? 'never invoked this run' : 'invocation unknown'}</span>`; }).join('')}</div></div>` : ''}
+<details class="howto"><summary>How to read this report, and what to do</summary>
 <ol>
 <li><b>No drift / baseline recorded:</b> nothing to do. Hover a grader chip to see what each check asserts and why it passed.</li>
 <li><b>N case(s) regressed:</b> open the red case(s) and classify each failing run: <i>refused or asked before acting</i> (1 turn, no tool calls) → the case never reached the skill/hook, rewrite the scenario; <i>skill/hook did not fire</i> → a real regression: pin <code>model.pinned</code>/<code>harness.pinned</code> in <code>.cdc.yml</code> to the last good pair, fix the setup (or run the <code>repair</code> skill), tell the maintainers; <i>grader wrong</i> (matched prose, a negation, nested parentheses) → fix the grader and re-score with <code>--regrade</code>; <i>flaky</i> (mixed verdicts across runs) → raise <code>runs</code>, never the threshold.</li>
 <li><b>Efficiency drift (slower / pricier / longer):</b> every case still passes, but the median turns, cost or time moved past its threshold. Warning by default; add it to <code>fail_on</code> in <code>.cdc.yml</code> to make it red.</li>
-<li><b>Noisy (⚠):</b> the case dropped past the threshold but stayed within its historical noise band — a warning, not a regression; more runs per case shrink the noise band.</li>
-<li><b>Runs errored:</b> read the error text — usually no prepaid API credit or a Claude Code startup failure. Nothing was stored; fix and re-run.</li>
+<li><b>Noisy (⚠):</b> the case dropped past the threshold but stayed within its historical noise band, a warning, not a regression; more runs per case shrink the noise band.</li>
+<li><b>Runs errored:</b> read the error text, usually no prepaid API credit or a Claude Code startup failure. Nothing was stored; fix and re-run.</li>
 <li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is (amber) → raise that case's <code>max_turns</code>.</li>
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ</th><th>noise</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
-${notRun.length ? `<p class="notrun">Not evaluated in this run (${notRun.length} of the suite): ${notRun.map((d) => `<code>${esc(d)}</code>`).join(' ')} — a case filter, a budget stop, or cases added since. They still count in the suite column of the stamp.</p>` : ''}
+${notRun.length ? `<p class="notrun">Not evaluated in this run (${notRun.length} of the suite): ${notRun.map((d) => `<code>${esc(d)}</code>`).join(' ')}, a case filter, a budget stop, or cases added since. They still count in the suite column of the stamp.</p>` : ''}
 ${notes}
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
 <div class="cases">${sections}</div>
-<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${th.score} against the baseline is a regression${opt.history ? ' — a drop inside the case\'s noise band is a ⚠ warning, not red' : ''}. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
+<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${th.score} against the baseline is a regression${opt.history ? ', a drop inside the case\'s noise band is a ⚠ warning, not red' : ''}. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
 </div></body></html>`;
 }
 

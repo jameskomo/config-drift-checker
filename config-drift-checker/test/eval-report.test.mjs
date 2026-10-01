@@ -53,7 +53,7 @@ test('without --history: the flat threshold decides, as before', () => {
 test('baseline-quality warnings render as a never-red note', () => {
   const thinBase = result({ a: [1, 0.4] }); // 2 runs (< min 3), spread 0.6
   const html = renderReport(result({ a: [1, 0.4] }), thinBase, { threshold: 0.15, minBaselineRuns: 3 });
-  assert.match(html, /⚠ baseline quality \(never red\):<\/b> <code>a<\/code> — thin baseline \(n=2\), unstable baseline \(±0\.60\)/);
+  assert.match(html, /⚠ baseline quality \(never red\):<\/b> <code>a<\/code>, thin baseline \(n=2\), unstable baseline \(±0\.60\)/);
 });
 
 test('suite completeness: cases on disk but not in the run are listed, stamp shows N of M', () => {
@@ -91,4 +91,90 @@ test('discovered skills panel: invoked, never invoked, and malformed each render
   assert.match(html, /✓ conventions · invoked in 1/);
   assert.match(html, /⚠ unused · never invoked this run/);
   assert.match(html, /✖ broken · malformed/);
+});
+
+// ---- setup health panel (cur.preflight = { skills: skill-lint JSON, suite: suite-doctor JSON }) ----
+const withPreflight = (preflight) => ({ ...JSON.parse(JSON.stringify(cur)), preflight });
+const cleanSkills = { schemaVersion: 1, pluginDir: 'p', skills: 4, errors: 0, warnings: 0, findings: [] };
+const liveOk = { status: 'ok', runner: '/usr/bin/claude', version: '2.1.287', loadErrors: [], notes: [], failedCount: 0, runsStarted: 0, costUsd: 0, loaded: 6 };
+const cleanSuite = { pluginDir: 'p', evalDir: 'evals', cases: 6, fixApplied: false, fixed: [], findings: [], live: liveOk, summary: { errors: 0, warnings: 0, fixed: 0, fixable: 0 } };
+const healthPanel = (html) => html.split('class="xtr health"')[1]?.split('<details class="howto"')[0] ?? '';
+const skillWarn = (i) => ({ level: 'WARN', rule: 'no-negative-scope', file: `skills/s${i}/SKILL.md`, line: 3, message: `skill ${i} names no negative scope`, fix: 'add a "Do not use for ..." sentence' });
+const suiteErr = { level: 'ERROR', rule: 'scaffold-top-level', case: 'guard', file: 'eval.yaml', key: 'scaffold_script', message: 'scaffold_script belongs under context:', fix: 'move it under context:', fixable: true, confirmedByRunner: true };
+
+test('setup health: without preflight nothing new renders, no chip, no panel', () => {
+  const html = renderReport(cur, base, { thresholds: { score: 0.15 }, history, minBaselineRuns: 3 });
+  assert.doesNotMatch(html, /Setup health/);
+  assert.doesNotMatch(html, /class="xtr health"/);
+  assert.doesNotMatch(html, /setup health/);
+  assert.doesNotMatch(html, /class="tile /);
+});
+
+test('setup health: a clean preflight shows pass tiles and one reassuring line', () => {
+  const html = renderReport(withPreflight({ skills: cleanSkills, suite: cleanSuite }), base, { threshold: 0.15 });
+  const panel = healthPanel(html);
+  assert.match(panel, /Setup health on Claude Code 2\.1\.287/);
+  assert.match(panel, /these checks start no model runs/);
+  assert.match(panel, /<div class="tile t-pass"><span class="tile-h">Skills<\/span><span class="tile-v">✓ clean<\/span><span class="tile-s">4 skills checked · 0 errors · 0 warnings<\/span>/);
+  assert.match(panel, /<div class="tile t-pass"><span class="tile-h">Eval suite format<\/span><span class="tile-v">✓ clean<\/span>/);
+  assert.match(panel, /loaded 6 of 6 cases · confirmed by the runner/);
+  assert.match(panel, /✓<\/span> No setup problems: 4 skills and 6 eval cases pass every static check, and the runner loaded the suite\./);
+  assert.doesNotMatch(panel, /class="hfind"/);
+  assert.match(html, /<span class="chip pass" title="[^"]*">✓ setup health<\/span>/, 'the checks row gains an active chip');
+  // the panel sits between the checks row and the rest of the report
+  assert.ok(html.indexOf('What this report checks') < html.indexOf('Setup health on'));
+});
+
+test('setup health: version falls back to the harness, and a single part renders alone', () => {
+  const html = renderReport(withPreflight({ skills: cleanSkills }), base, { threshold: 0.15 });
+  const panel = healthPanel(html);
+  assert.match(panel, /Setup health on Claude Code 2\.1\.200/);
+  assert.match(panel, /Skills<\/span>/);
+  assert.doesNotMatch(panel, /Eval suite format/);
+  assert.match(panel, /No setup problems: 4 skills pass every static check\./);
+});
+
+test('setup health: errors and warnings carry tone, glyph, word, fix text and suite tags, errors first', () => {
+  const skills = { ...cleanSkills, warnings: 1, findings: [skillWarn(1)] };
+  const suite = { ...cleanSuite, findings: [suiteErr], summary: { errors: 1, warnings: 0, fixed: 0, fixable: 1 } };
+  const panel = healthPanel(renderReport(withPreflight({ skills, suite }), base, { threshold: 0.15 }));
+  assert.match(panel, /<div class="tile t-warn"><span class="tile-h">Skills<\/span><span class="tile-v">⚠ 1 warning<\/span>/);
+  assert.match(panel, /<div class="tile t-fail"><span class="tile-h">Eval suite format<\/span><span class="tile-v">✖ 1 error<\/span>/);
+  const lis = panel.match(/<li>[\s\S]*?<\/li>/g);
+  assert.equal(lis.length, 2);
+  assert.match(lis[0], /<span class="lv fail">✖ error<\/span><code>guard \/ eval\.yaml scaffold_script:<\/code> scaffold_script belongs under context:/, 'the suite error comes first');
+  assert.match(lis[0], /<span class="tag">\[--fix can apply\]<\/span> <span class="tag">runner agrees<\/span>/);
+  assert.match(lis[0], /<span class="fx">Fix: move it under context:<\/span>/);
+  assert.match(lis[1], /<span class="lv warn">⚠ warning<\/span><code>skills\/s1\/SKILL\.md:3<\/code> skill 1 names no negative scope/);
+  assert.match(lis[1], /Fix: add a &quot;Do not use for \.\.\.&quot; sentence/);
+  assert.doesNotMatch(lis[1], /class="tag"/, 'skill findings carry no suite tags');
+  assert.doesNotMatch(panel, /No setup problems/);
+});
+
+test('setup health: more than 12 findings are cut to 12 with an "and N more" line', () => {
+  const findings = Array.from({ length: 15 }, (_, i) => skillWarn(i));
+  const panel = healthPanel(renderReport(withPreflight({ skills: { ...cleanSkills, warnings: 15, findings } }), base, { threshold: 0.15 }));
+  assert.equal((panel.match(/<li>/g) ?? []).length, 12);
+  assert.match(panel, /and 3 more; run skill-lint and suite-doctor locally for the full list\./);
+  assert.match(panel, /⚠ 15 warnings/);
+});
+
+test('setup health: a live check that did not run says not confirmed and why', () => {
+  const suite = { ...cleanSuite, live: { status: 'skipped', reason: 'no --runner given and no claude on PATH' } };
+  const panel = healthPanel(renderReport(withPreflight({ suite }), base, { threshold: 0.15 }));
+  assert.match(panel, /Setup health on Claude Code 2\.1\.200/, 'no live version, so the harness version');
+  assert.match(panel, /6 cases checked statically · not confirmed: no --runner given and no claude on PATH/);
+  assert.doesNotMatch(panel, /confirmed by the runner/);
+  assert.match(panel, /No setup problems: 6 eval cases pass every static check\./);
+  assert.doesNotMatch(panel, /runner loaded the suite/);
+});
+
+test('setup health: finding text is HTML-escaped', () => {
+  const evil = { ...skillWarn(0), file: 'skills/<b>x</b>/SKILL.md', message: '<script>alert(1)</script> & "quoted"', fix: '<img src=x onerror=alert(1)>' };
+  const suite = { ...cleanSuite, live: { status: 'failed', reason: '<svg onload=alert(1)>' }, findings: [{ ...suiteErr, case: '<i>c</i>' }] };
+  const html = renderReport(withPreflight({ skills: { ...cleanSkills, warnings: 1, findings: [evil] }, suite }), base, { threshold: 0.15 });
+  assert.doesNotMatch(html, /<script|<img |<svg onload|<b>x<\/b>|<i>c<\/i>/);
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; &quot;quoted&quot;/);
+  assert.match(html, /Fix: &lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(html, /not confirmed: &lt;svg onload=alert\(1\)&gt;/);
 });
