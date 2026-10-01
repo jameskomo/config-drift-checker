@@ -168,6 +168,9 @@ runs:
           echo; echo "**Skills** $( [ $sl -eq 0 ] && echo '✓' || echo '✗')"; echo; echo '```'; tail -40 "$RUNNER_TEMP/skill-lint.txt"; echo '```'
           echo; echo "**Eval suite format** $( [ $sd -eq 0 ] && echo '✓' || echo '✗')"; echo; echo '```'; tail -40 "$RUNNER_TEMP/suite-doctor.txt"; echo '```'
         } >> "$GITHUB_STEP_SUMMARY"
+        echo "preflight skills: $(tail -1 "$RUNNER_TEMP/skill-lint.txt")"
+        echo "preflight suite: $(grep -E '^live load check' "$RUNNER_TEMP/suite-doctor.txt" | head -1)"
+        echo "preflight suite: $(tail -1 "$RUNNER_TEMP/suite-doctor.txt")"
         if [ $sl -ne 0 ] || [ $sd -ne 0 ]; then
           echo "failed=true" >> "$GITHUB_OUTPUT"
           msg="preflight found problems in your skills or eval cases on Claude Code $CC_VERSION; see the job summary (fix most with: node <plugin-root>/tools/suite-doctor.mjs <plugin> --fix)"

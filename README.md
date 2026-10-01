@@ -53,6 +53,16 @@ yourself. Add one secret
 (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` to run on a Pro/Max subscription at no extra cost, within its usage limits, or
 `ANTHROPIC_API_KEY`), push, done.
 
+**Try the two free checks on any plugin, nothing to install.** Each is a single file with no
+dependencies (read it first, it's short):
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/jameskomo/config-drift-checker/v1/config-drift-checker/tools/skill-lint.mjs && node skill-lint.mjs .        # your SKILL.md files
+curl -fsSLO https://raw.githubusercontent.com/jameskomo/config-drift-checker/v1/config-drift-checker/tools/suite-doctor.mjs && node suite-doctor.mjs .    # your eval suite vs the installed Claude Code; add --fix
+```
+
+Neither starts a model run. [What they check](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free).
+
 Already have a suite in the `claude plugin eval` format? One step:
 
 ```yaml
@@ -76,8 +86,8 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging. [Watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
 | Efficiency drift | slower, pricier, longer gets flagged even when every case still passes |
 | Coverage | which of your rules have no test: a percentage, a badge, and a `coverage-min` gate |
-| Skill linter | `skill-lint` checks every SKILL.md before any model run: frontmatter that strict parsers reject, missing or vague trigger descriptions, overlapping skills without negative scope, broken file references |
-| Format drift | `suite-doctor` checks your eval cases against the runner of the Claude Code you're about to test, for free (no model runs), names every case the new version rejects, and `--fix` migrates the known changes. Runs as a preflight on every release, so a schema change shows up as "this case no longer loads", not as mysterious regressions |
+| [Skill linter](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free) | `skill-lint` checks every SKILL.md before any model run: frontmatter that strict parsers reject, missing or vague trigger descriptions, overlapping skills without negative scope, broken file references |
+| [Format drift](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free) | `suite-doctor` checks your eval cases against the runner of the Claude Code you're about to test, for free (no model runs), names every case the new version rejects, and `--fix` migrates the known changes. Runs as a preflight on every release, so a schema change shows up as "this case no longer loads", not as mysterious regressions |
 
 **Diagnose**: red comes with answers, not homework
 

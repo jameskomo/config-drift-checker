@@ -292,6 +292,20 @@ installed, and puts both in the job summary:
 The Action's `preflight` input decides what happens on a finding: `warn` (default) reports it,
 `fail` stops before spending any model runs, `off` skips the checks.
 
+Locally, with the plugin installed: `node <plugin-root>/tools/skill-lint.mjs <plugin>` and
+`node <plugin-root>/tools/suite-doctor.mjs <plugin> [--fix]`. Or on any plugin without installing
+anything (each tool is one dependency-free file; read it before running):
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/jameskomo/config-drift-checker/v1/config-drift-checker/tools/skill-lint.mjs && node skill-lint.mjs <plugin-dir>
+curl -fsSLO https://raw.githubusercontent.com/jameskomo/config-drift-checker/v1/config-drift-checker/tools/suite-doctor.mjs && node suite-doctor.mjs <plugin-dir> --fix
+```
+
+What changed in Claude Code 2.1.287, which `--fix` handles: llm graders take `focus:` instead of
+`target:`; `context.scaffold_script` names a script file; `tool_used` needs `min: 0` with `max: 0`
+to mean "never"; `arm: with` becomes `with-only`; a `covers:` key moves to `covers.yaml`. The full
+list with reasons is in the [v1.2.0 release notes](https://github.com/jameskomo/config-drift-checker/releases/tag/v1.2.0).
+
 ### Which release broke it: `drift-bisect`
 
 When a case that passed weeks ago fails today and several Claude Code releases shipped in
