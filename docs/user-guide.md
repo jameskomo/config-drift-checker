@@ -82,7 +82,9 @@ on its case. Adopt one and adapt the rules; the suite keeps measuring your adapt
 - `CLAUDE_CODE_OAUTH_TOKEN`: run `claude setup-token` (Pro/Max/Team/Enterprise) and paste the
   result. Runs then use your subscription, $0 API credit. This is
   [Anthropic's documented CI path](https://code.claude.com/docs/en/github-actions#manual-setup).
-  The token is tied to the person who generated it.
+  The token is tied to the person who generated it, and every CI run draws on that person's
+  plan usage limits, the same limits their own Claude Code sessions use. For a team, give CI a
+  dedicated seat or use an API key so the test suite never competes with someone's working day.
 - `ANTHROPIC_API_KEY` (console.anthropic.com): better for an org-wide secret. Runs bill prepaid
   credit, so add a few dollars first; with none, runs fail with "Credit balance is too low" and
   nothing is stored. If both secrets are set, the API key wins.
@@ -372,7 +374,9 @@ $0.05 to $0.08 per short Sonnet run; $0.20 to $0.25 per real-code run. A 3-case 
 about $0.43 per pinned run; a canary at 1 run per case is $0.15 to $0.20. With
 `min_interval_hours: 72`, 25 Claude Code releases a month collapse into at most about 10 canaries,
 and `budget.per_month_usd` is the hard ceiling whatever npm publishes. On a subscription token,
-API cost is $0. Use `ablation: none` in CI and Haiku for PR smoke.
+API cost is $0 but runs count against that plan's usage limits: a six-case canary is about six
+short agent runs per release, three times that only when a case deviates. Use `ablation: none`
+in CI and Haiku for PR smoke.
 
 ## 12. Safety
 

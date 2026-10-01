@@ -50,7 +50,7 @@ smoke-runs them, and writes `.cdc.yml` plus the GitHub workflow. Prefer never op
 all? `node <plugin-root>/tools/cdc-bootstrap.mjs .` runs the same setup headlessly, and
 `--no-agent` scaffolds everything for $0 (blank starter case included) so you fill in the prompts
 yourself. Add one secret
-(`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` to run free on a Pro/Max subscription, or
+(`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` to run on a Pro/Max subscription at no extra cost, within its usage limits, or
 `ANTHROPIC_API_KEY`), push, done.
 
 Already have a suite in the `claude plugin eval` format? One step:
@@ -101,7 +101,7 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | The drift wire | [a subscribable Atom feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml) plus `verdicts.json`: one behavioural verdict per release, the changelog nobody else publishes |
 | The status badge | embeddable like a coverage badge: green "cc2.1.269 · 3 releases clean", red naming the version the day something breaks |
 | Posts and digest, pre-written | `drift-digest` turns every new verdict into ready-to-paste posts per platform (X, LinkedIn, Reddit when something actually broke) plus a weekly digest; a workflow can post to Bluesky/Mastodon automatically |
-| Hard budget caps | per run and per month, enforced from a ledger; $0 API on a Claude Pro/Max subscription token |
+| Hard budget caps | per run and per month, enforced from a ledger; on a Claude Pro/Max subscription token, $0 API, counted against the plan's usage limits |
 | One-command onboarding | `cdc-bootstrap` runs the whole setup headlessly with an auth preflight, or scaffolds everything for $0 with `--no-agent` |
 | Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller. No hosted server, ever |
 | Community suites | maintained setups with published worth numbers ([Spring Boot first](docs/community-suites.md)); a [hosted-tier waitlist](https://github.com/jameskomo/config-drift-checker/issues/new?template=hosted-waitlist.yml) decides what we run for you |
