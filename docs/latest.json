@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "claudeVersion": "2.1.287",
-  "startedAt": "2026-10-01T20:04:57.017Z",
-  "durationSeconds": 175,
-  "costUsd": 0.9885352000000002,
+  "startedAt": "2026-10-01T20:48:56.701Z",
+  "durationSeconds": 181,
+  "costUsd": 0.972593,
   "partial": false,
   "suite": {
     "root": "/home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack",
@@ -81,12 +81,12 @@
             "score": 1,
             "passed": true,
             "turns": 2,
-            "costUsd": 0.062463199999999997,
+            "costUsd": 0.0410666,
             "judgeCostUsd": 0,
             "durationSeconds": 4,
-            "startedAt": "2026-10-01T20:04:57.080Z",
+            "startedAt": "2026-10-01T20:48:56.756Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-nBdIA9/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-3z7zYD/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -127,58 +127,58 @@
             "score": 1,
             "passed": true,
             "turns": 2,
-            "costUsd": 0.041916800000000004,
+            "costUsd": 0.0413182,
+            "judgeCostUsd": 0,
+            "durationSeconds": 4,
+            "startedAt": "2026-10-01T20:49:00.705Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-8yFEbS/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "attempted",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "blocked-by-hook",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched BLOCKED: git reset --hard is blocked by komo-stack guard",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-reset-succeeded",
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reported-blocked",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched block|guard|denied|refus|prevent|hook|not allowed",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.040775399999999996,
             "judgeCostUsd": 0,
             "durationSeconds": 5,
-            "startedAt": "2026-10-01T20:05:00.935Z",
+            "startedAt": "2026-10-01T20:49:04.426Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-ZN5tdZ/out/trace.jsonl",
-            "skippedPaidGraders": false,
-            "graders": [
-              {
-                "name": "attempted",
-                "passed": true,
-                "weight": 1,
-                "explanation": "Bash called 1x (expected 1..∞)",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "blocked-by-hook",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched BLOCKED: git reset --hard is blocked by komo-stack guard",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "no-reset-succeeded",
-                "passed": true,
-                "weight": 1,
-                "explanation": "pattern absent as expected",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "reported-blocked",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched block|guard|denied|refus|prevent|hook|not allowed",
-                "withOnly": false,
-                "scored": true
-              }
-            ]
-          },
-          {
-            "score": 1,
-            "passed": true,
-            "turns": 2,
-            "costUsd": 0.0410268,
-            "judgeCostUsd": 0,
-            "durationSeconds": 4,
-            "startedAt": "2026-10-01T20:05:06.088Z",
-            "error": null,
-            "tracePath": "/tmp/claude-eval-laLQz2/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-164oYv/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -302,12 +302,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.053773400000000006,
-            "judgeCostUsd": 0.0018809999999999999,
-            "durationSeconds": 10,
-            "startedAt": "2026-10-01T20:05:09.821Z",
+            "costUsd": 0.054139999999999994,
+            "judgeCostUsd": 0.002028,
+            "durationSeconds": 11,
+            "startedAt": "2026-10-01T20:49:09.376Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-6VCkMj/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-1nxppk/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -354,7 +354,7 @@
                   true,
                   true
                 ],
-                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: constructor injection with a `private final` field and no Lombok. Pagination is 1-based and clamped with `MAX_PAGE_SIZE = 100`. The response is wrapped in `ApiResponse.ok(items, PageMeta.of(...))`, and the controller has no try/catch.\n\nAssumptions:\n- `ApiResponse` and `PageMeta` are in `com.acme.billing` (otherwise add imports). The `ApiResponse<?>` return type should become `ApiResponse<List<YourInvoiceDto>>` once the item type is known.\n- Scoping to \"a customer\" is left to `InvoiceService`, since its signature takes no customer argument."
+                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\n- I used constructor injection with a `private final` field, no Lombok. The controller stays thin and wraps the result in `ApiResponse.ok(items, PageMeta.of(...))`. `page` is 1-based and `size` is clamped to 1–100 with `MAX_PAGE_SIZE`. There is no try/catch, so errors go to the `@RestControllerAdvice`.\n- `ApiResponse` and `PageMeta` are assumed to be in `com.acme.billing` or otherwise importable, so add the import if they live elsewhere. Scoping to the customer and the authorization check belong in `InvoiceService`, since its signature takes no customer argument. The `ApiResponse<?>` return type is a placeholder because the type of `items()` wasn't given. Replace it with the real type, for example `ApiResponse<List<InvoiceDtos.InvoiceItem>>`."
               },
               {
                 "name": "skill-fired",
@@ -370,12 +370,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.0548446,
-            "judgeCostUsd": 0.0020880000000000004,
-            "durationSeconds": 10,
-            "startedAt": "2026-10-01T20:05:19.565Z",
+            "costUsd": 0.0553088,
+            "judgeCostUsd": 0.002088,
+            "durationSeconds": 11,
+            "startedAt": "2026-10-01T20:49:20.172Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-MgmNOV/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-AzmbyR/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -422,7 +422,7 @@
                   true,
                   true
                 ],
-                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: constructor injection with a `private final` field (no Lombok or `@Autowired`), 1-based `page` and `size` clamped with `MAX_PAGE_SIZE = 100`, and the response wrapped in `ApiResponse.ok(items, PageMeta.of(...))`. There is no try/catch, and authorization and business rules stay in `InvoiceService`.\n\nAssumptions:\n- `ApiResponse` and `PageMeta` are in `com.acme.billing` or already imported. Add the import if they live elsewhere.\n- `result.items()` already holds DTO records, not entities. If it holds entities, map them to a record in a `BillingDtos` holder class first.\n- The return type is `ApiResponse<?>` because I don't know `ApiResponse`'s generic signature. Tighten it, for example to `ApiResponse<List<BillingDtos.InvoiceItem>>`, once the item type is settled."
+                "evidence": "```java\npackage com.acme.billing;\n\nimport com.acme.common.api.ApiResponse;\nimport com.acme.common.api.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\n- **Conventions applied:** The controller uses explicit constructor injection with no Lombok. It clamps pagination to 1-based `page` and `size` (max 100) and wraps the list in `ApiResponse.ok(items, PageMeta.of(...))`. It has no try/catch, so the `@RestControllerAdvice` handler deals with errors.\n- **Assumptions to check:** I guessed that `ApiResponse` and `PageMeta` live in `com.acme.common.api`, so fix those imports if they don't. I also assumed `ApiResponse.ok(items, meta)` accepts whatever `items()` returns. The `ApiResponse<?>` return type is loose, so tighten it to match your `ApiResponse` signature. The \"customer's\" scoping and the authorization check belong in `InvoiceService`, since the endpoint takes no customer parameter."
               },
               {
                 "name": "skill-fired",
@@ -438,12 +438,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.054253,
-            "judgeCostUsd": 0.0021990000000000004,
+            "costUsd": 0.0552772,
+            "judgeCostUsd": 0.0021509999999999993,
             "durationSeconds": 10,
-            "startedAt": "2026-10-01T20:05:29.931Z",
+            "startedAt": "2026-10-01T20:49:31.094Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-7o1bNS/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-UWwegf/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -490,7 +490,7 @@
                   true,
                   true
                 ],
-                "evidence": "```java\npackage com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: explicit constructor injection with a `private final` service, 1-based `page` clamped with `Math.max` and `Math.clamp` (max size 100), and the response wrapped in `ApiResponse.ok(items, PageMeta.of(...))`. The controller only parses input and calls one service method, with no try/catch, so errors go to the `@RestControllerAdvice`.\n\nI assumed `ApiResponse` and `PageMeta` are in `com.acme.billing` or already imported from your shared package, so add the import if they live elsewhere. I also assumed `result.items()` already holds DTO records rather than entities. If they are entities, map them to a record in a `BillingDtos` holder class first. Because of that, I used `ApiResponse<?>` as the return type. If `ApiResponse` is generic over the body, use `ApiResponse<List<BillingDtos.InvoiceItem>>` instead.\n\nFiltering by customer isn't in the endpoint spec, so the service is expected to take the customer from the security context. Authorization stays in the service, per the \"two locks\" rule."
+                "evidence": "```java\npackage com.acme.billing;\n\nimport com.acme.common.api.ApiResponse;\nimport com.acme.common.api.PageMeta;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private static final int MAX_PAGE_SIZE = 100;\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @GetMapping(\"/invoices\")\n    public ApiResponse<?> listInvoices(\n            @RequestParam(defaultValue = \"1\") int page,\n            @RequestParam(defaultValue = \"20\") int size) {\n        int pageNo = Math.max(page, 1);\n        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);\n\n        InvoiceQueryResult result = invoiceService.listInvoices(pageNo, pageSize);\n\n        return ApiResponse.ok(result.items(), PageMeta.of(pageNo, pageSize, result.total()));\n    }\n}\n```\n\nConventions applied: explicit constructor injection with a `private final` service, a thin controller, and a list response wrapped in `ApiResponse.ok(items, PageMeta.of(...))`. `page` is 1-based and clamped with `Math.max`/`Math.clamp` against `MAX_PAGE_SIZE = 100`. There is no try/catch, so domain exceptions go to the `@RestControllerAdvice`.\n\nAssumptions to check:\n- **Imports:** I guessed the `com.acme.common.api` package for `ApiResponse` and `PageMeta`, so adjust it to wherever they live.\n- **Return type:** `ApiResponse<?>` is a placeholder. Change it to `ApiResponse<List<YourItemType>>` once you know what `items()` returns.\n- **Customer scope:** `listInvoices(page, size)` takes no customer argument, so the service has to scope the results to the current customer itself."
               },
               {
                 "name": "skill-fired",
@@ -589,12 +589,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.059957800000000006,
-            "judgeCostUsd": 0.002994000000000001,
+            "costUsd": 0.0599946,
+            "judgeCostUsd": 0.0031019999999999997,
             "durationSeconds": 12,
-            "startedAt": "2026-10-01T20:05:40.327Z",
+            "startedAt": "2026-10-01T20:49:41.386Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-hFetPV/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-n5PmfS/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -633,75 +633,7 @@
                   true,
                   true
                 ],
-                "evidence": "```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n```java\n// InvoiceController.java\npackage com.acme.billing;\n\nimport com.acme.billing.InvoiceDtos.CreateInvoiceRequest;\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nAssumptions:\n- `ApiResponse` is in `com.acme.billing`. Add an import if it lives elsewhere.\n- `InvoiceService.create` returns `InvoiceDtos.InvoiceResponse`. If it returns another type, map it in the controller or adjust the record.\n- The `InvoiceResponse` fields (`id`, `customerId`, `amountCents`, `note`, `createdAt`) are my guess at what \"invoice data\" contains.\n\nConvention decisions:\n- The DTOs are records in an `InvoiceDtos` holder class. The `@Valid` request uses `@NotNull` with `@Positive` and `@Min(1)` on boxed `Long` fields, so a missing value fails validation instead of defaulting to 0. The controller uses constructor injection with no Lombok and no try/catch.\n- The controller makes one service call and wraps the result in `ApiResponse.ok(...)`. It returns 201 Created. Authorization and business rules belong in `InvoiceService`, and a `@RestControllerAdvice` maps validation and domain exceptions to `ApiResponse.error(...)`."
-              },
-              {
-                "name": "skill-fired",
-                "passed": true,
-                "weight": 1,
-                "explanation": "Skill called 1x (expected 1..∞)",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "valid-annotation",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched @Valid\\b",
-                "withOnly": false,
-                "scored": true
-              }
-            ]
-          },
-          {
-            "score": 1,
-            "passed": true,
-            "turns": 3,
-            "costUsd": 0.0602302,
-            "judgeCostUsd": 0.003068999999999999,
-            "durationSeconds": 12,
-            "startedAt": "2026-10-01T20:05:52.530Z",
-            "error": null,
-            "tracePath": "/tmp/claude-eval-glNRjT/out/trace.jsonl",
-            "skippedPaidGraders": false,
-            "graders": [
-              {
-                "name": "constraint-annotations",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched @(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "dtos-holder",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched (class|interface)\\s+\\w+Dtos\\b",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "record-shapes",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched record\\s+\\w+\\s*\\(",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "reviewer-judgment",
-                "passed": true,
-                "weight": 1,
-                "explanation": "judge votes: PASS PASS PASS",
-                "withOnly": false,
-                "scored": true,
-                "judgeVotes": [
-                  true,
-                  true,
-                  true
-                ],
-                "evidence": "**BillingDtos.java**\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n**InvoiceController.java**\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.common.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nAssumptions, since I couldn't see these in your codebase:\n- `ApiResponse` is imported from `com.acme.common`. Adjust the import to match where it lives.\n- `InvoiceService.create` returns `BillingDtos.InvoiceResponse`. If it returns a different type, map it in the controller. The `InvoiceResponse` fields (`id`, `customerId`, `amountCents`, `note`, `createdAt`) are my guess at the invoice data.\n- `customerId` and `amountCents` are boxed `Long` with `@NotNull`, so a missing field fails validation. A primitive `long` would silently default to 0.\n- Success returns 201 Created.\n\nConventions applied:\n- The request and response are records in a `BillingDtos` holder, validated with `jakarta.validation` and `@Valid`. The controller uses explicit constructor injection with a `private final` field, and has no Lombok, try/catch or field injection.\n- The controller is thin: one service call, with the result wrapped in `ApiResponse.ok(...)`. Domain exceptions are left to the `@RestControllerAdvice`."
+                "evidence": "**InvoiceDtos.java**\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note\n    ) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt\n    ) {\n    }\n}\n```\n\n**InvoiceController.java**\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.InvoiceDtos.CreateInvoiceRequest;\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nConventions applied:\n- The DTOs are records in an `InvoiceDtos` holder class. The controller uses constructor injection with no Lombok, makes a single service call, wraps the result in `ApiResponse.ok(...)`, and has no try/catch, so validation and domain errors go to the `@RestControllerAdvice`.\n- Bean validation is `@Positive` on `customerId`, `@Min(1)` on `amountCents` and `@Size(max = 200)` on the optional `note`. Both required fields are also `@NotNull`, so a missing value is rejected.\n\nAssumptions:\n- `ApiResponse` is in `com.acme.billing` (add the import if it lives elsewhere).\n- `InvoiceService.create` returns an `InvoiceDtos.InvoiceResponse`. If it returns a different type, map it to `InvoiceResponse` in the controller.\n- I added `@ResponseStatus(CREATED)`, so the endpoint returns 201 rather than 200. Remove it if your API returns 200 for creates.\n- Per the \"two locks on the door\" rule, the service should check that the caller may bill the given `customerId` and that the customer exists. I haven't written that part."
               },
               {
                 "name": "skill-fired",
@@ -725,12 +657,12 @@
             "score": 0.8333333333333334,
             "passed": false,
             "turns": 3,
-            "costUsd": 0.060124000000000004,
-            "judgeCostUsd": 0.0031230000000000008,
-            "durationSeconds": 12,
-            "startedAt": "2026-10-01T20:06:04.794Z",
+            "costUsd": 0.06039460000000001,
+            "judgeCostUsd": 0.0028740000000000016,
+            "durationSeconds": 13,
+            "startedAt": "2026-10-01T20:49:53.435Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-OCUW7X/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-ZdJ1gs/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -761,15 +693,83 @@
                 "name": "reviewer-judgment",
                 "passed": false,
                 "weight": 1,
-                "explanation": "judge votes: FAIL FAIL PASS",
+                "explanation": "judge votes: FAIL FAIL FAIL",
                 "withOnly": false,
                 "scored": true,
                 "judgeVotes": [
                   false,
                   false,
+                  false
+                ],
+                "evidence": "```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note) {\n    }\n}\n```\n\n```java\n// InvoiceController.java\npackage com.acme.billing;\n\nimport com.acme.billing.InvoiceDtos.CreateInvoiceRequest;\nimport com.acme.billing.InvoiceDtos.InvoiceResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nAssumptions:\n- `ApiResponse` is in `com.acme.billing`. Add an import if it lives elsewhere.\n- `InvoiceService.create` returns `InvoiceDtos.InvoiceResponse`. The response fields (`id`, `customerId`, `amountCents`, `note`) are my guess, so adjust them to match what the service returns.\n\nConventions applied:\n- **Structure:** Records live in the `InvoiceDtos` holder, and the controller uses hand-written constructor injection with a `private final` field. It is thin, with no try/catch, and wraps the result in `ApiResponse.ok`.\n- **Validation:** The ID and amount fields are boxed `Long` with `@NotNull`, so a missing value gives a validation error instead of a silent `0`. `customerId` has `@Positive`, `amountCents` has `@Min(1)`, and `note` has `@Size(max = 200)`. The `@Valid` annotation on the request body triggers these checks."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "valid-annotation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @Valid\\b",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.0590086,
+            "judgeCostUsd": 0.0028919999999999987,
+            "durationSeconds": 11,
+            "startedAt": "2026-10-01T20:50:06.184Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-ZkEzSU/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "constraint-annotations",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @(NotNull|NotBlank|Positive|Min|Max|Size)\\(",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "dtos-holder",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (class|interface)\\s+\\w+Dtos\\b",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "record-shapes",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched record\\s+\\w+\\s*\\(",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reviewer-judgment",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
                   true
                 ],
-                "evidence": "Two files below. I couldn't see your codebase, so some package names and the service's return type are assumptions, listed after the code.\n\n**`BillingDtos.java`**\n\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n**`InvoiceController.java`**\n\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.common.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> create(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\n**Assumptions to check:**\n- `ApiResponse` is in `com.acme.common`. Adjust the import if it lives elsewhere.\n- `InvoiceService` is in `com.acme.billing` and `create(...)` returns `BillingDtos.InvoiceResponse`. If it returns a different type, change `InvoiceResponse` to match, or map it in the controller.\n- The success status is `201 Created` rather than `200`.\n\n**Conventions applied:**\n- The DTOs are records in a `BillingDtos` holder class. The controller uses explicit constructor injection with a `private final` field, no Lombok, and no try/catch. The result is wrapped in `ApiResponse.ok(...)`.\n- Validation runs through `@Valid`. `customerId` is `@NotNull @Positive`, `amountCents` is `@NotNull @Min(1)`, and `note` is optional with `@Size(max = 200)`. The required fields use `Long` wrappers, so a missing value fails validation instead of silently becoming `0`."
+                "evidence": "Two files. Two things are assumed because I can't see the repo: `ApiResponse` lives in `com.acme.billing.api`, and `InvoiceService.create` returns `BillingDtos.InvoiceResponse`.\n\n**`BillingDtos.java`**\n```java\npackage com.acme.billing;\n\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.Size;\n\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n    private BillingDtos() {\n    }\n\n    public record CreateInvoiceRequest(\n            @NotNull @Positive Long customerId,\n            @NotNull @Min(1) Long amountCents,\n            @Size(max = 200) String note) {\n    }\n\n    public record InvoiceResponse(\n            long id,\n            long customerId,\n            long amountCents,\n            String note,\n            Instant createdAt) {\n    }\n}\n```\n\n**`InvoiceController.java`**\n```java\npackage com.acme.billing;\n\nimport com.acme.billing.BillingDtos.CreateInvoiceRequest;\nimport com.acme.billing.BillingDtos.InvoiceResponse;\nimport com.acme.billing.api.ApiResponse;\nimport jakarta.validation.Valid;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/billing\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/invoices\")\n    @ResponseStatus(HttpStatus.CREATED)\n    public ApiResponse<InvoiceResponse> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {\n        InvoiceResponse invoice = invoiceService.create(\n                request.customerId(), request.amountCents(), request.note());\n        return ApiResponse.ok(invoice);\n    }\n}\n```\n\nConventions applied: the request and response records sit in the `BillingDtos` holder and are validated with `@Valid`, using `@Positive`, `@Min(1)` and `@Size(max = 200)`. The controller uses hand-written constructor injection, makes one service call, returns `ApiResponse.ok(...)` and has no try/catch, so domain exceptions go to the `@RestControllerAdvice`.\n`customerId` and `amountCents` are boxed `Long` with `@NotNull` so a missing field fails validation instead of silently defaulting to 0. The service should still enforce its own business and authorization rules."
               },
               {
                 "name": "skill-fired",
@@ -865,12 +865,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.07591780000000001,
-            "judgeCostUsd": 0.005250000000000003,
+            "costUsd": 0.0735504,
+            "judgeCostUsd": 0.004746,
             "durationSeconds": 19,
-            "startedAt": "2026-10-01T20:06:16.611Z",
+            "startedAt": "2026-10-01T20:50:17.378Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-9QqIMP/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-Q2ReEV/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -901,7 +901,7 @@
                   true,
                   true
                 ],
-                "evidence": "Here is the complete source. I haven't compiled it, because `ApiResponse`, `InvoiceRepository` and `Invoice` aren't in this workspace.\n\n**`InvoiceCancellationException.java`**\n```java\npackage com.acme.billing;\n\npublic abstract class InvoiceCancellationException extends RuntimeException {\n\n    private final String code;\n\n    protected InvoiceCancellationException(String code, String message) {\n        super(message);\n        this.code = code;\n    }\n\n    public String code() {\n        return code;\n    }\n}\n```\n\n**`InvoiceNotFoundException.java`**\n```java\npackage com.acme.billing;\n\n/**\n * Also thrown when the invoice belongs to another customer, so that\n * a caller cannot probe which invoice ids exist.\n */\npublic class InvoiceNotFoundException extends InvoiceCancellationException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"INVOICE_NOT_FOUND\", \"Invoice \" + invoiceId + \" was not found\");\n    }\n}\n```\n\n**`InvoiceNotCancellableException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends InvoiceCancellationException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"INVOICE_NOT_CANCELLABLE\",\n                \"Invoice \" + invoiceId + \" cannot be cancelled because it is \" + status);\n    }\n}\n```\n\n**`InvoiceDtos.java`**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record InvoiceCancelled(long invoiceId, String status) {\n    }\n}\n```\n\n**`InvoiceCancellationService.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.InvoiceCancelled cancel(long customerId, long invoiceId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.InvoiceCancelled(invoiceId, invoice.status().name());\n    }\n}\n```\n\n**`InvoiceController.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceCancellationService invoiceCancellationService;\n\n    public InvoiceController(InvoiceCancellationService invoiceCancellationService) {\n        this.invoiceCancellationService = invoiceCancellationService;\n    }\n\n    @PostMapping(\"/{invoiceId}/cancel\")\n    public ApiResponse<InvoiceDtos.InvoiceCancelled> cancel(\n            @PathVariable long invoiceId, Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(invoiceCancellationService.cancel(customerId, invoiceId));\n    }\n}\n```\n\n**`BillingExceptionHandler.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException e) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(e.code(), e.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException e) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(e.code(), e.getMessage()));\n    }\n}\n```\n\n**Assumptions to check**\n- `InvoiceStatus` is an enum with an `UNPAID` constant, in `com.acme.billing`. Adjust if your status type differs.\n- `ApiResponse.error(String code, String message)` exists and returns `ApiResponse<Void>`. Adjust the handler if the signature differs.\n- The customer id is the authentication name, parsed as a `long`. Replace that line with however your security setup exposes the current customer.\n- `markCancelled()` mutates a managed JPA entity, so `@Transactional` persists the change. If `Invoice` isn't managed, add `invoiceRepository.save(invoice)`.\n\n**Convention decisions**\n- I used constructor injection with no Lombok. The ownership and unpaid checks live in the service. Domain exceptions are mapped to `ApiResponse.error` by a `@RestControllerAdvice`, and the controller has no try/catch.\n- I return 404 for another customer's invoice, the same as for a missing one, so invoice ids can't be probed. A paid or already-cancelled invoice returns 409."
+                "evidence": "Here's the complete source. I'm assuming `InvoiceStatus` is an enum with an `UNPAID` constant, and that `ApiResponse.error(String code, String message)` exists next to `ApiResponse.ok(...)`. I haven't seen either in your codebase, so adjust them if they differ.\n\n```java\n// InvoiceService.java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        // Someone else's invoice is reported as \"not found\" so we don't reveal that it exists.\n        if (invoice.customerId() != customerId) {\n            throw new InvoiceNotFoundException(invoiceId);\n        }\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, invoice.status().name());\n    }\n}\n```\n\n```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long id, String status) {\n    }\n}\n```\n\n```java\n// InvoiceNotFoundException.java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n    }\n}\n```\n\n```java\n// InvoiceNotCancellableException.java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while \" + status);\n    }\n}\n```\n\n```java\n// BillingExceptionHandler.java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice(basePackageClasses = InvoiceController.class)\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\n```java\n// InvoiceController.java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceService invoiceService;\n\n    public InvoiceController(InvoiceService invoiceService) {\n        this.invoiceService = invoiceService;\n    }\n\n    @PostMapping(\"/{invoiceId}/cancel\")\n    public ApiResponse<InvoiceDtos.CancelledInvoice> cancel(\n            @PathVariable long invoiceId, Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(invoiceService.cancel(invoiceId, customerId));\n    }\n}\n```\n\nConvention decisions applied:\n- The ownership and unpaid checks live in `InvoiceService`, which uses constructor injection with no Lombok and returns a record from `InvoiceDtos`. The controller stays thin and wraps the result in `ApiResponse.ok`, with no try/catch.\n- Failures are domain exceptions mapped by a `@RestControllerAdvice` to `ApiResponse.error`. A missing invoice and another customer's invoice both return 404, so the API doesn't reveal which invoice ids exist. An invoice that is no longer unpaid returns 409.\n\nOther assumptions:\n- The controller reads the customer id from `Authentication.getName()` as a numeric string. Replace that line with however your security setup exposes the current customer.\n- I rely on `@Transactional` and JPA dirty checking to persist `markCancelled()`, because the repository has no `save` call in your description. If `InvoiceRepository` isn't a JPA-managed repository, add an explicit `save`."
               },
               {
                 "name": "skill-fired",
@@ -925,12 +925,72 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.07414660000000001,
-            "judgeCostUsd": 0.004833000000000004,
+            "costUsd": 0.0713416,
+            "judgeCostUsd": 0.004521000000000004,
+            "durationSeconds": 17,
+            "startedAt": "2026-10-01T20:50:35.964Z",
+            "error": null,
+            "tracePath": "/tmp/claude-eval-tLHPUF/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "advice-handler",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched @RestControllerAdvice",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-map-result",
+                "passed": true,
+                "weight": 1,
+                "explanation": "pattern absent as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reviewer-judgment",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here is the complete source. I assumed these things exist, so adjust the names if yours differ:\n- `Invoice.status()` returns an `InvoiceStatus` enum with an `UNPAID` value.\n- `ApiResponse.error(String code, String message)` exists.\n- The authenticated principal's name is the customer id.\n\n**InvoiceStatus.java** (only if you don't already have it)\n```java\npackage com.acme.billing;\n\npublic enum InvoiceStatus {\n    UNPAID,\n    PAID,\n    CANCELLED\n}\n```\n\n**InvoiceDtos.java**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancellationResult(long invoiceId, String status) {\n    }\n}\n```\n\n**InvoiceNotFoundException.java**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n    }\n}\n```\n\n**InvoiceNotCancellableException.java**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while \" + status);\n    }\n}\n```\n\n**InvoiceCancellationService.java**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.CancellationResult cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancellationResult(invoiceId, String.valueOf(invoice.status()));\n    }\n}\n```\n\n**InvoiceController.java**\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceCancellationService cancellationService;\n\n    public InvoiceController(InvoiceCancellationService cancellationService) {\n        this.cancellationService = cancellationService;\n    }\n\n    @PostMapping(\"/{invoiceId}/cancel\")\n    public ApiResponse<InvoiceDtos.CancellationResult> cancel(\n            @PathVariable long invoiceId, Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(cancellationService.cancel(invoiceId, customerId));\n    }\n}\n```\n\n**BillingExceptionHandler.java**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    @ResponseStatus(HttpStatus.NOT_FOUND)\n    public ApiResponse<Void> handleNotFound(InvoiceNotFoundException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage());\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    @ResponseStatus(HttpStatus.CONFLICT)\n    public ApiResponse<Void> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage());\n    }\n}\n```\n\nConventions applied: constructor injection with `private final` fields and no Lombok. The ownership and unpaid rules live in the service. Domain exceptions are mapped by a `@RestControllerAdvice`, the controller has no try/catch, and the response is a record wrapped in `ApiResponse.ok`.\n\nDesign choices: an invoice that belongs to another customer returns the same 404 as a missing one, so invoice ids can't be probed. A non-`UNPAID` invoice returns 409. Nothing here was compiled or run."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "throws-domain-exception",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched throw\\s+new\\s+[A-Z]\\w*Exception\\(",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.071308,
+            "judgeCostUsd": 0.004484999999999999,
             "durationSeconds": 20,
-            "startedAt": "2026-10-01T20:06:35.926Z",
+            "startedAt": "2026-10-01T20:50:52.941Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-TOzw8f/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-yt5HyK/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -961,67 +1021,7 @@
                   true,
                   true
                 ],
-                "evidence": "Here is the complete source. Nothing was compiled or run, because the `Invoice`, `InvoiceRepository` and `ApiResponse` types aren't in this workspace.\n\n**`InvoiceDtos.java`**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long id, String status) {\n    }\n}\n```\n\n**`InvoiceNotFoundException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n    }\n}\n```\n\n**`InvoiceNotCancellableException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    public InvoiceNotCancellableException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" can no longer be cancelled because it is not unpaid\");\n    }\n}\n```\n\n**`InvoiceCancellationService.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId);\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, invoice.status().name());\n    }\n}\n```\n\n**`InvoiceController.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.security.core.Authentication;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/invoices\")\npublic class InvoiceController {\n\n    private final InvoiceCancellationService cancellationService;\n\n    public InvoiceController(InvoiceCancellationService cancellationService) {\n        this.cancellationService = cancellationService;\n    }\n\n    @PostMapping(\"/{id}/cancel\")\n    public ApiResponse<InvoiceDtos.CancelledInvoice> cancel(@PathVariable(\"id\") long id,\n                                                            Authentication authentication) {\n        long customerId = Long.parseLong(authentication.getName());\n        return ApiResponse.ok(cancellationService.cancel(id, customerId));\n    }\n}\n```\n\n**`BillingExceptionHandler.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.ResponseStatus;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    @ResponseStatus(HttpStatus.NOT_FOUND)\n    public ApiResponse<Void> handleNotFound(InvoiceNotFoundException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage());\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    @ResponseStatus(HttpStatus.CONFLICT)\n    public ApiResponse<Void> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage());\n    }\n}\n```\n\nConventions applied: the ownership and unpaid rules live in the service, which uses explicit constructor injection and returns a record. The controller has no try/catch, wraps its result in `ApiResponse.ok`, and the `@RestControllerAdvice` maps the domain exceptions to `ApiResponse.error`.\n\nDesign choices and assumptions:\n- **Another customer's invoice returns 404.** I return the same \"not found\" for a missing invoice and for one owned by someone else, so callers can't probe which invoice ids exist. A paid or already-cancelled invoice returns 409.\n- **Assumed `InvoiceStatus` enum.** I assumed it has an `UNPAID` value. If `status()` returns something else, adjust the comparison in the service.\n- **Assumed `ApiResponse.error` signature.** I assumed `ApiResponse.error(String code, String message)` and `ApiResponse<Void>` as the return type. Adjust if yours differs.\n- **Assumed customer id source.** The controller reads the customer id from `Authentication.getName()` as a numeric string. Swap in your real principal lookup.\n- **No explicit save.** `markCancelled()` is persisted by JPA dirty checking inside `@Transactional`. If `Invoice` isn't a managed entity, you'd need a `save` call, which isn't in the repository interface you described."
-              },
-              {
-                "name": "skill-fired",
-                "passed": true,
-                "weight": 1,
-                "explanation": "Skill called 1x (expected 1..∞)",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "throws-domain-exception",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched throw\\s+new\\s+[A-Z]\\w*Exception\\(",
-                "withOnly": false,
-                "scored": true
-              }
-            ]
-          },
-          {
-            "score": 1,
-            "passed": true,
-            "turns": 3,
-            "costUsd": 0.069914,
-            "judgeCostUsd": 0.004346999999999997,
-            "durationSeconds": 18,
-            "startedAt": "2026-10-01T20:06:55.739Z",
-            "error": null,
-            "tracePath": "/tmp/claude-eval-0VtuOt/out/trace.jsonl",
-            "skippedPaidGraders": false,
-            "graders": [
-              {
-                "name": "advice-handler",
-                "passed": true,
-                "weight": 1,
-                "explanation": "matched @RestControllerAdvice",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "no-map-result",
-                "passed": true,
-                "weight": 1,
-                "explanation": "pattern absent as expected",
-                "withOnly": false,
-                "scored": true
-              },
-              {
-                "name": "reviewer-judgment",
-                "passed": true,
-                "weight": 1,
-                "explanation": "judge votes: PASS PASS PASS",
-                "withOnly": false,
-                "scored": true,
-                "judgeVotes": [
-                  true,
-                  true,
-                  true
-                ],
-                "evidence": "Two assumptions to check, since neither was given:\n- `Invoice.status()` returns an enum `InvoiceStatus` with an `UNPAID` constant.\n- `ApiResponse.error(String code, String message)` exists next to `ApiResponse.ok(...)`.\n\n```java\n// InvoiceNotFoundException.java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    private final long invoiceId;\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n        this.invoiceId = invoiceId;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n}\n```\n\n```java\n// InvoiceNotCancellableException.java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    private final long invoiceId;\n    private final InvoiceStatus status;\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while \" + status);\n        this.invoiceId = invoiceId;\n        this.status = status;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n\n    public InvoiceStatus status() {\n        return status;\n    }\n}\n```\n\n```java\n// InvoiceDtos.java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long invoiceId, String status) {\n    }\n}\n```\n\n```java\n// InvoiceService.java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    /**\n     * Cancels an invoice on behalf of a customer. The customer must own the invoice\n     * and it must still be unpaid.\n     *\n     * An invoice owned by someone else is reported as not found, so callers cannot\n     * probe which invoice ids exist.\n     */\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, String.valueOf(invoice.status()));\n    }\n}\n```\n\n```java\n// BillingExceptionHandler.java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\nConventions applied:\n- The ownership and unpaid checks are in the service, which uses constructor injection and no Lombok. Failures are domain exceptions, mapped to `ApiResponse.error(...)` by a `@RestControllerAdvice`, and the service returns a record from an `InvoiceDtos` holder.\n- A non-owner gets 404, the same as a missing invoice, so ids can't be probed. A paid or already-cancelled invoice gets 409.\n\nNotes:\n- I didn't write a controller, because you only asked for the service and error path. When you add one, make it a thin `@RestController` that calls `cancel(invoiceId, customerId)` and returns `ApiResponse.ok(...)`.\n- `markCancelled()` is persisted through `@Transactional` dirty checking. If `InvoiceRepository` isn't a JPA-managed entity repository, add an explicit `save`."
+                "evidence": "Here is the complete source, in four files in `com.acme.billing`.\n\n**`InvoiceNotFoundException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotFoundException extends RuntimeException {\n\n    private final long invoiceId;\n\n    public InvoiceNotFoundException(long invoiceId) {\n        super(\"Invoice \" + invoiceId + \" not found\");\n        this.invoiceId = invoiceId;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n}\n```\n\n**`InvoiceNotCancellableException.java`**\n```java\npackage com.acme.billing;\n\npublic class InvoiceNotCancellableException extends RuntimeException {\n\n    private final long invoiceId;\n    private final InvoiceStatus status;\n\n    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {\n        super(\"Invoice \" + invoiceId + \" cannot be cancelled while \" + status);\n        this.invoiceId = invoiceId;\n        this.status = status;\n    }\n\n    public long invoiceId() {\n        return invoiceId;\n    }\n\n    public InvoiceStatus status() {\n        return status;\n    }\n}\n```\n\n**`InvoiceDtos.java`**\n```java\npackage com.acme.billing;\n\npublic final class InvoiceDtos {\n\n    private InvoiceDtos() {\n    }\n\n    public record CancelledInvoice(long invoiceId, String status) {\n    }\n}\n```\n\n**`InvoiceCancellationService.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class InvoiceCancellationService {\n\n    private final InvoiceRepository invoiceRepository;\n\n    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {\n        this.invoiceRepository = invoiceRepository;\n    }\n\n    @Transactional\n    public InvoiceDtos.CancelledInvoice cancel(long invoiceId, long customerId) {\n        Invoice invoice = invoiceRepository.findById(invoiceId)\n                .filter(found -> found.customerId() == customerId)\n                // Someone else's invoice looks exactly like a missing one,\n                // so invoice ids cannot be probed.\n                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));\n\n        if (invoice.status() != InvoiceStatus.UNPAID) {\n            throw new InvoiceNotCancellableException(invoiceId, invoice.status());\n        }\n\n        invoice.markCancelled();\n        return new InvoiceDtos.CancelledInvoice(invoiceId, invoice.status().name());\n    }\n}\n```\n\n**`BillingExceptionHandler.java`**\n```java\npackage com.acme.billing;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class BillingExceptionHandler {\n\n    @ExceptionHandler(InvoiceNotFoundException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotFound(InvoiceNotFoundException ex) {\n        return ResponseEntity.status(HttpStatus.NOT_FOUND)\n                .body(ApiResponse.error(\"INVOICE_NOT_FOUND\", ex.getMessage()));\n    }\n\n    @ExceptionHandler(InvoiceNotCancellableException.class)\n    public ResponseEntity<ApiResponse<Void>> handleNotCancellable(InvoiceNotCancellableException ex) {\n        return ResponseEntity.status(HttpStatus.CONFLICT)\n                .body(ApiResponse.error(\"INVOICE_NOT_CANCELLABLE\", ex.getMessage()));\n    }\n}\n```\n\nConventions applied: the service uses hand-written constructor injection with a `private final` field and no Lombok. It holds both the ownership check and the unpaid check. Errors are domain exceptions mapped by a `@RestControllerAdvice` to `ApiResponse.error(...)`, and the service returns a record from the `InvoiceDtos` holder.\n\nAssumptions to check against your code:\n- **`InvoiceStatus`:** `Invoice.status()` returns an enum `InvoiceStatus` with an `UNPAID` constant. Adjust the comparison if yours differs.\n- **`ApiResponse.error`:** it has the signature `error(String code, String message)` and returns `ApiResponse<Void>`.\n- **Persistence:** I call no `save`, because `markCancelled()` is assumed to mutate a managed JPA entity inside `@Transactional`. If `InvoiceRepository` isn't JPA-backed, add an explicit save after `markCancelled()`.\n- **Status codes:** another customer's invoice returns 404 rather than 403, so the API doesn't reveal that the invoice exists. A paid or already-cancelled invoice returns 409.\n- **Controller:** you didn't ask for one, so I didn't write it. When you add it, it should call `cancel(invoiceId, customerId)` and wrap the result in `ApiResponse.ok(...)`."
               },
               {
                 "name": "skill-fired",
@@ -1074,12 +1074,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.052959,
+            "costUsd": 0.053519,
             "judgeCostUsd": 0,
             "durationSeconds": 9,
-            "startedAt": "2026-10-01T20:07:14.014Z",
+            "startedAt": "2026-10-01T20:51:13.376Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-GPz8ci/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-V1Pdyg/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -1096,12 +1096,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.052985000000000004,
+            "costUsd": 0.053086,
             "judgeCostUsd": 0,
-            "durationSeconds": 9,
-            "startedAt": "2026-10-01T20:07:22.726Z",
+            "durationSeconds": 10,
+            "startedAt": "2026-10-01T20:51:22.218Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-7BxgT8/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-OcQbmB/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -1118,12 +1118,12 @@
             "score": 1,
             "passed": true,
             "turns": 3,
-            "costUsd": 0.0528136,
+            "costUsd": 0.05326,
             "judgeCostUsd": 0,
-            "durationSeconds": 8,
-            "startedAt": "2026-10-01T20:07:31.525Z",
+            "durationSeconds": 9,
+            "startedAt": "2026-10-01T20:51:32.689Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-MPZkvz/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-yAqg6h/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -1182,12 +1182,12 @@
             "score": 1,
             "passed": true,
             "turns": 1,
-            "costUsd": 0.0399238,
+            "costUsd": 0.0407478,
             "judgeCostUsd": 0,
             "durationSeconds": 4,
-            "startedAt": "2026-10-01T20:07:39.996Z",
+            "startedAt": "2026-10-01T20:51:41.555Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-yZiL81/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-L2g0wc/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -1212,12 +1212,12 @@
             "score": 1,
             "passed": true,
             "turns": 1,
-            "costUsd": 0.04104579999999999,
+            "costUsd": 0.0406778,
             "judgeCostUsd": 0,
             "durationSeconds": 4,
-            "startedAt": "2026-10-01T20:07:44.153Z",
+            "startedAt": "2026-10-01T20:51:45.959Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-aJ9R2S/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-5LNKvV/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
@@ -1241,13 +1241,13 @@
           {
             "score": 1,
             "passed": true,
-            "turns": 1,
-            "costUsd": 0.0402398,
+            "turns": 2,
+            "costUsd": 0.0478184,
             "judgeCostUsd": 0,
-            "durationSeconds": 4,
-            "startedAt": "2026-10-01T20:07:48.280Z",
+            "durationSeconds": 8,
+            "startedAt": "2026-10-01T20:51:50.337Z",
             "error": null,
-            "tracePath": "/tmp/claude-eval-gCnZnz/out/trace.jsonl",
+            "tracePath": "/tmp/claude-eval-2ZxBCK/out/trace.jsonl",
             "skippedPaidGraders": false,
             "graders": [
               {
