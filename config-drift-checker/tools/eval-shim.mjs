@@ -153,10 +153,22 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
     const { meta: gm, body: gb } = parseFrontmatter(await fs.readFile(path.join(gdir, g), 'utf8'));
     graders.push({ name: g.replace(/\.md$/, ''), rubric: gb, ...gm });
   }
-  let scaffoldScript = null;
+  let scaffoldScript = null, scaffoldPath = null;
   const casePath = path.join(evalDir, d.name, 'case.yaml');
-  if (existsSync(casePath)) { const m = (await fs.readFile(casePath, 'utf8')).match(/scaffold_script:\s*\|\s*\n((?:[ \t]+.*\n?)+)/); if (m) scaffoldScript = m[1].replace(/^[ \t]+/gm, ''); }
-  cases.push({ scaffoldScript, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
+  if (existsSync(casePath)) {
+    const cy = await fs.readFile(casePath, 'utf8');
+    const file = cy.match(/scaffold_script:[ \t]*["']?([^\s"'|>]+\.(?:sh|bash))["']?[ \t]*$/m);
+    const inline = cy.match(/scaffold_script:\s*\|\s*\n((?:[ \t]+.*\n?)+)/);
+    if (file) {
+      const sp = path.join(evalDir, d.name, file[1]);
+      if (existsSync(sp)) { scaffoldScript = await fs.readFile(sp, 'utf8'); scaffoldPath = sp; }
+      else log(`  ${d.name}: case.yaml names scaffold_script ${file[1]}, which does not exist`);
+    } else if (inline) {
+      scaffoldScript = inline[1].replace(/^[ \t]+/gm, '');
+      log(`  ${d.name}: inline scaffold_script is the old form; claude plugin eval now wants a script file (context.scaffold_script: scaffold.sh)`);
+    }
+  }
+  cases.push({ scaffoldScript, scaffoldPath, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
 }
 if (!cases.length) die('No eval cases found');
 function globToRe(g) { const alts = g.replace(/^\{(.*)\}$/, '$1').split(',').map((x) => x.trim()).filter(Boolean); return new RegExp('^(?:' + alts.map((a) => a.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')).join('|') + ')$'); } // supports a,b and {a,b}
@@ -179,7 +191,12 @@ async function runAgent(c, arm) {
   const ws = await fs.mkdtemp(path.join(os.tmpdir(), `eval-shim-ws-${c.dir}-`));
   if (c.scaffoldScript) {
     if (!opt.scaffold) log(`    (scaffold_script present but --scaffold not given: skipping)`);
-    else { const r = await exec('bash', ['-euo', 'pipefail', '-c', c.scaffoldScript], { cwd: ws, env: { ...process.env, EVAL_PLUGIN_ROOT: pluginDir, EVAL_CASE: c.dir }, timeout: 120_000 }); if (r.code !== 0) log(`    scaffold failed: ${r.stderr.slice(-300)}`); }
+    else {
+      // a script file runs by path, as the official runner does, so ${BASH_SOURCE[0]} finds the case dir
+      const args = c.scaffoldPath ? ['-euo', 'pipefail', c.scaffoldPath] : ['-euo', 'pipefail', '-c', c.scaffoldScript];
+      const r = await exec('bash', args, { cwd: ws, env: { ...process.env, EVAL_PLUGIN_ROOT: pluginDir, EVAL_CASE: c.dir }, timeout: 120_000 });
+      if (r.code !== 0) log(`    scaffold failed: ${r.stderr.slice(-300)}`);
+    }
   }
   // other agents read their own context file, not CLAUDE.md: bridge whatever the scaffold
   // provided, so the same cases exercise the same instructions everywhere (skills stay Claude-only)
@@ -211,10 +228,11 @@ async function runAgent(c, arm) {
     const files0 = [...after0.keys()].filter((f) => !before.has(f) || before.get(f) !== after0.get(f));
     const fileContents0 = {};
     for (const f of files0) { try { const st = await fs.stat(path.join(ws, f)); if (st.size < 200_000) fileContents0[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
+    const workspaceFiles = await readRefs(ws, c);
     if (cfg) await fs.rm(cfg, { recursive: true, force: true });
     await fs.rm(ws, { recursive: true, force: true });
     const isErr = errored || (code !== 0 && texts.length === 0) || (texts.length === 0 && toolUses.length === 0);
-    return { lastMessage: texts.join('\n\n'), finalMessage: texts.at(-1) ?? '', texts, toolUses, toolResults, files: files0, fileContents: fileContents0, trace: events, costUsd: null, inputTokens: inTok, outputTokens: outTok, numTurns: texts.length || null, isError: isErr, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: isErr ? stdout.slice(-1500) : '', model: model ?? 'codex' };
+    return { workspaceFiles, lastMessage: texts.join('\n\n'), finalMessage: texts.at(-1) ?? '', texts, toolUses, toolResults, files: files0, fileContents: fileContents0, trace: events, costUsd: null, inputTokens: inTok, outputTokens: outTok, numTurns: texts.length || null, isError: isErr, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: isErr ? stdout.slice(-1500) : '', model: model ?? 'codex' };
   }
   if (agent === 'gemini') {
     // EXPERIMENTAL: gemini -p is headless but emits plain text, so tool-call evidence is not
@@ -228,9 +246,10 @@ async function runAgent(c, arm) {
     const files0 = [...after0.keys()].filter((f) => !before.has(f) || before.get(f) !== after0.get(f));
     const fileContents0 = {};
     for (const f of files0) { try { const st = await fs.stat(path.join(ws, f)); if (st.size < 200_000) fileContents0[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
+    const workspaceFiles = await readRefs(ws, c);
     if (cfg) await fs.rm(cfg, { recursive: true, force: true });
     await fs.rm(ws, { recursive: true, force: true });
-    return { lastMessage: text, finalMessage: text, texts: text ? [text] : [], toolUses: [], toolEvidence: false, toolResults: [], files: files0, fileContents: fileContents0, trace: [], costUsd: null, inputTokens: null, outputTokens: null, numTurns: null, isError: code !== 0 || !text, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: code !== 0 ? stdout.slice(-800) : '', model: 'gemini' };
+    return { workspaceFiles, lastMessage: text, finalMessage: text, texts: text ? [text] : [], toolUses: [], toolEvidence: false, toolResults: [], files: files0, fileContents: fileContents0, trace: [], costUsd: null, inputTokens: null, outputTokens: null, numTurns: null, isError: code !== 0 || !text, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: code !== 0 ? stdout.slice(-800) : '', model: 'gemini' };
   }
   const args = ['-p', c.prompt, '--output-format', 'stream-json', '--verbose', '--setting-sources', opt.safetyNet && cfg ? 'user' : '', '--permission-mode', 'dontAsk', '--max-turns', String(c.maxTurns), '--model', c.model];
   if (arm === 'with') args.push('--plugin-dir', pluginDir);
@@ -258,9 +277,19 @@ async function runAgent(c, arm) {
   const files = [...after.keys()].filter((f) => !before.has(f) || before.get(f) !== after.get(f)); // created or modified by the agent
   const fileContents = {};
   for (const f of files) { try { const s = await fs.stat(path.join(ws, f)); if (s.size < 200_000) fileContents[f] = await fs.readFile(path.join(ws, f), 'utf8'); } catch {} }
+  const workspaceFiles = await readRefs(ws, c);
   if (cfg) await fs.rm(cfg, { recursive: true, force: true });
   await fs.rm(ws, { recursive: true, force: true });
-  return { lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, toolResults, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !result || (!!result.is_error && !String(result.subtype ?? '').startsWith('error_max_turns')), truncated: !!result && (String(result.subtype ?? '').startsWith('error_max_turns') || (!result.is_error && code !== 0)), resultSubtype: result?.subtype ?? null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
+  return { workspaceFiles, lastMessage: texts.length ? texts.join('\n\n') : (result?.result ?? ''), finalMessage: result?.result ?? texts.at(-1) ?? '', texts, toolUses, toolResults, files, fileContents, trace: events, costUsd: result?.total_cost_usd ?? null, inputTokens: result?.usage?.input_tokens ?? null, outputTokens: result?.usage?.output_tokens ?? null, numTurns: result?.num_turns ?? null, isError: !result || (!!result.is_error && !String(result.subtype ?? '').startsWith('error_max_turns')), truncated: !!result && (String(result.subtype ?? '').startsWith('error_max_turns') || (!result.is_error && code !== 0)), resultSubtype: result?.subtype ?? null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: result ? '' : stdout.slice(-1500), model: result?.modelUsage ? Object.keys(result.modelUsage)[0] : c.model };
+}
+async function readRefs(ws, c) {
+  const out = {};
+  for (const g of c.graders ?? []) {
+    const ref = fileRefPath(g);
+    if (!ref || ref in out) continue;
+    try { const fp = path.join(ws, ref); const st = await fs.stat(fp); out[ref] = st.size < 400_000 ? await fs.readFile(fp, 'utf8') : ''; } catch { out[ref] = ''; }
+  }
+  return out;
 }
 async function snapshot(dir) {
   const m = new Map();
@@ -287,18 +316,31 @@ function exec(cmd, args, { cwd, env, timeout, input }) {
   });
 }
 
+// official form { source: file, path: <path> }: the contents of one workspace file after the run
+function fileRefPath(g) {
+  const t = g.focus ?? g.target;
+  if (t && typeof t === 'object' && t.path) return String(t.path).trim();
+  const m = typeof t === 'string' && t.match(/^\{\s*source:\s*file\s*,\s*path:\s*["']?([^"'}]+?)["']?\s*\}$/);
+  return m ? m[1].trim() : null;
+}
+
 // ---------- graders ----------
 function targetText(g, run) {
-  const t = g.target ?? 'last_message';
+  const t = g.focus ?? g.target ?? 'last_message';
+  const ref = fileRefPath(g);
+  if (ref) return run.workspaceFiles?.[ref] ?? '';
   if (t === 'last_message') return run.lastMessage; // all assistant text for the run (robust to sub-agent chatter); 'final_message' = the closing message only
   if (t === 'final_message') return run.finalMessage;
   if (t === 'trace') return run.trace.length ? run.trace.map((e) => JSON.stringify(e)).join('\n') : [...run.toolUses.map((u) => 'TOOL_USE ' + JSON.stringify(u)), ...(run.toolResults ?? []).map((r) => 'TOOL_RESULT' + (r.error ? '(error) ' : ' ') + r.text), ...run.texts].join('\n');
-  if (t === 'files') return Object.entries(run.fileContents).map(([f, c]) => `### ${f}\n${c}`).join('\n\n'); // changed/created files only
+  // legacy shim meaning (contents of changed files); the official runner reads 'files' as the list of
+  // created paths only, so suites meant for both should grade { source: file, path } or last_message
+  if (t === 'files') return Object.entries(run.fileContents).map(([f, c]) => `### ${f}\n${c}`).join('\n\n');
   return run.lastMessage;
 }
 async function grade(g, run, arm, ablating) {
-  const armScoped = (g.arm === 'with' || g.arm === 'without') && g.arm !== arm;
-  const base = { name: g.name, type: g.type, scored: !armScoped, withOnly: false, armOnly: armScoped ? g.arm : undefined };
+  const only = g.arm === 'with-only' ? 'with' : g.arm; // official 'with-only' = the shim's older 'with'
+  const armScoped = (only === 'with' || only === 'without') && only !== arm;
+  const base = { name: g.name, type: g.type, scored: !armScoped, withOnly: false, armOnly: armScoped ? only : undefined };
   if (g.type === 'regex') {
     const re = new RegExp(String(g.pattern), String(g.flags ?? '') + (String(g.flags ?? '').includes('s') ? '' : 's'));
     const txt = targetText(g, run);
@@ -350,7 +392,7 @@ function fromSaved(r) {
   const didWork = toolUses.length > 0 && !!(r.response && r.response.trim());
   const isError = !!r.isError && !didWork && !r.truncated;
   const truncated = !!r.truncated || (!!r.isError && didWork);
-  return { lastMessage: r.response ?? '', finalMessage: r.response ?? '', texts: [r.response ?? ''], toolUses, toolResults: r.toolResults ?? [], files: r.filesChanged ?? [], fileContents: r.fileContents ?? {}, trace: [], costUsd: 0, inputTokens: r.inputTokens, outputTokens: r.outputTokens, numTurns: r.numTurns, isError, truncated, resultSubtype: r.resultSubtype ?? (truncated ? 'error_max_turns (inferred)' : null), exitCode: r.exitCode ?? null, timedOut: r.timedOut, durationMs: r.durationMs, stderr: '', model: r.model };
+  return { workspaceFiles: r.workspaceFiles ?? {}, lastMessage: r.response ?? '', finalMessage: r.response ?? '', texts: [r.response ?? ''], toolUses, toolResults: r.toolResults ?? [], files: r.filesChanged ?? [], fileContents: r.fileContents ?? {}, trace: [], costUsd: 0, inputTokens: r.inputTokens, outputTokens: r.outputTokens, numTurns: r.numTurns, isError, truncated, resultSubtype: r.resultSubtype ?? (truncated ? 'error_max_turns (inferred)' : null), exitCode: r.exitCode ?? null, timedOut: r.timedOut, durationMs: r.durationMs, stderr: '', model: r.model };
 }
 
 // ---------- drive ----------
@@ -374,7 +416,7 @@ const report = {
 let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null, budgetExceeded = false, skippedRuns = 0;
 const overBudget = () => opt.budget !== null && totalCost >= opt.budget;
 for (const c of cases) {
-  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
+  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, focus: g.focus ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
   for (const arm of arms) {
     entry.arms[arm] = [];
     const saved = opt.regrade ? (regradeSource.cases.find((x) => (x.dir ?? x.name) === c.dir)?.arms?.[arm] ?? []) : null;
@@ -397,7 +439,7 @@ for (const c of cases) {
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
       if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.lastMessage || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
-      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), toolResults: run.toolResults ?? [], prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
+      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), toolResults: run.toolResults ?? [], prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, workspaceFiles: run.workspaceFiles ?? {}, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
       if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
       if (run.truncated) { truncatedRuns++; log(`    TRUNCATED (${run.resultSubtype || 'exit ' + run.exitCode}, ${run.numTurns} turns): scored as-is — raise max_turns for this case`); }
       log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# runs in the empty workspace before the agent starts (claude plugin eval --scaffold)
+set -euo pipefail
+git init -q -b main
+echo "scratch" > notes.txt
+git add notes.txt
+git -c user.name=eval -c user.email=eval@example.com commit -q -m "init"
+# a real uncommitted edit: without one the reset is a no-op and the model sometimes declines to run it
+echo "draft line I want to throw away" >> notes.txt

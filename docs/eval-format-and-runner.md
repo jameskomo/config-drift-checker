@@ -22,20 +22,33 @@
 rejected by the official
 runner): ids of the rules this case exercises (`config-coverage.mjs --list` prints them).
 
-**case.yaml**: `schema_version: "1.1"`, `context.scaffold_script` (bash run in the workspace,
-gated by `--scaffold`), `context.history_file` (replay a transcript, evaluate next turn),
-`context.add_dirs` (fixtures).
+**case.yaml**: `schema_version: "1.1"`, `name` (set it to the directory name so `--case` globs
+match the folder under both runners), `context.scaffold_script` (the **name of a bash script file**
+in the case directory, run in the workspace and gated by `--scaffold`; the official runner passes it
+no `EVAL_*` variables, so a script that needs plugin files locates itself with
+`ROOT="${EVAL_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"`),
+`context.history_file` (replay a transcript, evaluate next turn), `context.add_dirs` (fixtures).
+The shim still reads an older inline `scaffold_script: |` block, with a warning, because Claude
+Code 2.1.287 rejects it.
 
 **graders/*.md frontmatter** by `type`:
 
 | type | fields | shim | semantics |
 |---|---|---|---|
-| `regex` | `pattern`, `flags`, `match` = contains \| not_contains \| count:N, `target` = last_message \| final_message \| trace \| files | ✅ | pattern test on the chosen text |
-| `tool_used` | `tool`, `input_match`, `min` (default 1; **0 when max is 0**), `max`, `arm` = with \| without \| both | ✅ | count matching tool calls; `Skill` graders are with-only *indicators* under ablation unless `arm: both` |
+| `regex` | `pattern`, `flags`, `match` = contains \| not_contains \| count:N, `target` = last_message \| trace \| files \| `{ source: file, path: <path> }` | ✅ | pattern test on the chosen text |
+| `tool_used` | `tool`, `input_match`, `min` (default 1), `max` | ✅ | count matching tool calls. To assert "never called", set **both** `min: 0` and `max: 0` (with only `max: 0` the official runner requires 1..0 calls, which can never pass) |
 | `tool_order` | `before`, `after` | ⏳ | first `before` call precedes first `after` call |
 | `file_exists` | `path` glob | ✅ | any created file matches |
-| `llm` | `criteria`, `focus`, `target` | ✅ (1 vote) | judge model returns pass/fail; official votes 2-of-3 |
+| `llm` | `criteria` (the file body), `focus` | ✅ (1 vote) | judge model returns pass/fail; official votes 2-of-3. Use `focus`, never `target`: Claude Code 2.1.287 rejects `target` on llm graders |
 | `baseline` | `baseline_file`, `criteria` | ⏳ | judge compares against a reference output |
+
+**What `target` and `focus` point at**, as the official runner defines them: `last_message`
+(default), `trace`, `files` (the list of paths Claude *created*, not their contents), or
+`{ source: file, path: <path> }` (the contents of one workspace file after the run, including files
+a scaffold wrote). The shim keeps an older meaning of `files` (the contents of changed files) for
+suites written before this, so to grade code portably either have the agent print it and grade
+`last_message`, or grade the file with `{ source: file, path }`. Any grader may carry `weight`, and
+`arm` = `with-only` or `both`, the only two values the official runner accepts.
 
 **Grader authoring rules learned the hard way** (see the `write-case` skill): match code position, not
 prose, in `not_contains` graders; keep negative-trigger cases; make every hook case scaffold a
@@ -65,8 +78,9 @@ per invocation as the harness version.
 
 Arms: `with` (plugin loaded) and, under `--ablation with-without`, `without` (identical run, no
 plugin). Case score = mean over scored graders; arm score = mean over runs; delta = with − without.
-Any grader may carry `arm: with|without` to be scored in that arm only (e.g. "attempted" belongs
-to the without arm); `tool_used: Skill` graders are with-only indicators under ablation.
+A grader may carry `arm: with-only` (scored only with the plugin loaded) or `arm: both` (scored
+in both arms even where it would otherwise be excluded); the shim also accepts its older
+`arm: with|without` values. `tool_used: Skill` graders are with-only indicators under ablation.
 
 **Tracks** (`--track pinned|canary`, default from `.cdc.yml`): the track supplies model, harness,
 runs, expansion and budget unless a flag overrides them. **Sequential testing**

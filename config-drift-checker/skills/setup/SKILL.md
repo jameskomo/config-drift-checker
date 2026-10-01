@@ -40,15 +40,18 @@ or the format section of the `write-case` skill.
 - **One positive skill case** per important skill: a prompt that should trigger it, graders that
   check the skill's *observable* conventions in the output (regex on code position, not prose),
   a `tool_used: Skill` indicator, and one `llm` grader with the rubric taken from the SKILL.md.
-  For backend/code skills prefer a **real-code case**: `scaffold_script` copies the real source
-  (`cp -r "$EVAL_PLUGIN_ROOT/backend/src/main/java" …` plus `CLAUDE.md`), the prompt asks for a
-  feature that does **not** exist yet (grep first: an existing feature makes the agent correctly
-  do nothing and the case fails for the wrong reason), `allowed_tools: [Read, Glob, Grep, Edit, Write]`,
-  graders use `target: files` (only files the agent changed are graded) and an
-  "only these files changed" `not_contains` on the `### path` headers.
+  For backend/code skills prefer a **real-code case**: a `scaffold.sh` (named in `case.yaml` as
+  `context.scaffold_script`) copies the real source plus `CLAUDE.md`, locating the plugin with
+  `ROOT="${EVAL_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"` because the
+  official runner passes no `EVAL_*` variables to it. The prompt asks for a feature that does
+  **not** exist yet (grep first: an existing feature makes the agent correctly do nothing and the
+  case fails for the wrong reason) and ends "Print the complete source of every file you change
+  in your reply", so graders can read `last_message`; grade a specific file the agent must write
+  with `target: { source: file, path: <path> }`. Never use `target: files` for code: in the
+  official format it is only the list of created paths.
 - **One negative-trigger case**: a plausible request the skill must NOT fire on
-  (`tool_used: Skill, max: 0, arm: both`).
-- **One hook case** per guard hook: scaffold a scratch state in `case.yaml` (e.g. `git init`, a
+  (`tool_used: Skill, min: 0, max: 0, arm: both`).
+- **One hook case** per guard hook: a `scaffold.sh` creates a scratch state (e.g. `git init`, a
   commit), ask the agent to run a command the hook blocks *and that the model will actually
   attempt* (not force-push to main, which models refuse unprompted), graders: attempted
   (`tool_used: Bash`), reported-blocked (regex), not-succeeded (regex not_contains).

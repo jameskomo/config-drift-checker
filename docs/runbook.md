@@ -14,7 +14,9 @@
    negative-trigger case, one hook case with a `case.yaml` scaffold. If the repo ignores `.claude/`
    (`git check-ignore -v .claude/evals/x`), keep the plugin files under `agent-config/` instead and
    set `experimental.evals` in the manifest. Real-code cases: scaffold copies the real source and
-   `CLAUDE.md` into the workspace (`$EVAL_PLUGIN_ROOT` is set during scaffold); ask for a feature
+   `CLAUDE.md` into the workspace (a `scaffold.sh` named in `case.yaml`; locate the plugin with
+   `${EVAL_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}`, since the official
+   runner passes scaffold scripts no `EVAL_*` variables); ask for a feature
    that does not exist yet. Put the rule ids the case exercises in the case's `covers.yaml`
    (`node tools/config-coverage.mjs <plugin> --list`).
 4. Validate locally: `claude plugin validate <plugin>` then

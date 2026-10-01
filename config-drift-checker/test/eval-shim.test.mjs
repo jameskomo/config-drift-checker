@@ -243,3 +243,50 @@ test('every SKILL.md this repo ships has strictly quoted frontmatter values', as
     }
   }
 });
+
+test('official case format: case.yaml names a scaffold script file; inline still runs with a migration warning', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  const c = path.join(plugin, 'evals/case-a');
+  await fs.writeFile(path.join(c, 'scaffold.sh'), '#!/usr/bin/env bash\necho fixture > made-by-scaffold.txt\n');
+  await fs.writeFile(path.join(c, 'case.yaml'), 'schema_version: "1.1"\nname: case-a\ncontext:\n  scaffold_script: scaffold.sh\n');
+  const { report, stderr } = await runShim(plugin, ['--scaffold']);
+  assert.match(report.cases[0].scaffold, /made-by-scaffold/, 'the script file was read');
+  assert.doesNotMatch(stderr ?? '', /old form/);
+  await fs.writeFile(path.join(c, 'case.yaml'), 'schema_version: "1.1"\nname: case-a\ncontext:\n  scaffold_script: |\n    echo legacy > x.txt\n');
+  const legacy = await runShim(plugin, ['--scaffold']);
+  assert.match(legacy.report.cases[0].scaffold, /echo legacy/);
+  assert.match(legacy.stderr ?? '', /inline scaffold_script is the old form/);
+});
+
+test('official grader vocabulary: llm focus, and { source: file, path } reads one file', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  const g = path.join(plugin, 'evals/case-a/graders');
+  await fs.writeFile(path.join(g, 'judge.md'), '---\ntype: llm\nfocus: last_message\n---\nSays DONE.\n');
+  await fs.writeFile(path.join(g, 'file-ref.md'), '---\ntype: regex\npattern: never-in-any-file\nmatch: not_contains\ntarget: { source: file, path: out.txt }\n---\nfile check.\n');
+  const { report } = await runShim(plugin, ['--runs', '1']);
+  const graders = report.cases[0].graders;
+  assert.equal(graders.find((x) => x.name === 'judge').focus, 'last_message', 'focus carried into the report');
+  const fr = report.cases[0].arms.with[0].graders.find((x) => x.name === 'file-ref');
+  assert.equal(fr.verdict, 'pass', 'missing file reads as empty, so not_contains passes');
+});
+
+test('{ source: file, path } reads a file the scaffold wrote (any workspace file, like the official runner)', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  const c = path.join(plugin, 'evals/case-a');
+  await fs.writeFile(path.join(c, 'scaffold.sh'), '#!/usr/bin/env bash\nset -euo pipefail\nROOT="${EVAL_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"\necho "plugin=$(basename "$ROOT")" > seeded.txt\n');
+  await fs.writeFile(path.join(c, 'case.yaml'), 'schema_version: "1.1"\nname: case-a\ncontext:\n  scaffold_script: scaffold.sh\n');
+  await fs.writeFile(path.join(c, 'graders/seeded.md'), '---\ntype: regex\npattern: plugin=\ntarget: { source: file, path: seeded.txt }\n---\nseeded.\n');
+  const { report } = await runShim(plugin, ['--scaffold']);
+  const g = report.cases[0].arms.with[0].graders.find((x) => x.name === 'seeded');
+  assert.equal(g.verdict, 'pass', 'scaffold-created file is visible to the file-ref grader');
+});
+
+test('arm: with-only (official) is scored in the with arm only, like the older arm: with', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  await fs.writeFile(path.join(plugin, 'evals/case-a/graders/only-with.md'), '---\ntype: regex\npattern: DONE\narm: with-only\n---\nwith only.\n');
+  const { report } = await runShim(plugin, ['--ablation', 'with-without']);
+  const w = report.cases[0].arms.with[0].graders.find((x) => x.name === 'only-with');
+  const wo = report.cases[0].arms.without[0].graders.find((x) => x.name === 'only-with');
+  assert.equal(w.scored, true);
+  assert.equal(wo.scored, false, 'not scored in the without arm');
+});

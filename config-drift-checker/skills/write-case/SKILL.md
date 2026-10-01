@@ -17,14 +17,28 @@ the coverage %, which the Action reports and can enforce with `coverage-min`. `r
 prompt, written the way a real user would write it (do not mention the skill or hook by name).
 
 **graders/*.md** frontmatter `type`:
-- `regex`: `pattern`, `flags`, `match: contains|not_contains|count:N`, `target: last_message|trace|files`
-- `tool_used`: `tool`, `input_match`, `min`, `max`, `arm: with|without|both`
-- `file_exists`: `path` (glob)
-- `llm`: `criteria` (one paragraph; "score 1 only if all hold")
+- `regex`: `pattern`, `flags`, `match: contains|not_contains|count:N`, `target`
+- `tool_used`: `tool`, `input_match`, `min`, `max`
+- `file_exists`: `path` (glob), `exists`
+- `llm`: `focus` (never `target`: the official runner rejects it on llm graders); the file body is
+  the criteria (one paragraph; "score 1 only if all hold")
+- any grader: `weight`, and `arm: with-only` or `arm: both` (the only two values the official
+  runner accepts)
+
+What `target` (regex) and `focus` (llm) can point at, exactly as `claude plugin eval` defines it:
+`last_message` (default), `trace`, `files` (the list of paths Claude *created*, not their
+contents), or `{ source: file, path: <path> }` (the contents of one workspace file after the run).
+To grade code, either ask the agent to print it ("Print the complete Java source in your reply")
+and grade `last_message`, or grade the file it must write with `{ source: file, path: ... }`.
 Body = one sentence a reviewer would understand.
 
-**case.yaml** (`schema_version: "1.1"`): `context.scaffold_script` (bash; give the agent a state
-to act on: a git repo, a file, a branch), `context.add_dirs` (fixtures).
+**case.yaml** (`schema_version: "1.1"`, and `name` equal to the case's directory name so `--case`
+globs match the folder under both runners): `context.scaffold_script` names a **script file** in the
+case directory (`scaffold.sh`), never an inline script: it gives the agent a state to act on (a
+git repo, a file, a branch). The official runner runs it with no `EVAL_*` variables, so a script
+that needs the plugin's files locates itself:
+`ROOT="${EVAL_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"`.
+`context.add_dirs` lists read-only fixture directories.
 
 ## Rules that came from real failures
 1. `not_contains` graders must match **code position** (`^\s*@Autowired`, flag `m`), never a
