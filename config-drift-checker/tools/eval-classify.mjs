@@ -35,7 +35,13 @@ export function normalizeResult(j) {
       arms: Object.fromEntries(Object.entries(c.arms ?? {}).map(([a, rs]) => [a, (rs ?? []).map(run)])),
       summary: { score: c.aggregates?.score ?? null },
     })),
-    aggregates: { overallScore: j.aggregates?.overallScore ?? null, totalRuns: j.cases.reduce((n, c) => n + Object.values(c.arms ?? {}).reduce((m, rs) => m + (rs?.length ?? 0), 0), 0), erroredRuns: j.cases.reduce((n, c) => n + Object.values(c.arms ?? {}).flat().filter((r) => r?.error).length, 0), costUsd: j.costUsd ?? null },
+    aggregates: (() => {
+      const all = j.cases.flatMap((c) => Object.values(c.arms ?? {}).flat()).filter(Boolean);
+      const errored = all.filter((r) => r.error);
+      const first = errored[0]?.error ? String(errored[0].error).replace(/\s+/g, ' ').slice(0, 220) : null;
+      return { overallScore: j.aggregates?.overallScore ?? null, totalRuns: all.length, erroredRuns: errored.length,
+        partialReason: errored.length ? `${errored.length} of ${all.length} agent runs errored: ${first}` : null, costUsd: j.costUsd ?? null };
+    })(),
   };
 }
 

@@ -133,6 +133,10 @@ runs:
         v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
         case "$v" in *[!A-Za-z0-9.-]*) echo "::error::claude-code-version '$v' is not a version"; exit 1;; esac
         npm install -g "@anthropic-ai/claude-code@$v" >/dev/null
+        # newer Claude Code refuses shell tools in plugin eval without an OS sandbox (bubblewrap on Linux)
+        if [ "$(uname -s)" = "Linux" ] && ! command -v bwrap >/dev/null 2>&1; then
+          sudo apt-get install -y -qq bubblewrap socat >/dev/null 2>&1 || echo "::notice::could not install bubblewrap; the official runner may fall back to the bundled one"
+        fi
         echo "version=$(claude --version | awk '{print $1}')" >> "$GITHUB_OUTPUT"
         echo "requested=$v" >> "$GITHUB_OUTPUT"
 
@@ -175,9 +179,14 @@ runs:
           # --trust-plugin: CI cannot answer the first-run trust prompt; the suite is this repo's own checkout
           claude plugin eval "$PLUGIN_DIR" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
             "${runs_args[@]}" "${scaffold_args[@]}" --allow-tools Bash Write Edit --no-publish --trust-plugin --json "$out/aggregate-result.json" || true
-          if [ ! -s "$out/aggregate-result.json" ]; then
-            # a CLI change in the official runner must never take the whole check down: fall back
-            echo "::warning::the official runner produced no result on Claude Code $CC_VERSION; falling back to the bundled runner for this run"
+          # a CLI change in the official runner must never take the whole check down: if its result
+          # is not a usable measurement (nothing written, every run refused, cases rejected), fall back
+          expect=$(PLUGIN_DIR="$PLUGIN_DIR" node -e 'const fs=require("fs"),p=require("path");let d="evals";try{d=JSON.parse(fs.readFileSync(p.join(process.env.PLUGIN_DIR,".claude-plugin/plugin.json"),"utf8")).experimental?.evals||d}catch{};const e=p.join(process.env.PLUGIN_DIR,d);console.log(fs.existsSync(e)?fs.readdirSync(e,{withFileTypes:true}).filter(x=>x.isDirectory()&&!["results","mocks"].includes(x.name)).length:0)')
+          health=$(node "$TOOLS/result-health.mjs" "$out/aggregate-result.json" --expect-cases "$expect")
+          if ! grep -q '^usable=true' <<< "$health"; then
+            reason=$(grep '^reason=' <<< "$health" | cut -d= -f2-)
+            echo "::warning::the official runner on Claude Code $CC_VERSION gave no usable result ($reason); falling back to the bundled runner for this run"
+            rm -f "$out/aggregate-result.json"
             RUNNER=shim
             node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
               --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
@@ -193,7 +202,8 @@ runs:
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
         # the stem the store step reuses for history/<stem>.json and docs/history/<stem>.html (PR-comment deep links)
         echo "stem=$(date -u +%Y%m%dT%H%M%SZ)-cc${CC_VERSION}-${RUNNER}-${TRACK}" >> "$GITHUB_OUTPUT"
-        errs=$(OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log((a.erroredRuns||0)+"/"+(a.totalRuns||0)+" "+(a.partialReason||""))')
+        h=$(node "$TOOLS/result-health.mjs" "$out/aggregate-result.json")
+        errs="$(grep '^errored=' <<< "$h" | cut -d= -f2)/$(grep '^total=' <<< "$h" | cut -d= -f2) $(grep '^reason=' <<< "$h" | cut -d= -f2-)"
         case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored — $errs. Nothing will be stored as a baseline. Common causes: no prepaid API credit on the key's account (console.anthropic.com → Billing), or a Claude Code startup failure — see the eval-report artifact's stderrTail."; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
         OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log(a.budget&&a.budget.exceeded ? "budget_hit=true" : "budget_hit=false")' >> "$GITHUB_OUTPUT"
 
