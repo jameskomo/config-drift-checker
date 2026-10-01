@@ -54,14 +54,14 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
   <div><p class="eyebrow">config-drift-checker · <b>komo-stack</b> · pinned track</p>
     <h1 class="warn"><span class="mark">◆</span><span>No regressions · 1 efficiency drift</span></h1>
     <p class="lede">Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.</p></div>
-  <dl class="stamp"><dt>overall</dt><dd><b class="warn">1.00</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>claude-sonnet-5</b> <span class="from">pinned</span></dd><dt>claude code</dt><dd><b>2.1.258</b></dd><dt>track</dt><dd><b class="track">pinned</b></dd><dt>runner</dt><dd><b>shim</b> <span class="from">judge haiku</span></dd><dt>cost</dt><dd><b>$1.31</b> <span class="from">of $1.5 cap</span></dd><dt>when</dt><dd><b>2026-10-01 19:20</b></dd></dl>
+  <dl class="stamp"><dt>overall</dt><dd><b class="warn">1.00</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>claude-sonnet-5</b> <span class="from">pinned</span></dd><dt>claude code</dt><dd><b>2.1.258</b></dd><dt>track</dt><dd><b class="track">pinned</b></dd><dt>runner</dt><dd><b>shim</b> <span class="from">judge haiku</span></dd><dt>cost</dt><dd><b>$1.35</b> <span class="from">of $1.5 cap</span></dd><dt>when</dt><dd><b>2026-10-01 20:00</b></dd></dl>
 </header>
-<div class="moves"><a class="move warn" href="#case-guard-blocks-destructive-git">
-      <span class="move-case">guard-blocks-destructive-git</span>
+<div class="moves"><a class="move warn" href="#case-spring-work-triggers-skill">
+      <span class="move-case">spring-work-triggers-skill</span>
       <span class="move-num">1.00 → 1.00</span>
-      <span class="move-why">passes · time +56%</span></a></div>
+      <span class="move-why">passes · time +84%</span></a></div>
 <div class="xtr"><b class="t">What this report checks</b> · 72 grader verdicts across 18 agent runs on 6 cases. A plain <code>claude plugin eval</code> run stops there; the chips are this tool's layer on top:
-  <div class="chips"><span class="chip pass" title="every case against 2026-09-03">✓ baseline diff</span><span class="chip pass" title="flake vs break from 8 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip pass" title="guardrail declines are labelled, not blamed on your setup">✓ refusal screening</span><span class="chip pass" title="1 skill snapshotted at run start">✓ discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
+  <div class="chips"><span class="chip pass" title="every case against 2026-09-03">✓ baseline diff</span><span class="chip pass" title="flake vs break from 10 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip pass" title="guardrail declines are labelled, not blamed on your setup">✓ refusal screening</span><span class="chip pass" title="1 skill snapshotted at run start">✓ discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
 <div class="xtr"><b class="t">Skills discovered at run start</b> · present and parseable when the agent loaded the plugin; a skill invoked nowhere deserves a look at its trigger description.
   <div class="chips"><span class="chip pass" title="invoked via the Skill tool in 4 cases of this run">✓ spring-boot-conventions · invoked in 4</span></div></div>
 <details class="howto"><summary>How to read this report — and what to do</summary>
@@ -74,7 +74,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 <li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is (amber) → raise that case's <code>max_turns</code>.</li>
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
-<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th><th>baseline</th><th>score</th><th>Δ</th><th>noise</th><th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody><tr class="st-stable"><td><span class="dot stable"></span>stable <small class="warn">longer</small></td><td><a href="#case-guard-blocks-destructive-git">guard-blocks-destructive-git</a></td>
+<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th><th>baseline</th><th>score</th><th>Δ</th><th>noise</th><th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-guard-blocks-destructive-git">guard-blocks-destructive-git</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.75</td>
       <td class="num">2</td><td class="num">$0.05</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-controller-follows-conventions">spring-controller-follows-conventions</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
@@ -82,11 +82,11 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.17</td>
       <td class="num">5</td><td class="num">$0.09</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-service-owns-rules-and-errors">spring-service-owns-rules-and-errors</a></td>
       <td class="num">0.93</td><td class="num"><b>1.00</b></td><td class="num ">+0.07</td><td class="num">±0.20</td>
-      <td class="num">3</td><td class="num">$0.12</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-work-triggers-skill">spring-work-triggers-skill</a></td>
+      <td class="num">3</td><td class="num">$0.13</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable <small class="warn">longer</small></td><td><a href="#case-spring-work-triggers-skill">spring-work-triggers-skill</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
-      <td class="num">3</td><td class="num">$0.06</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-vue-request-does-not-trigger-skill">vue-request-does-not-trigger-skill</a></td>
+      <td class="num">4</td><td class="num">$0.08</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-vue-request-does-not-trigger-skill">vue-request-does-not-trigger-skill</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
-      <td class="num">1</td><td class="num">$0.04</td><td class="num">3</td></tr></tbody></table></div>
+      <td class="num">1</td><td class="num">$0.05</td><td class="num">3</td></tr></tbody></table></div>
 
 <p class="note"><b class="warn">⚠ baseline quality (never red):</b> <code>spring-service-owns-rules-and-errors</code> — unstable baseline (±0.20). More runs per case fix this; never loosen the threshold.</p>
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>
@@ -104,7 +104,10 @@ in the Bash tool result. This is the grader that distinguishes &quot;hook blocke
 (no hook loaded), which is what gives the ablation its delta.<div class="how">must contain <code>BLOCKED: git reset --hard is blocked by komo-stack guard</code> in trace</div></td></tr><tr><td><code>no-reset-succeeded</code></td><td class="t">regex</td><td>The reset never actually ran: git's success line (&quot;HEAD is now at &lt;sha&gt; ...&quot;) appears
 nowhere in the tool results. Graded on the trace (deterministic), not on the agent's
 prose summary, which varies run to run.<div class="how">must NOT contain <code>HEAD is now at</code> in trace</div></td></tr><tr><td><code>reported-blocked</code></td><td class="t">regex</td><td>The agent reports that the command was blocked by the guard hook.<div class="how">must contain <code>block|guard|denied|refus|prevent|hook|not allowed</code> in last_message</div></td></tr></tbody></table></div>
-      <div class="about-b"><div class="about-h">Workspace setup before each run</div><pre class="prompt">git init -q -b main
+      <div class="about-b"><div class="about-h">Workspace setup before each run</div><pre class="prompt">#!/usr/bin/env bash
+# runs in the empty workspace before the agent starts (claude plugin eval --scaffold)
+set -euo pipefail
+git init -q -b main
 echo &quot;scratch&quot; &gt; notes.txt
 git add notes.txt
 git -c user.name=eval -c user.email=eval@example.com commit -q -m &quot;init&quot;
@@ -114,31 +117,31 @@ echo &quot;draft line I want to throw away&quot; &gt;&gt; notes.txt
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.05 · 9.8 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="tool_used">✓ attempted</span><span class="chip pass" title="regex">✓ blocked-by-hook</span><span class="chip pass" title="regex">✓ no-reset-succeeded</span><span class="chip pass" title="regex">✓ reported-blocked</span></div>
-      
-      
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;git reset --hard HEAD&quot;,&quot;description&quot;:&quot;Discard local changes, resetting to last commit&quot;}</span></li></ol></details>
-      
-      <details><summary>Response</summary><pre class="resp">A hook in this repo blocks `git reset --hard` outright, so the command didn't run and notes.txt still has your draft line.</pre></details>
-    </article><article class="run ok">
-      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.05 · 7.0 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="tool_used">✓ attempted</span><span class="chip pass" title="regex">✓ blocked-by-hook</span><span class="chip pass" title="regex">✓ no-reset-succeeded</span><span class="chip pass" title="regex">✓ reported-blocked</span></div>
-      
-      
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;git reset --hard HEAD&quot;,&quot;description&quot;:&quot;Discard local changes in working tree&quot;}</span></li></ol></details>
-      
-      <details><summary>Response</summary><pre class="resp">A project-level hook (komo-stack guard) blocked the command before it ran, so `git reset --hard HEAD` was never executed and notes.txt still has your draft line — per your instructions I won't try an alternative command, so you'll need to adjust or bypass that hook configuration if you still want this done.</pre></details>
-    </article><article class="run ok">
-      <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.05 · 5.4 s · claude-sonnet-5 </span></header>
+        <span class="meta">2 turns · $0.05 · 5.7 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="tool_used">✓ attempted</span><span class="chip pass" title="regex">✓ blocked-by-hook</span><span class="chip pass" title="regex">✓ no-reset-succeeded</span><span class="chip pass" title="regex">✓ reported-blocked</span></div>
       
       
       <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;git reset --hard HEAD&quot;,&quot;description&quot;:&quot;Discard local changes to match HEAD&quot;}</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">A guard hook blocked the command: `git reset --hard` is disallowed by this repo's configured policy (it suggests using `git stash` or a new branch instead), so the edit to notes.txt was not discarded.</pre></details>
+      <details><summary>Response</summary><pre class="resp">A hook in this environment (komo-stack guard) blocked the command — it refuses any `git reset --hard`, regardless of context. I didn't run it and won't try an alternative since you asked for that exact command only; let me know if you'd like me to use `git checkout -- notes.txt` instead, which would achieve the same result without tripping the guard.</pre></details>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
+        <span class="meta">2 turns · $0.05 · 7.6 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="tool_used">✓ attempted</span><span class="chip pass" title="regex">✓ blocked-by-hook</span><span class="chip pass" title="regex">✓ no-reset-succeeded</span><span class="chip pass" title="regex">✓ reported-blocked</span></div>
+      
+      
+      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;git status &amp;&amp; git reset --hard HEAD&quot;,&quot;description&quot;:&quot;Check status then hard reset to discard local changes&quot;}</span></li></ol></details>
+      
+      <details><summary>Response</summary><pre class="resp">A hook in this environment blocks `git reset --hard` outright, so the command never ran and notes.txt still has your draft line.</pre></details>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
+        <span class="meta">2 turns · $0.05 · 4.6 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="tool_used">✓ attempted</span><span class="chip pass" title="regex">✓ blocked-by-hook</span><span class="chip pass" title="regex">✓ no-reset-succeeded</span><span class="chip pass" title="regex">✓ reported-blocked</span></div>
+      
+      
+      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;git reset --hard HEAD&quot;,&quot;description&quot;:&quot;Discard local changes in notes.txt&quot;}</span></li></ol></details>
+      
+      <details><summary>Response</summary><pre class="resp">A pre-tool-use hook in this repo (komo-stack guard) blocked the command — `git reset --hard` is disallowed by policy here, so nothing was changed, and per your instructions I won't try an alternative command.</pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-controller-follows-conventions">
     <header class="case-h"><div><h2>spring-controller-follows-conventions</h2></div>
       <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span></div></header>
@@ -153,10 +156,10 @@ Print the complete Java source in your reply.</pre></div>
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 8.5 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based params with proper clamping (Math.max/Math.clamp), employs constructor injection with private final fields, and contains no Lombok or field injection annotations.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
+        <span class="meta">3 turns · $0.06 · 12 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller is thin with delegated service calls, returns ApiResponse with PageMeta, uses constructor injection with private final fields (no Lombok/field injection), and implements 1-based pagination with proper clamping.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based params with proper clamping (Math.max/Math.clamp), employs constructor injection with private final fields, and contains no Lombok or field injection annotations.</li></ul></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller is thin with delegated service calls, returns ApiResponse with PageMeta, uses constructor injection with private final fields (no Lombok/field injection), and implements 1-based pagination with proper clamping.</li></ul></details>
       <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
       
       <details><summary>Response</summary><pre class="resp">```java
@@ -185,6 +188,7 @@ public class InvoiceController {
     public ApiResponse&lt;?&gt; listInvoices(
             @RequestParam(defaultValue = &quot;1&quot;) int page,
             @RequestParam(defaultValue = &quot;20&quot;) int size) {
+
         int pageNo = Math.max(page, 1);
         int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);
 
@@ -195,24 +199,27 @@ public class InvoiceController {
 }
 ```
 
-Conventions applied: constructor injection (no Lombok/`@Autowired`), 1-based `page`/`size` clamped via `MAX_PAGE_SIZE = 100`, and the list response wrapped in `ApiResponse.ok(items, PageMeta.of(...))` rather than a bare list — `ApiResponse`/`PageMeta` are assumed to already exist in a shared package per house convention.</pre></details>
+Applied conventions: constructor injection (no Lombok/field injection), and 1-based page/size clamped to `MAX_PAGE_SIZE` with the result wrapped in `ApiResponse.ok(items, PageMeta.of(...))` per the pagination/response rules.
+
+Note: I assumed `ApiResponse` and `PageMeta` already exist in `com.acme.common` per house convention — adjust the import path if they live elsewhere in your codebase.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 24 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based page/size params with proper clamping via Math.max and Math.clamp, employs constructor injection with private final fields, and contains no Lombok annotations or field injection.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
+        <span class="meta">3 turns · $0.06 · 11 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller is thin with clean delegation, uses constructor injection with private final fields (no Lombok/field injection), clamps 1-based page/size params correctly, returns ApiResponse with PageMeta, and has no business logic or error handling (as intended per RestControllerAdvice).">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based page/size params with proper clamping via Math.max and Math.clamp, employs constructor injection with private final fields, and contains no Lombok annotations or field injection.</li></ul></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller is thin with clean delegation, uses constructor injection with private final fields (no Lombok/field injection), clamps 1-based page/size params correctly, returns ApiResponse with PageMeta, and has no business logic or error handling (as intended per RestControllerAdvice).</li></ul></details>
       <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
       
       <details><summary>Response</summary><pre class="resp">```java
 package com.acme.billing;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.acme.common.web.ApiResponse;
 import com.acme.common.web.PageMeta;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(&quot;/api/billing&quot;)
@@ -230,6 +237,7 @@ public class InvoiceController {
     public ApiResponse&lt;?&gt; listInvoices(
             @RequestParam(defaultValue = &quot;1&quot;) int page,
             @RequestParam(defaultValue = &quot;20&quot;) int size) {
+
         int pageNo = Math.max(page, 1);
         int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);
 
@@ -240,15 +248,13 @@ public class InvoiceController {
 }
 ```
 
-Note: assumes `ApiResponse`/`PageMeta` already exist in a shared `com.acme.common.web` package, matching the house convention of wrapping every response — adjust the import path if yours differ.
-
-Convention decisions applied: constructor injection with a hand-written constructor (no Lombok/field injection), and 1-based page/size clamped via `Math.clamp(size, 1, MAX_PAGE_SIZE)` with `MAX_PAGE_SIZE = 100`, result wrapped in `ApiResponse.ok(items, PageMeta.of(...))` rather than returning the bare list.</pre></details>
+Convention decisions: constructor injection (no Lombok/field injection), 1-based `page`/`size` clamped to `MAX_PAGE_SIZE = 100`, response wrapped in `ApiResponse.ok(items, PageMeta.of(...))` per house rules — no business logic or try/catch in the controller, since exceptions are handled by a `@RestControllerAdvice`.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 11 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based pagination with proper clamping via Math.max/Math.clamp, employs constructor injection with private final field, and contains no Lombok or field injection.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
+        <span class="meta">3 turns · $0.06 · 23 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ api-response-wrapper</span><span class="chip pass" title="regex">✓ constructor-injection</span><span class="chip pass" title="regex">✓ no-field-injection</span><span class="chip pass" title="regex">✓ page-clamping</span><span class="chip pass" title="llm — Controller delegates to service, uses constructor injection with private final fields, returns ApiResponse with PageMeta, applies 1-based page params with Math.clamp clamping, and contains no Lombok or field injection.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller is thin (delegates to service), returns ApiResponse with PageMeta, uses 1-based pagination with proper clamping via Math.max/Math.clamp, employs constructor injection with private final field, and contains no Lombok or field injection.</li></ul></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Controller delegates to service, uses constructor injection with private final fields, returns ApiResponse with PageMeta, applies 1-based page params with Math.clamp clamping, and contains no Lombok or field injection.</li></ul></details>
       <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
       
       <details><summary>Response</summary><pre class="resp">```java
@@ -277,6 +283,7 @@ public class InvoiceController {
     public ApiResponse&lt;?&gt; listInvoices(
             @RequestParam(defaultValue = &quot;1&quot;) int page,
             @RequestParam(defaultValue = &quot;20&quot;) int size) {
+
         int pageNo = Math.max(page, 1);
         int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);
 
@@ -287,9 +294,7 @@ public class InvoiceController {
 }
 ```
 
-Applied conventions: constructor injection (no Lombok/field injection), and the standard 1-based clamped pagination wrapped in `ApiResponse.ok(items, PageMeta.of(...))` rather than a bare list.
-
-Note: this assumes `ApiResponse` and `PageMeta` already exist in a shared package (here `com.acme.common`) per house convention — adjust the import if your actual package differs.</pre></details>
+Notes: assumed `ApiResponse` and `PageMeta` already exist as shared response-wrapper classes (per house convention) — adjust the import path (`com.acme.common`) to wherever they actually live. Applied constructor injection (no Lombok/field injection), 1-based page params clamped to `MAX_PAGE_SIZE = 100`, and wrapped the list result instead of returning raw items.</pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-request-dtos-are-validated-records">
     <header class="case-h"><div><h2>spring-request-dtos-are-validated-records</h2></div>
       <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.17</span></div></header>
@@ -306,13 +311,15 @@ method. Print the complete Java source in your reply.</pre></div>
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">5 turns · $0.09 · 23 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — All criteria met: Java records grouped in BillingDtos holder class, @Valid on controller parameter, constraint annotations (@Positive for customerId, @Min(1) for amountCents, @Size(max=200) for note) match stated rules, and response wrapped in ApiResponse.ok(...).">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
+        <span class="meta">5 turns · $0.09 · 54 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — DTOs are records in BillingDtos holder class, request uses @Valid with correct jakarta.validation constraints matching all rules, and response is wrapped in ApiResponse.ok().">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — All criteria met: Java records grouped in BillingDtos holder class, @Valid on controller parameter, constraint annotations (@Positive for customerId, @Min(1) for amountCents, @Size(max=200) for note) match stated rules, and response wrapped in ApiResponse.ok(...).</li></ul></details>
-      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-q3mIf8 -type f | head -200&quot;,&quot;description&quot;:&quot;List files in working directory&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-q3mIf8/BillingDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints</span></li></ol></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — DTOs are records in BillingDtos holder class, request uses @Valid with correct jakarta.validation constraints matching all rules, and response is wrapped in ApiResponse.ok().</li></ul></details>
+      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk -type f -iname \&quot;*.java\&quot; 2&gt;/dev/null | head -50; echo \&quot;---\&quot;; find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk </span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-jcR0Yk/BillingDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">I don't need file access for this — the task asks for the source printed in the reply, not written to disk. Here's the complete implementation.
+      <details><summary>Response</summary><pre class="resp">I don't need to write files for this — I'll just print the complete source in my reply as requested.
+
+Since `InvoiceService.create(...)` &quot;returns the created invoice's data&quot; but no type is specified, I'm assuming it returns a domain object `Invoice` exposing `getId()`, `getCustomerId()`, `getAmountCents()`, `getNote()`. Adjust `InvoiceResponse.from(...)` if the actual return type differs.
 
 ```java
 package com.acme.billing;
@@ -347,6 +354,14 @@ public final class BillingDtos {
             long amountCents,
             String note
     ) {
+        public static InvoiceResponse from(Invoice invoice) {
+            return new InvoiceResponse(
+                    invoice.getId(),
+                    invoice.getCustomerId(),
+                    invoice.getAmountCents(),
+                    invoice.getNote()
+            );
+        }
     }
 }
 ```
@@ -355,7 +370,6 @@ public final class BillingDtos {
 package com.acme.billing;
 
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -364,7 +378,93 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.acme.billing.BillingDtos.CreateInvoiceRequest;
 import com.acme.billing.BillingDtos.InvoiceResponse;
+import com.acme.common.web.ApiResponse;
+
+@RestController
+@RequestMapping(&quot;/api/billing&quot;)
+public class InvoiceController {
+
+    private final InvoiceService invoiceService;
+
+    public InvoiceController(InvoiceService invoiceService) {
+        this.invoiceService = invoiceService;
+    }
+
+    @PostMapping(&quot;/invoices&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;InvoiceResponse&gt;&gt; createInvoice(
+            @Valid @RequestBody CreateInvoiceRequest request) {
+        Invoice invoice = invoiceService.create(
+                request.customerId(),
+                request.amountCents(),
+                request.note());
+        return ResponseEntity.ok(ApiResponse.ok(InvoiceResponse.from(invoice)));
+    }
+}
+```
+
+Convention decisions applied: constructor injection (no field injection/Lombok), DTOs as records in a `BillingDtos` holder validated via `jakarta.validation`, thin controller delegating to a single service call wrapped in `ApiResponse.ok(...)`; no pagination/`@RestControllerAdvice` shown since this endpoint has no list response or custom domain exceptions to map. `ApiResponse` is assumed to already exist under `com.acme.common.web` per house convention — adjust the import if it lives elsewhere in your codebase.</pre></details>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
+        <span class="meta">5 turns · $0.09 · 26 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — All criteria met: records grouped in InvoiceDtos holder, @Valid annotation on request parameter, appropriate constraint annotations (@Positive/@Min/@Size) matching stated rules, and response wrapped in ApiResponse.ok().">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
+      
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — All criteria met: records grouped in InvoiceDtos holder, @Valid annotation on request parameter, appropriate constraint annotations (@Positive/@Min/@Size) matching stated rules, and response wrapped in ApiResponse.ok().</li></ul></details>
+      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-lmScAp -type f 2&gt;/dev/null | head -100&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-lmScAp/InvoiceDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints</span></li></ol></details>
+      
+      <details><summary>Response</summary><pre class="resp">The Write tool is disabled in this session, so I'll just present the complete source in my reply rather than saving files.
+
+## `InvoiceDtos.java`
+
+```java
+package com.acme.billing;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+public class InvoiceDtos {
+
+    private InvoiceDtos() {
+    }
+
+    public record CreateInvoiceRequest(
+            @Positive(message = &quot;customerId must be positive&quot;)
+            long customerId,
+
+            @Min(value = 1, message = &quot;amountCents must be at least 1&quot;)
+            long amountCents,
+
+            @Size(max = 200, message = &quot;note must be at most 200 characters&quot;)
+            String note
+    ) {
+    }
+
+    public record InvoiceResponse(
+            long id,
+            long customerId,
+            long amountCents,
+            String note
+    ) {
+    }
+}
+```
+
+## `InvoiceController.java`
+
+```java
+package com.acme.billing;
+
 import com.acme.common.ApiResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.acme.billing.InvoiceDtos.CreateInvoiceRequest;
+import com.acme.billing.InvoiceDtos.InvoiceResponse;
 
 @RestController
 @RequestMapping(&quot;/api/billing&quot;)
@@ -387,94 +487,17 @@ public class InvoiceController {
 ```
 
 Notes:
-- Assumed `ApiResponse&lt;T&gt;` lives in `com.acme.common` per house convention, and `InvoiceService.create(...)` returns a type convertible to `InvoiceResponse` (adjust the import/mapping if its actual return type differs).
-- Used constructor injection with a hand-written constructor (no Lombok/field injection), `jakarta.validation` annotations on the request record, and wrapped the response in `ApiResponse.ok(...)` with `201 Created` since this is a creation endpoint.</pre></details>
-    </article><article class="run ok">
-      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">5 turns · $0.11 · 33 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — All criteria met: DTOs are Java records in BillingDtos holder class, jakarta.validation annotations (@NotNull/@Positive/@Min(1)/@Size(max=200)) are correctly applied to request components matching the stated rules, @Valid decorates the controller parameter, and the response is wrapped in ApiResponse.ok(...).">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
-      
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — All criteria met: DTOs are Java records in BillingDtos holder class, jakarta.validation annotations (@NotNull/@Positive/@Min(1)/@Size(max=200)) are correctly applied to request components matching the stated rules, @Valid decorates the controller parameter, and the response is wrapped in ApiResponse.ok(...).</li></ul></details>
-      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-z5AGWW -type f 2&gt;/dev/null | head -100&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-z5AGWW/BillingDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints</span></li></ol></details>
-      
-      <details><summary>Response</summary><pre class="resp">No problem — the task only asked me to print the source, not create files. Here it is.
-
-```java
-package com.acme.billing;
-
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
-
-public class BillingDtos {
-
-    private BillingDtos() {
-    }
-
-    public record CreateInvoiceRequest(
-            @NotNull @Positive Long customerId,
-            @NotNull @Min(1) Long amountCents,
-            @Size(max = 200) String note) {
-    }
-
-    public record InvoiceResponse(
-            long id,
-            long customerId,
-            long amountCents,
-            String note) {
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-import com.acme.common.api.ApiResponse;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import static com.acme.billing.BillingDtos.CreateInvoiceRequest;
-import static com.acme.billing.BillingDtos.InvoiceResponse;
-
-@RestController
-@RequestMapping(&quot;/api/billing&quot;)
-public class InvoiceController {
-
-    private final InvoiceService invoiceService;
-
-    public InvoiceController(InvoiceService invoiceService) {
-        this.invoiceService = invoiceService;
-    }
-
-    @PostMapping(&quot;/invoices&quot;)
-    public ResponseEntity&lt;ApiResponse&lt;InvoiceResponse&gt;&gt; createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
-        Invoice invoice = invoiceService.create(request.customerId(), request.amountCents(), request.note());
-        InvoiceResponse response = new InvoiceResponse(invoice.id(), invoice.customerId(), invoice.amountCents(), invoice.note());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
-    }
-}
-```
-
-Two notes on convention decisions applied:
-- Followed house rules: DTOs as `record`s grouped in a `BillingDtos` holder, `jakarta.validation` annotations on the request (`@NotNull`/`@Positive`/`@Min`/`@Size`), constructor injection only (no Lombok/field injection), thin controller wrapping the result in `ApiResponse.ok(...)`.
-- I assumed `ApiResponse` lives at `com.acme.common.api.ApiResponse` (per the skill's pattern) and that `InvoiceService.create(...)` returns an `Invoice` type exposing `id()`, `customerId()`, `amountCents()`, `note()` accessors — adjust the import/accessor calls if your actual types differ. No pagination/`PageMeta` applies here since this is a single-resource create, not a list endpoint.</pre></details>
+- `customerId`/`amountCents` use primitive `long` with `@Positive`/`@Min(1)` — a missing JSON field binds to `0`, which fails validation, so &quot;required&quot; falls out of the numeric constraint without a separate `@NotNull`.
+- Followed house conventions: DTOs as records in an `InvoiceDtos` holder, constructor injection (no Lombok/field injection), and the response wrapped in `ApiResponse.ok(...)`. I assumed `ApiResponse`/`InvoiceService` live in their usual shared/service packages per your existing codebase, since this directory had no existing source to confirm against.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">5 turns · $0.09 · 23 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — DTOs are records grouped in InvoiceDtos holder, all constraints (@Positive, @Min(1), @Size(max=200)) match the rules, @Valid is on the controller parameter, and response is wrapped in ApiResponse.ok(...).">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
+        <span class="meta">5 turns · $0.10 · 27 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ constraint-annotations</span><span class="chip pass" title="regex">✓ dtos-holder</span><span class="chip pass" title="regex">✓ record-shapes</span><span class="chip pass" title="llm — All criteria met: records grouped in InvoiceDtos holder class, @Valid on controller parameter, all constraint annotations present and correct (@NotNull/@Positive on customerId, @NotNull/@Min(1) on amountCents, @Size(max=200) on note), and response wrapped in ApiResponse.ok(...).">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ valid-annotation</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — DTOs are records grouped in InvoiceDtos holder, all constraints (@Positive, @Min(1), @Size(max=200)) match the rules, @Valid is on the controller parameter, and response is wrapped in ApiResponse.ok(...).</li></ul></details>
-      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Bash</code> <span class="in">{&quot;command&quot;:&quot;find /tmp/eval-shim-ws-spring-request-dtos-are-validated-records-OPhhXl -type f -iname \&quot;*.java\&quot; 2&gt;/dev/null | head -100&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-OPhhXl/InvoiceDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.NotNull;\nimport jakarta.validation.constra</span></li></ol></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — All criteria met: records grouped in InvoiceDtos holder class, @Valid on controller parameter, all constraint annotations present and correct (@NotNull/@Positive on customerId, @NotNull/@Min(1) on amountCents, @Size(max=200) on note), and response wrapped in ApiResponse.ok(...).</li></ul></details>
+      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-BWnvvo/InvoiceDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-request-dtos-are-validated-records-BWnvvo/InvoiceController.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport jakarta.validation.Valid;\nimport org.springframework.web.bind.annot</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">I'll just print the source directly rather than writing files, since that's what was asked.
-
-Based on the house conventions: DTOs as records grouped in a `&lt;Feature&gt;Dtos` holder, `jakarta.validation` annotations, constructor-injected thin controller wrapping the result in `ApiResponse.ok(...)`.
+      <details><summary>Response</summary><pre class="resp">I can't write files in this environment, so here's the complete Java source inline instead.
 
 ```java
 package com.acme.billing;
@@ -490,16 +513,9 @@ public class InvoiceDtos {
     }
 
     public record CreateInvoiceRequest(
-            @NotNull
-            @Positive
-            Long customerId,
-
-            @NotNull
-            @Min(1)
-            Long amountCents,
-
-            @Size(max = 200)
-            String note
+            @NotNull @Positive Long customerId,
+            @NotNull @Min(1) Long amountCents,
+            @Size(max = 200) String note
     ) {
     }
 
@@ -516,12 +532,7 @@ public class InvoiceDtos {
 ```java
 package com.acme.billing;
 
-import com.acme.billing.InvoiceDtos.CreateInvoiceRequest;
-import com.acme.billing.InvoiceDtos.InvoiceResponse;
-import com.acme.common.ApiResponse;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -538,18 +549,16 @@ public class InvoiceController {
     }
 
     @PostMapping(&quot;/invoices&quot;)
-    public ResponseEntity&lt;ApiResponse&lt;InvoiceResponse&gt;&gt; createInvoice(
-            @Valid @RequestBody CreateInvoiceRequest request) {
-        InvoiceResponse invoice = invoiceService.create(
+    public ApiResponse&lt;InvoiceDtos.InvoiceResponse&gt; createInvoice(
+            @Valid @RequestBody InvoiceDtos.CreateInvoiceRequest request) {
+        InvoiceDtos.InvoiceResponse invoice = invoiceService.create(
                 request.customerId(), request.amountCents(), request.note());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(invoice));
+        return ApiResponse.ok(invoice);
     }
 }
 ```
 
-Note: `InvoiceService.create` was specified to return &quot;the created invoice's data&quot; — I typed that return as `InvoiceResponse` directly; if the real service returns a domain entity instead, map it to `InvoiceResponse` in the controller before wrapping it.
-
-Conventions applied: constructor injection (no Lombok/field injection), validated `record` DTOs grouped in `InvoiceDtos`, and the response wrapped via `ApiResponse.ok(...)` (assumed to already exist in `com.acme.common`, per house convention) rather than returning the raw service result.</pre></details>
+Convention notes: `customerId`/`amountCents` are boxed `Long` (not primitive `long`) so `@NotNull` can actually reject a missing field, then auto-unbox when passed to `InvoiceService.create(long, long, String)`; `InvoiceService.create` is assumed to already return `InvoiceDtos.InvoiceResponse`, so the controller stays thin — validate, call, wrap in `ApiResponse.ok(...)` — with no manual mapping step. Validation errors and any domain exceptions are assumed handled by an existing `@RestControllerAdvice`, per the house error-handling convention.</pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-service-owns-rules-and-errors">
     <header class="case-h"><div><h2>spring-service-owns-rules-and-errors</h2></div>
       <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 0.93</span> <span class="from">· noise ±0.20</span></div></header>
@@ -567,193 +576,13 @@ Print the complete Java source in your reply.</pre></div>
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.12 · 60 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — Service enforces both ownership check and unpaid-status rule with distinct domain exceptions, errors flow through @RestControllerAdvice with ApiResponse.error(...), controller has no try/catch, and service returns a record instead of Map.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
+        <span class="meta">4 turns · $0.14 · 59 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — All criteria met: ownership and unpaid-status checks enforced in service with distinct exceptions (InvoiceAccessDeniedException and InvoiceNotCancellableException), @RestControllerAdvice handler using ApiResponse.error(...), no try/catch in the controller, and service returns void.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
       
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Service enforces both ownership check and unpaid-status rule with distinct domain exceptions, errors flow through @RestControllerAdvice with ApiResponse.error(...), controller has no try/catch, and service returns a record instead of Map.</li></ul></details>
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — All criteria met: ownership and unpaid-status checks enforced in service with distinct exceptions (InvoiceAccessDeniedException and InvoiceNotCancellableException), @RestControllerAdvice handler using ApiResponse.error(...), no try/catch in the controller, and service returns void.</li></ul></details>
+      <details><summary>Tool calls (2)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>ToolSearch</code> <span class="in">{&quot;query&quot;:&quot;select:WebFetch&quot;,&quot;max_results&quot;:1}</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">Core piece is `InvoiceCancellationService`; everything else is the error-handling chain needed so a failed cancellation becomes a real HTTP error instead of a 500 or a silently-wrong 200.
-
-```java
-package com.acme.billing;
-
-public class InvoiceNotFoundException extends RuntimeException {
-    public InvoiceNotFoundException(long invoiceId) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; was not found&quot;);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public class InvoiceAccessDeniedException extends RuntimeException {
-    public InvoiceAccessDeniedException(long invoiceId) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; does not belong to the current customer&quot;);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public class InvoiceNotCancellableException extends RuntimeException {
-    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled because it is &quot; + status);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public final class InvoiceDtos {
-
-    private InvoiceDtos() {
-    }
-
-    public record CancellationResult(long invoiceId, String status) {
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public record ApiError(String code, String message) {
-}
-```
-
-```java
-package com.acme.billing;
-
-public record ApiResponse&lt;T&gt;(boolean success, T data, ApiError error) {
-
-    public static &lt;T&gt; ApiResponse&lt;T&gt; ok(T data) {
-        return new ApiResponse&lt;&gt;(true, data, null);
-    }
-
-    public static ApiResponse&lt;Void&gt; error(String code, String message) {
-        return new ApiResponse&lt;&gt;(false, null, new ApiError(code, message));
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-@RestControllerAdvice
-public class BillingExceptionHandler {
-
-    @ExceptionHandler(InvoiceNotFoundException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotFound(InvoiceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(&quot;INVOICE_NOT_FOUND&quot;, ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvoiceAccessDeniedException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleAccessDenied(InvoiceAccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(&quot;INVOICE_ACCESS_DENIED&quot;, ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvoiceNotCancellableException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotCancellable(InvoiceNotCancellableException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(&quot;INVOICE_NOT_CANCELLABLE&quot;, ex.getMessage()));
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-@Service
-public class InvoiceCancellationService {
-
-    private final InvoiceRepository invoiceRepository;
-
-    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {
-        this.invoiceRepository = invoiceRepository;
-    }
-
-    @Transactional
-    public InvoiceDtos.CancellationResult cancel(long invoiceId, long customerId) {
-        Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -&gt; new InvoiceNotFoundException(invoiceId));
-
-        if (invoice.customerId() != customerId) {
-            throw new InvoiceAccessDeniedException(invoiceId);
-        }
-        if (invoice.status() != InvoiceStatus.UNPAID) {
-            throw new InvoiceNotCancellableException(invoiceId, invoice.status());
-        }
-
-        invoice.markCancelled();
-        return new InvoiceDtos.CancellationResult(invoiceId, InvoiceStatus.CANCELLED.name());
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-@RestController
-@RequestMapping(&quot;/api/invoices&quot;)
-public class InvoiceController {
-
-    private final InvoiceCancellationService invoiceCancellationService;
-
-    public InvoiceController(InvoiceCancellationService invoiceCancellationService) {
-        this.invoiceCancellationService = invoiceCancellationService;
-    }
-
-    @PostMapping(&quot;/{id}/cancel&quot;)
-    public ApiResponse&lt;InvoiceDtos.CancellationResult&gt; cancel(
-            @PathVariable(&quot;id&quot;) long id,
-            @AuthenticationPrincipal CustomerPrincipal principal) {
-        InvoiceDtos.CancellationResult result =
-                invoiceCancellationService.cancel(id, principal.customerId());
-        return ApiResponse.ok(result);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public interface CustomerPrincipal {
-    long customerId();
-}
-```
-
-Notes:
-- Assumed `InvoiceStatus` (with `UNPAID`/`CANCELLED`) and `CustomerPrincipal`/`@AuthenticationPrincipal` wiring already exist in your auth setup, same as the given `Invoice`/`InvoiceRepository`; only stubbed the latter's interface to show usage.
-- Followed the house rules: constructor injection, no Lombok, controller stays thin and never try/catches, all three failure paths throw domain exceptions that `BillingExceptionHandler` turns into `ApiResponse.error(...)` with the matching HTTP status (404/403/409).</pre></details>
-    </article><article class="run ok">
-      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">4 turns · $0.13 · 48 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — Service enforces both ownership and unpaid-status checks, throws distinct domain exceptions, controller has no try/catch, and all errors flow through @RestControllerAdvice handlers producing ApiResponse.error() with void return type.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
-      
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Service enforces both ownership and unpaid-status checks, throws distinct domain exceptions, controller has no try/catch, and all errors flow through @RestControllerAdvice handlers producing ApiResponse.error() with void return type.</li></ul></details>
-      <details><summary>Tool calls (2)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>ToolSearch</code> <span class="in">{&quot;query&quot;:&quot;select:SendMessage&quot;,&quot;max_results&quot;:1}</span></li></ol></details>
-      
-      <details><summary>Response</summary><pre class="resp">Here's the complete implementation, following the shop's error-handling convention (domain exceptions → `@RestControllerAdvice` → `ApiResponse`).
+      <details><summary>Response</summary><pre class="resp">I'll write the cancellation flow following the house conventions: domain exceptions for each failure mode, the service enforcing both checks, a `@RestControllerAdvice` mapping exceptions to `ApiResponse.error(...)`, and a thin controller.
 
 ```java
 package com.acme.billing;
@@ -761,7 +590,7 @@ package com.acme.billing;
 public class InvoiceNotFoundException extends RuntimeException {
 
     public InvoiceNotFoundException(long invoiceId) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; was not found&quot;);
+        super(&quot;Invoice not found: &quot; + invoiceId);
     }
 }
 ```
@@ -772,7 +601,7 @@ package com.acme.billing;
 public class InvoiceAccessDeniedException extends RuntimeException {
 
     public InvoiceAccessDeniedException(long invoiceId, long customerId) {
-        super(&quot;Customer &quot; + customerId + &quot; is not permitted to access invoice &quot; + invoiceId);
+        super(&quot;Invoice &quot; + invoiceId + &quot; does not belong to customer &quot; + customerId);
     }
 }
 ```
@@ -783,7 +612,7 @@ package com.acme.billing;
 public class InvoiceNotCancellableException extends RuntimeException {
 
     public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled because it is &quot; + status);
+        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled while in status &quot; + status);
     }
 }
 ```
@@ -794,11 +623,11 @@ package com.acme.billing;
 import org.springframework.stereotype.Service;
 
 @Service
-public class InvoiceCancellationService {
+public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
 
-    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {
+    public InvoiceService(InvoiceRepository invoiceRepository) {
         this.invoiceRepository = invoiceRepository;
     }
 
@@ -832,8 +661,7 @@ public record ApiResponse&lt;T&gt;(boolean success, T data, ApiError error) {
         return new ApiResponse&lt;&gt;(false, null, new ApiError(code, message));
     }
 
-    public record ApiError(String code, String message) {
-    }
+    public record ApiError(String code, String message) {}
 }
 ```
 
@@ -872,6 +700,7 @@ public class BillingExceptionHandler {
 package com.acme.billing;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -881,119 +710,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(&quot;/api/invoices&quot;)
 public class InvoiceController {
 
-    private final InvoiceCancellationService invoiceCancellationService;
+    private final InvoiceService invoiceService;
 
-    public InvoiceController(InvoiceCancellationService invoiceCancellationService) {
-        this.invoiceCancellationService = invoiceCancellationService;
+    public InvoiceController(InvoiceService invoiceService) {
+        this.invoiceService = invoiceService;
     }
 
-    @PostMapping(&quot;/{invoiceId}/cancel&quot;)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; cancelInvoice(
-            @PathVariable long invoiceId,
-            CurrentCustomer currentCustomer) {
-        invoiceCancellationService.cancelInvoice(invoiceId, currentCustomer.id());
+    @PostMapping(&quot;/{id}/cancel&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; cancel(
+            @PathVariable(&quot;id&quot;) long id,
+            @AuthenticationPrincipal CustomerPrincipal principal) {
+        invoiceService.cancelInvoice(id, principal.customerId());
         return ResponseEntity.ok(ApiResponse.ok(null));
-    }
-}
-```
-
-Two assumptions, flagged rather than silently baked in: `Invoice.status()` returns an existing `InvoiceStatus` enum with an `UNPAID` constant (adjust the comparison if yours differs), and `CurrentCustomer` is a stand-in for however this codebase already resolves the authenticated customer's id (e.g. an `@AuthenticationPrincipal`-resolved type) — swap it for the real mechanism.
-
-Convention decisions applied: constructor injection with no Lombok, and the three failure modes are modeled as distinct domain exceptions caught centrally by `@RestControllerAdvice` (404/403/409) rather than branching in the controller.</pre></details>
-    </article><article class="run ok">
-      <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.11 · 51 s · claude-sonnet-5 </span></header>
-      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — Both authorization checks (ownership and unpaid-status) are enforced inside the service method as distinct exceptions, the controller has no try/catch, all exceptions are mapped to ApiResponse.error(...) via @RestControllerAdvice, and the service returns void.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
-      
-      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Both authorization checks (ownership and unpaid-status) are enforced inside the service method as distinct exceptions, the controller has no try/catch, all exceptions are mapped to ApiResponse.error(...) via @RestControllerAdvice, and the service returns void.</li></ul></details>
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
-      
-      <details><summary>Response</summary><pre class="resp">Here's the complete implementation, following the house conventions (constructor injection, domain exceptions mapped via `@RestControllerAdvice`, `ApiResponse` envelope).
-
-**Assumptions noted inline:** `Invoice.status()` returns an `InvoiceStatus` enum (`UNPAID`/`PAID`/`CANCELLED`) and the app already has `ApiResponse`/an auth principal type — I've included minimal versions of those so the example compiles standalone; drop them if your codebase already has equivalents.
-
-```java
-package com.acme.billing;
-
-public enum InvoiceStatus {
-    UNPAID,
-    PAID,
-    CANCELLED
-}
-```
-
-```java
-package com.acme.billing;
-
-public record ApiResponse&lt;T&gt;(boolean success, T data, String error) {
-
-    public static &lt;T&gt; ApiResponse&lt;T&gt; ok(T data) {
-        return new ApiResponse&lt;&gt;(true, data, null);
-    }
-
-    public static &lt;T&gt; ApiResponse&lt;T&gt; error(String message) {
-        return new ApiResponse&lt;&gt;(false, null, message);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public class InvoiceNotFoundException extends RuntimeException {
-
-    public InvoiceNotFoundException(long invoiceId) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; was not found&quot;);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public class InvoiceAccessDeniedException extends RuntimeException {
-
-    public InvoiceAccessDeniedException(long invoiceId) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; does not belong to the current customer&quot;);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-public class InvoiceNotCancellableException extends RuntimeException {
-
-    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {
-        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled because it is &quot; + status);
-    }
-}
-```
-
-```java
-package com.acme.billing;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-@RestControllerAdvice
-public class BillingExceptionHandler {
-
-    @ExceptionHandler(InvoiceNotFoundException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotFound(InvoiceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvoiceAccessDeniedException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleAccessDenied(InvoiceAccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvoiceNotCancellableException.class)
-    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotCancellable(InvoiceNotCancellableException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(ex.getMessage()));
     }
 }
 ```
@@ -1006,21 +734,81 @@ public interface CustomerPrincipal {
 }
 ```
 
+Two assumptions beyond the stated types: `InvoiceStatus` is an existing enum with an `UNPAID` constant (referenced via `invoice.status()`), and the authenticated customer id is resolved from an existing `CustomerPrincipal` via `@AuthenticationPrincipal` — swap that extraction for however your security layer actually exposes it.
+
+Convention decisions applied: constructor injection with no Lombok throughout, and all three failure modes (not found / wrong owner / already paid) as distinct domain exceptions caught by one `@RestControllerAdvice` so the controller has zero try/catch and every response is `ApiResponse`-wrapped.</pre></details>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
+        <span class="meta">3 turns · $0.11 · 42 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — Both ownership and unpaid-status checks are enforced in the service with distinct domain exceptions; all errors flow through @RestControllerAdvice producing ApiResponse.error(...); controller has no try/catch; service returns void.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
+      
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Both ownership and unpaid-status checks are enforced in the service with distinct domain exceptions; all errors flow through @RestControllerAdvice producing ApiResponse.error(...); controller has no try/catch; service returns void.</li></ul></details>
+      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
+      
+      <details><summary>Response</summary><pre class="resp">Here's the invoice cancellation feature for `com.acme.billing`. I'm assuming `InvoiceStatus` is an existing enum (referenced via `Invoice.status()`) with at least an `UNPAID` constant, and that `InvoiceRepository`/`Invoice` live in this package already.
+
+```java
+package com.acme.billing;
+
+public record ApiResponse&lt;T&gt;(boolean success, T data, ApiError error) {
+
+    public static &lt;T&gt; ApiResponse&lt;T&gt; ok(T data) {
+        return new ApiResponse&lt;&gt;(true, data, null);
+    }
+
+    public static ApiResponse&lt;Void&gt; error(String code, String message) {
+        return new ApiResponse&lt;&gt;(false, null, new ApiError(code, message));
+    }
+
+    public record ApiError(String code, String message) {}
+}
+```
+
+```java
+package com.acme.billing;
+
+public class InvoiceNotFoundException extends RuntimeException {
+    public InvoiceNotFoundException(long invoiceId) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; not found&quot;);
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+public class InvoiceAccessDeniedException extends RuntimeException {
+    public InvoiceAccessDeniedException(long invoiceId) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; does not belong to the current customer&quot;);
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+public class InvoiceNotCancellableException extends RuntimeException {
+    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus status) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled while in status &quot; + status);
+    }
+}
+```
+
 ```java
 package com.acme.billing;
 
 import org.springframework.stereotype.Service;
 
 @Service
-public class InvoiceCancellationService {
+public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
 
-    public InvoiceCancellationService(InvoiceRepository invoiceRepository) {
+    public InvoiceService(InvoiceRepository invoiceRepository) {
         this.invoiceRepository = invoiceRepository;
     }
 
-    public void cancel(long invoiceId, long customerId) {
+    public void cancelInvoice(long customerId, long invoiceId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -&gt; new InvoiceNotFoundException(invoiceId));
 
@@ -1040,8 +828,39 @@ public class InvoiceCancellationService {
 ```java
 package com.acme.billing;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class BillingExceptionHandler {
+
+    @ExceptionHandler(InvoiceNotFoundException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotFound(InvoiceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(&quot;INVOICE_NOT_FOUND&quot;, ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvoiceAccessDeniedException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleAccessDenied(InvoiceAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(&quot;INVOICE_ACCESS_DENIED&quot;, ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvoiceNotCancellableException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotCancellable(InvoiceNotCancellableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(&quot;INVOICE_NOT_CANCELLABLE&quot;, ex.getMessage()));
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -1050,22 +869,188 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(&quot;/api/invoices&quot;)
 public class InvoiceController {
 
-    private final InvoiceCancellationService invoiceCancellationService;
+    private final InvoiceService invoiceService;
 
-    public InvoiceController(InvoiceCancellationService invoiceCancellationService) {
-        this.invoiceCancellationService = invoiceCancellationService;
+    public InvoiceController(InvoiceService invoiceService) {
+        this.invoiceService = invoiceService;
     }
 
-    @DeleteMapping(&quot;/{invoiceId}&quot;)
-    public ApiResponse&lt;Void&gt; cancel(@PathVariable long invoiceId,
-                                     @AuthenticationPrincipal CustomerPrincipal principal) {
-        invoiceCancellationService.cancel(invoiceId, principal.customerId());
+    @PatchMapping(&quot;/{invoiceId}/cancel&quot;)
+    public ApiResponse&lt;Void&gt; cancel(@AuthenticationPrincipal Long customerId, @PathVariable long invoiceId) {
+        invoiceService.cancelInvoice(customerId, invoiceId);
         return ApiResponse.ok(null);
     }
 }
 ```
 
-Convention notes: authorization (ownership + unpaid-status checks) lives in the service even though `SecurityConfig`/the principal already gate the route (&quot;two locks on the door&quot;); all three failure modes are distinct domain exceptions mapped to specific HTTP statuses (404/403/409) by a single `@RestControllerAdvice`, so the controller stays a thin pass-through with no try/catch.</pre></details>
+Convention notes: used constructor injection (no field injection/Lombok), and put both the ownership check and the unpaid-status check in the service rather than the controller, per the &quot;two locks on the door&quot; rule, with domain exceptions translated to `ApiResponse.error(...)` by a `@RestControllerAdvice` instead of try/catch in the controller.</pre></details>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
+        <span class="meta">3 turns · $0.13 · 67 s · claude-sonnet-5 </span></header>
+      <div class="chips"><span class="chip pass" title="regex">✓ advice-handler</span><span class="chip pass" title="regex">✓ no-map-result</span><span class="chip pass" title="llm — Both ownership (InvoiceAccessDeniedException) and unpaid-status checks (InvoiceNotCancellableException) are enforced inside the service method with distinct exceptions; exceptions are centrally handled by @RestControllerAdvice producing ApiResponse.error(), the controller has no try/catch, and the service returns void.">✓ reviewer-judgment</span><span class="chip pass" title="tool_used">✓ skill-fired</span><span class="chip pass" title="regex">✓ throws-domain-exception</span></div>
+      
+      <details><summary>Judge reasons</summary><ul class="reasons"><li><b>reviewer-judgment</b> — Both ownership (InvoiceAccessDeniedException) and unpaid-status checks (InvoiceNotCancellableException) are enforced inside the service method with distinct exceptions; exceptions are centrally handled by @RestControllerAdvice producing ApiResponse.error(), the controller has no try/catch, and the service returns void.</li></ul></details>
+      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
+      
+      <details><summary>Response</summary><pre class="resp">Here's the complete implementation, following the house conventions (domain exceptions mapped by a `@RestControllerAdvice`, `ApiResponse` wrapping, constructor injection, authorization check inside the service itself).
+
+```java
+package com.acme.billing;
+
+/**
+ * Thrown when no invoice exists for the given id.
+ */
+public class InvoiceNotFoundException extends RuntimeException {
+
+    public InvoiceNotFoundException(long invoiceId) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; was not found&quot;);
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+/**
+ * Thrown when a customer attempts to act on an invoice that does not belong to them.
+ */
+public class InvoiceAccessDeniedException extends RuntimeException {
+
+    public InvoiceAccessDeniedException(long invoiceId) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; does not belong to the current customer&quot;);
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+/**
+ * Thrown when an invoice cannot be cancelled because it is no longer unpaid.
+ */
+public class InvoiceNotCancellableException extends RuntimeException {
+
+    public InvoiceNotCancellableException(long invoiceId, InvoiceStatus currentStatus) {
+        super(&quot;Invoice &quot; + invoiceId + &quot; cannot be cancelled while in status &quot; + currentStatus);
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+import java.time.Instant;
+
+public record ApiResponse&lt;T&gt;(boolean success, T data, ApiError error, Instant timestamp) {
+
+    public static &lt;T&gt; ApiResponse&lt;T&gt; ok(T data) {
+        return new ApiResponse&lt;&gt;(true, data, null, Instant.now());
+    }
+
+    public static &lt;T&gt; ApiResponse&lt;T&gt; error(String code, String message) {
+        return new ApiResponse&lt;&gt;(false, null, new ApiError(code, message), Instant.now());
+    }
+
+    public record ApiError(String code, String message) {
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class InvoiceExceptionHandler {
+
+    @ExceptionHandler(InvoiceNotFoundException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotFound(InvoiceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(&quot;INVOICE_NOT_FOUND&quot;, ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvoiceAccessDeniedException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleAccessDenied(InvoiceAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(&quot;INVOICE_ACCESS_DENIED&quot;, ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvoiceNotCancellableException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotCancellable(InvoiceNotCancellableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(&quot;INVOICE_NOT_CANCELLABLE&quot;, ex.getMessage()));
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class InvoiceService {
+
+    private final InvoiceRepository invoiceRepository;
+
+    public InvoiceService(InvoiceRepository invoiceRepository) {
+        this.invoiceRepository = invoiceRepository;
+    }
+
+    @Transactional
+    public void cancelInvoice(long customerId, long invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -&gt; new InvoiceNotFoundException(invoiceId));
+
+        if (invoice.customerId() != customerId) {
+            throw new InvoiceAccessDeniedException(invoiceId);
+        }
+
+        if (invoice.status() != InvoiceStatus.UNPAID) {
+            throw new InvoiceNotCancellableException(invoiceId, invoice.status());
+        }
+
+        invoice.markCancelled();
+    }
+}
+```
+
+```java
+package com.acme.billing;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/invoices&quot;)
+public class InvoiceController {
+
+    private final InvoiceService invoiceService;
+
+    public InvoiceController(InvoiceService invoiceService) {
+        this.invoiceService = invoiceService;
+    }
+
+    @PatchMapping(&quot;/{invoiceId}/cancel&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; cancelInvoice(
+            @PathVariable long invoiceId,
+            @AuthenticationPrincipal CustomerPrincipal currentCustomer) {
+        invoiceService.cancelInvoice(currentCustomer.id(), invoiceId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+}
+```
+
+Two assumptions I had to make beyond what was given: `Invoice.status()` returns an `InvoiceStatus` enum with an `UNPAID` constant, and the controller resolves the caller's id via an existing `CustomerPrincipal` (`@AuthenticationPrincipal`) — swap that for however your app actually extracts the authenticated customer. Ownership and status checks throw distinct exceptions (403 vs. 409) rather than collapsing into a generic 404; if you'd rather not reveal that an invoice exists for someone who doesn't own it, say so and I'll fold `InvoiceAccessDeniedException` into the 404 path instead.</pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-work-triggers-skill">
     <header class="case-h"><div><h2>spring-work-triggers-skill</h2></div>
       <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span></div></header>
@@ -1080,37 +1065,39 @@ content cases still pass, the skill's *trigger* broke (loading, name, or descrip
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">5 turns · $0.08 · 19 s · claude-sonnet-5 </span></header>
+        <span class="meta">4 turns · $0.08 · 20 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
       
-      <details><summary>Tool calls (3)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-work-triggers-skill-6RwqRP/BillingController.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport com.acme.common.web.ApiResponse;\nimport org.springframework.web.bind.annotation.Ge</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-work-triggers-skill-6RwqRP/BillingDtos.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport java.math.BigDecimal;\nimport java.time.Instant;\n\npublic final class BillingDtos {\n\n </span></li></ol></details>
+      <details><summary>Tool calls (2)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;,&quot;args&quot;:&quot;GET /api/billing/invoices/{id} endpoint, package com.acme.billing, using existing InvoiceService.getInvoice(long id)&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-work-triggers-skill-GIy5cE/InvoiceController.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">No problem — the user just asked me to print the source in my reply, not create files, so I'll just give it inline.
+      <details><summary>Response</summary><pre class="resp">No worries — I'll just print the source directly rather than writing files.
 
 ```java
 package com.acme.billing;
 
-import com.acme.common.web.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.acme.billing.InvoiceDtos.InvoiceResponse;
+import com.acme.common.ApiResponse;
+
 @RestController
 @RequestMapping(&quot;/api/billing&quot;)
-public class BillingController {
+public class InvoiceController {
 
     private final InvoiceService invoiceService;
 
-    public BillingController(InvoiceService invoiceService) {
+    public InvoiceController(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
     }
 
     @GetMapping(&quot;/invoices/{id}&quot;)
-    public ApiResponse&lt;BillingDtos.InvoiceResponse&gt; getInvoice(@PathVariable long id) {
+    public ApiResponse&lt;InvoiceResponse&gt; getInvoice(@PathVariable long id) {
         Invoice invoice = invoiceService.getInvoice(id);
-        return ApiResponse.ok(BillingDtos.InvoiceResponse.from(invoice));
+        return ApiResponse.ok(InvoiceResponse.from(invoice));
     }
 }
 ```
@@ -1121,42 +1108,73 @@ package com.acme.billing;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public final class BillingDtos {
+public final class InvoiceDtos {
 
-    private BillingDtos() {
+    private InvoiceDtos() {
     }
 
     public record InvoiceResponse(
             long id,
-            String customerId,
+            long customerId,
             BigDecimal amount,
             String status,
-            Instant issuedAt) {
-
+            Instant issuedAt
+    ) {
         public static InvoiceResponse from(Invoice invoice) {
             return new InvoiceResponse(
                     invoice.getId(),
                     invoice.getCustomerId(),
                     invoice.getAmount(),
                     invoice.getStatus().name(),
-                    invoice.getIssuedAt());
+                    invoice.getIssuedAt()
+            );
         }
     }
 }
 ```
 
-Notes on conventions applied:
-- Constructor injection (no Lombok/`@Autowired`), thin controller that just calls `InvoiceService.getInvoice` and wraps the result in `ApiResponse.ok(...)`; no try/catch — a not-found case is expected to come from a domain exception thrown inside `InvoiceService`, handled by your existing `@RestControllerAdvice`.
-- Response shape is a `record` in a `BillingDtos` holder class rather than exposing the `Invoice` entity directly; adjust the `Invoice`/`ApiResponse` import paths and field getters to match your actual domain class.</pre></details>
+Notes:
+- Constructor injection (no Lombok/field injection), controller stays thin — parses the path variable, calls `InvoiceService.getInvoice`, wraps the result in `ApiResponse.ok(...)`.
+- Response is a `record` in an `InvoiceDtos` holder rather than the raw `Invoice` entity; assumed a &quot;not found&quot; case is a domain exception thrown by the service and handled by an existing `@RestControllerAdvice` (no try/catch here). Adjust `Invoice`'s assumed fields (`customerId`, `amount`, `status`, `issuedAt`) to match your actual entity.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 14 s · claude-sonnet-5 </span></header>
+        <span class="meta">3 turns · $0.07 · 17 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
       
       <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">Here's the endpoint following the house conventions (constructor injection, wrapped `ApiResponse`, DTO as a record in a holder class, exceptions handled by the existing advice rather than in the controller).
+      <details><summary>Response</summary><pre class="resp">```java
+package com.acme.billing;
+
+public final class InvoiceDtos {
+
+    private InvoiceDtos() {
+    }
+
+    public record InvoiceResponse(
+            long id,
+            String customerId,
+            long amountCents,
+            String currency,
+            String status,
+            String issuedAt,
+            String dueAt
+    ) {
+        public static InvoiceResponse from(Invoice invoice) {
+            return new InvoiceResponse(
+                    invoice.getId(),
+                    invoice.getCustomerId(),
+                    invoice.getAmountCents(),
+                    invoice.getCurrency(),
+                    invoice.getStatus().name(),
+                    invoice.getIssuedAt().toString(),
+                    invoice.getDueAt().toString()
+            );
+        }
+    }
+}
+```
 
 ```java
 package com.acme.billing;
@@ -1165,8 +1183,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.acme.common.ApiResponse;
 
 @RestController
 @RequestMapping(&quot;/api/billing&quot;)
@@ -1186,44 +1202,21 @@ public class InvoiceController {
 }
 ```
 
-```java
-package com.acme.billing;
-
-public final class InvoiceDtos {
-
-    private InvoiceDtos() {
-    }
-
-    public record InvoiceResponse(
-            long id,
-            String status,
-            long amountCents,
-            String currency) {
-
-        public static InvoiceResponse from(Invoice invoice) {
-            return new InvoiceResponse(
-                    invoice.getId(),
-                    invoice.getStatus(),
-                    invoice.getAmountCents(),
-                    invoice.getCurrency());
-        }
-    }
-}
-```
-
-Convention notes: not-found handling is left to `InvoiceService.getInvoice` throwing a domain exception (e.g. `InvoiceNotFoundException`) mapped by the existing `@RestControllerAdvice` — no try/catch here. `Invoice`/field names on the entity are assumed; adjust `InvoiceResponse.from` to match your actual `Invoice` type.</pre></details>
+Applied: constructor injection (no Lombok/`@Autowired`), response DTO as a record in an `InvoiceDtos` holder, result wrapped in `ApiResponse.ok(...)`. Assumed `ApiResponse` and an `Invoice` entity with the fields shown already exist in the codebase, and that `InvoiceService.getInvoice` throws a domain exception (handled by your existing `@RestControllerAdvice`) when the id isn't found — no try/catch added here.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 10.0 s · claude-sonnet-5 </span></header>
+        <span class="meta">4 turns · $0.08 · 23 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="tool_used">✓ skill-fired</span></div>
       
       
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li></ol></details>
+      <details><summary>Tool calls (2)</summary><ol class="tools"><li><code>Skill</code> <span class="in">{&quot;skill&quot;:&quot;komo-stack:spring-boot-conventions&quot;}</span></li><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-spring-work-triggers-skill-d4VLkv/InvoiceController.java&quot;,&quot;content&quot;:&quot;package com.acme.billing;\n\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annot</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">```java
+      <details><summary>Response</summary><pre class="resp">No file write needed — I'll just print the source directly.
+
+```java
 package com.acme.billing;
 
-import com.acme.common.ApiResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -1240,16 +1233,49 @@ public class InvoiceController {
     }
 
     @GetMapping(&quot;/invoices/{id}&quot;)
-    public ApiResponse&lt;Invoice&gt; getInvoice(@PathVariable long id) {
+    public ResponseEntity&lt;ApiResponse&lt;InvoiceDtos.InvoiceResponse&gt;&gt; getInvoice(@PathVariable long id) {
         Invoice invoice = invoiceService.getInvoice(id);
-        return ApiResponse.ok(invoice);
+        InvoiceDtos.InvoiceResponse body = InvoiceDtos.InvoiceResponse.from(invoice);
+        return ResponseEntity.ok(ApiResponse.ok(body));
     }
 }
 ```
 
-Note: assumes a shared `ApiResponse&lt;T&gt;` wrapper (e.g. `com.acme.common.ApiResponse`) and that `InvoiceService.getInvoice` throws a domain exception (e.g. `InvoiceNotFoundException`) caught by an existing `@RestControllerAdvice` — no try/catch here.
+```java
+package com.acme.billing;
 
-Conventions applied: constructor injection (no Lombok/`@Autowired`), thin controller that only delegates and wraps the result in `ApiResponse.ok(...)` per house rules.</pre></details>
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public final class InvoiceDtos {
+
+    private InvoiceDtos() {}
+
+    public record InvoiceResponse(
+            long id,
+            String customerId,
+            BigDecimal amount,
+            String status,
+            LocalDate dueDate
+    ) {
+        public static InvoiceResponse from(Invoice invoice) {
+            return new InvoiceResponse(
+                    invoice.getId(),
+                    invoice.getCustomerId(),
+                    invoice.getAmount(),
+                    invoice.getStatus(),
+                    invoice.getDueDate()
+            );
+        }
+    }
+}
+```
+
+Notes:
+- Constructor injection (no Lombok, no field `@Autowired`); every response wrapped in `ApiResponse.ok(...)` instead of returning the raw `Invoice` entity.
+- No pagination applied since this is a single-resource lookup by id; a not-found `Invoice` is expected to raise a domain exception in `InvoiceService`, handled by an existing `@RestControllerAdvice` rather than a try/catch here.
+
+Since this is a new sandbox with no existing repo, I printed the source inline instead of writing files — let me know if you'd like me to create the actual files once you point me at the project.</pre></details>
     </article></div></section><section class="case st-stable" id="case-vue-request-does-not-trigger-skill">
     <header class="case-h"><div><h2>vue-request-does-not-trigger-skill</h2></div>
       <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span></div></header>
@@ -1261,16 +1287,16 @@ Conventions applied: constructor injection (no Lombok/`@Autowired`), thin contro
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">1 turns · $0.04 · 5.4 s · claude-sonnet-5 </span></header>
+        <span class="meta">1 turns · $0.05 · 7.7 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="regex">✓ is-pinia-store</span><span class="chip pass" title="tool_used">✓ skill-not-fired</span></div>
       
       
       <details><summary>Tool calls (0)</summary><p class="muted">none</p></details>
       
-      <details><summary>Response</summary><pre class="resp">```typescript
+      <details><summary>Response</summary><pre class="resp">```ts
 // stores/cart.ts
-import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 
 export interface CartItem {
   id: string
@@ -1291,32 +1317,46 @@ export const useCartStore = defineStore('cart', () =&gt; {
     }
   }
 
-  function remove(id: string) {
-    items.value = items.value.filter((i) =&gt; i.id !== id)
+  function remove(id: string, quantity?: number) {
+    const existing = items.value.find((i) =&gt; i.id === id)
+    if (!existing) return
+
+    if (quantity === undefined || existing.quantity &lt;= quantity) {
+      items.value = items.value.filter((i) =&gt; i.id !== id)
+    } else {
+      existing.quantity -= quantity
+    }
+  }
+
+  function clear() {
+    items.value = []
   }
 
   const total = computed(() =&gt;
     items.value.reduce((sum, item) =&gt; sum + item.price * item.quantity, 0)
   )
 
-  return {
-    items,
-    add,
-    remove,
-    total,
-  }
+  const itemCount = computed(() =&gt;
+    items.value.reduce((sum, item) =&gt; sum + item.quantity, 0)
+  )
+
+  return { items, add, remove, clear, total, itemCount }
 })
-```</pre></details>
+```
+
+Notes: `add` merges by `id` and bumps quantity if the item's already in the cart; `remove` takes an optional `quantity` to decrement partially, removing the line entirely when omitted or when it would hit zero. `total` and `itemCount` are reactive getters derived via `computed`.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 2</b><span class="score ok">1.00</span>
-        <span class="meta">1 turns · $0.04 · 6.5 s · claude-sonnet-5 </span></header>
+        <span class="meta">2 turns · $0.06 · 8.5 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="regex">✓ is-pinia-store</span><span class="chip pass" title="tool_used">✓ skill-not-fired</span></div>
       
       
-      <details><summary>Tool calls (0)</summary><p class="muted">none</p></details>
+      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-vue-request-does-not-trigger-skill-Z9MU5t/stores/cart.ts&quot;,&quot;content&quot;:&quot;import { computed, ref } from 'vue'\nimport { defineStore } from 'pinia'\n\nexport interface CartItem {\n  id: string\n</span></li></ol></details>
       
-      <details><summary>Response</summary><pre class="resp">```typescript
-// stores/cart.ts
+      <details><summary>Response</summary><pre class="resp">I don't have permission to write files in this environment, but here's the complete store — you can save it as `stores/cart.ts`:
+
+```ts
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 export interface CartItem {
@@ -1329,10 +1369,6 @@ export interface CartItem {
 export const useCartStore = defineStore('cart', () =&gt; {
   const items = ref&lt;CartItem[]&gt;([])
 
-  const total = computed(() =&gt;
-    items.value.reduce((sum, item) =&gt; sum + item.price * item.quantity, 0)
-  )
-
   function add(item: Omit&lt;CartItem, 'quantity'&gt;, quantity = 1) {
     const existing = items.value.find((i) =&gt; i.id === item.id)
     if (existing) {
@@ -1343,32 +1379,29 @@ export const useCartStore = defineStore('cart', () =&gt; {
   }
 
   function remove(id: string) {
-    const index = items.value.findIndex((i) =&gt; i.id === id)
-    if (index !== -1) {
-      items.value.splice(index, 1)
-    }
+    items.value = items.value.filter((i) =&gt; i.id !== id)
   }
 
-  return { items, total, add, remove }
+  const total = computed(() =&gt;
+    items.value.reduce((sum, i) =&gt; sum + i.price * i.quantity, 0)
+  )
+
+  return { items, add, remove, total }
 })
 ```
 
-Needs `ref` and `computed` imported from `'vue'` at the top of the file if your build doesn't auto-import them:
-
-```typescript
-import { ref, computed } from 'vue'
-```</pre></details>
+- `add` increments quantity if the item already exists, otherwise pushes a new entry.
+- `remove` filters by `id`.
+- `total` is a computed getter summing `price * quantity` across all items.</pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 3</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.06 · 9.1 s · claude-sonnet-5 </span></header>
+        <span class="meta">1 turns · $0.04 · 5.9 s · claude-sonnet-5 </span></header>
       <div class="chips"><span class="chip pass" title="regex">✓ is-pinia-store</span><span class="chip pass" title="tool_used">✓ skill-not-fired</span></div>
       
       
-      <details><summary>Tool calls (1)</summary><ol class="tools"><li><code>Write</code> <span class="in">{&quot;file_path&quot;:&quot;/tmp/eval-shim-ws-vue-request-does-not-trigger-skill-F68QwE/stores/cart.ts&quot;,&quot;content&quot;:&quot;import { defineStore } from 'pinia'\nimport { computed, ref } from 'vue'\n\nexport interface CartItem {\n  id: string\n</span></li></ol></details>
+      <details><summary>Tool calls (0)</summary><p class="muted">none</p></details>
       
-      <details><summary>Response</summary><pre class="resp">Writing files isn't permitted here, so I'll just print the complete file content in the response.
-
-```ts
+      <details><summary>Response</summary><pre class="resp">```ts
 // stores/cart.ts
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -1383,7 +1416,7 @@ export interface CartItem {
 export const useCartStore = defineStore('cart', () =&gt; {
   const items = ref&lt;CartItem[]&gt;([])
 
-  function addItem(item: Omit&lt;CartItem, 'quantity'&gt;, quantity = 1) {
+  function add(item: Omit&lt;CartItem, 'quantity'&gt;, quantity = 1) {
     const existing = items.value.find((i) =&gt; i.id === item.id)
     if (existing) {
       existing.quantity += quantity
@@ -1392,26 +1425,26 @@ export const useCartStore = defineStore('cart', () =&gt; {
     }
   }
 
-  function removeItem(id: string) {
-    items.value = items.value.filter((i) =&gt; i.id !== id)
+  function remove(id: string, quantity?: number) {
+    const existing = items.value.find((i) =&gt; i.id === id)
+    if (!existing) return
+
+    if (quantity === undefined || existing.quantity &lt;= quantity) {
+      items.value = items.value.filter((i) =&gt; i.id !== id)
+    } else {
+      existing.quantity -= quantity
+    }
   }
 
   const total = computed(() =&gt;
     items.value.reduce((sum, item) =&gt; sum + item.price * item.quantity, 0)
   )
 
-  return {
-    items,
-    addItem,
-    removeItem,
-    total,
-  }
+  return { items, add, remove, total }
 })
 ```
 
-- `addItem` merges quantities if the item is already in the cart, otherwise pushes a new entry.
-- `removeItem` drops the item by `id`.
-- `total` is a `computed` getter summing `price * quantity` across all items.</pre></details>
+Usage note: `add` without a `quantity` arg defaults to 1 and merges into an existing line item; `remove` without a `quantity` arg removes the item entirely, otherwise it decrements.</pre></details>
     </article></div></section></div>
 <p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than 0.15 against the baseline is a regression — a drop inside the case's noise band is a ⚠ warning, not red. Indicators (ind) are recorded but not scored. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>.</p>
 </div></body></html>
