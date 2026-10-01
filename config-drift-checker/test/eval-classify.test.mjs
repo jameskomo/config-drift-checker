@@ -113,3 +113,10 @@ test('normalizeResult: native claude plugin eval JSON maps to the 1.1 shape; 1.1
   const ours = { schemaVersion: '1.1', track: 'pinned', cases: [] };
   assert.equal(normalizeResult(ours), ours, '1.1 results pass through untouched');
 });
+
+test('normalizeResult keeps the preflight block that the Action embeds in official-runner results', async () => {
+  const { normalizeResult } = await import('../tools/eval-classify.mjs');
+  const pre = { skills: { skills: 4, errors: 0, warnings: 1, findings: [] }, suite: { summary: { errors: 0 } } };
+  const n = normalizeResult({ schemaVersion: 1, suite: { root: '/x' }, cases: [], preflight: pre });
+  assert.deepEqual(n.preflight, pre);
+});

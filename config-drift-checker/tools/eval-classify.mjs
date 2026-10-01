@@ -26,7 +26,7 @@ export function normalizeResult(j) {
     graders: r.graders ?? [], startedAt: r.startedAt ?? null,
   });
   return {
-    schemaVersion: '1.1', source: 'claude-plugin-eval', generatedAt: j.startedAt ?? null,
+    schemaVersion: '1.1', source: 'claude-plugin-eval', generatedAt: j.startedAt ?? null, preflight: j.preflight ?? null,
     track: j.track ?? null, harness: j.claudeVersion ? { name: 'claude-code', version: j.claudeVersion } : null,
     suite: { name: j.suite.root ? path.basename(j.suite.root) : 'claude-plugin-eval', ablation: j.suite.ablation ?? null },
     cases: j.cases.map((c) => ({

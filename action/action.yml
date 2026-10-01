@@ -161,8 +161,8 @@ runs:
         MODE: ${{ inputs.preflight }}
       run: |
         set +e
-        node "$TOOLS/skill-lint.mjs" "$PLUGIN_DIR" > "$RUNNER_TEMP/skill-lint.txt" 2>&1; sl=$?
-        node "$TOOLS/suite-doctor.mjs" "$PLUGIN_DIR" --runner "$(command -v claude)" > "$RUNNER_TEMP/suite-doctor.txt" 2>&1; sd=$?
+        node "$TOOLS/skill-lint.mjs" "$PLUGIN_DIR" --json "$RUNNER_TEMP/preflight-skills.json" > "$RUNNER_TEMP/skill-lint.txt" 2>&1; sl=$?
+        node "$TOOLS/suite-doctor.mjs" "$PLUGIN_DIR" --runner "$(command -v claude)" --json "$RUNNER_TEMP/preflight-suite.json" > "$RUNNER_TEMP/suite-doctor.txt" 2>&1; sd=$?
         {
           echo "### Preflight on Claude Code $CC_VERSION (no model runs spent)"
           echo; echo "**Skills** $( [ $sl -eq 0 ] && echo '✓' || echo '✗')"; echo; echo '```'; tail -40 "$RUNNER_TEMP/skill-lint.txt"; echo '```'
@@ -230,6 +230,9 @@ runs:
             "${model_args[@]}" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
+        # carry the preflight (skill lint + suite format) inside the result, so every stored run has its
+        # setup-health record for the report and the per-release format-drift row on the dashboard
+        OUT_DIR="$out" node -e 'const fs=require("fs"),t=process.env.RUNNER_TEMP,p=process.env.OUT_DIR+"/aggregate-result.json";const rd=(f)=>{try{return JSON.parse(fs.readFileSync(t+"/"+f,"utf8"))}catch{return null}};const sk=rd("preflight-skills.json"),su=rd("preflight-suite.json");if(sk||su){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.preflight={skills:sk,suite:su};fs.writeFileSync(p,JSON.stringify(j,null,2));}' || true
         echo "result=$out/aggregate-result.json" >> "$GITHUB_OUTPUT"
         # the stem the store step reuses for history/<stem>.json and docs/history/<stem>.html (PR-comment deep links)
         echo "stem=$(date -u +%Y%m%dT%H%M%SZ)-cc${CC_VERSION}-${RUNNER}-${TRACK}" >> "$GITHUB_OUTPUT"
