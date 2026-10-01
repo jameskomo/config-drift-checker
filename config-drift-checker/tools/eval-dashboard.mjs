@@ -27,9 +27,10 @@ for (const e of await fs.readdir(opt.dir, { withFileTypes: true })) {
   else if (e.isDirectory() && existsSync(path.join(opt.dir, e.name, 'aggregate-result.json'))) f = path.join(opt.dir, e.name, 'aggregate-result.json');
   if (!f) continue;
   try {
-    const j = normalizeResult(JSON.parse(await fs.readFile(f, 'utf8'))); if (!j.cases) continue;
+    const raw = JSON.parse(await fs.readFile(f, 'utf8')), j = normalizeResult(raw); if (!j.cases) continue;
     const m = id.match(/cc([\d.]+)/);
-    runs.push({ id, at: j.generatedAt ?? id, cc: j.harness?.version ?? (m ? m[1] : null), track: j.track ?? (/-canary$/.test(id) ? 'canary' : /-pinned$/.test(id) ? 'pinned' : null), runner: j.shim ? 'shim' : 'official', models: j.aggregates?.resolvedModels ?? [...new Set(j.cases.flatMap((c) => (c.arms?.with ?? []).map((r) => r.model)).filter(Boolean))], json: j, report: opt.reports && existsSync(path.join(opt.reports, id + '.html')) ? (relReports ? relReports + '/' : '') + id + '.html' : null });
+    // preflight rides on the raw file: normalizeResult rebuilds official results and would drop it
+    runs.push({ id, at: j.generatedAt ?? id, cc: j.harness?.version ?? (m ? m[1] : null), track: j.track ?? (/-canary$/.test(id) ? 'canary' : /-pinned$/.test(id) ? 'pinned' : null), runner: j.shim ? 'shim' : 'official', models: j.aggregates?.resolvedModels ?? [...new Set(j.cases.flatMap((c) => (c.arms?.with ?? []).map((r) => r.model)).filter(Boolean))], json: j, preflight: raw?.preflight ?? j.preflight ?? null, report: opt.reports && existsSync(path.join(opt.reports, id + '.html')) ? (relReports ? relReports + '/' : '') + id + '.html' : null });
   } catch {}
 }
 runs.sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -65,8 +66,8 @@ if (!latest) { tone = 'muted'; mark = '○'; headline = 'No runs yet'; lede = 'P
 else if (latestStatus === 'errored') { tone = 'fail'; mark = '■'; headline = 'Latest run errored'; lede = `${latest.json.aggregates?.partialReason ?? 'Agent runs errored.'} Usually an exhausted API key. Nothing was stored.`; }
 else if (latestStatus === 'regressed') { tone = 'fail'; mark = '▼'; headline = `${latest.track === 'canary' ? 'Canary' : 'Latest run'} regressed`; lede = `${latest.track === 'canary' ? `On ${latest.models.join(', ') || 'the alias'} with Claude Code ${latest.cc ?? '?'}, ` : ''}${latest.json.cases.filter((c) => caseStatus(c, latest) === 'regressed').map(key).join(', ')} dropped below the baseline by more than ${TH}. ${latest.track === 'canary' ? 'The pinned baseline is untouched; do not bump the pins.' : 'Open the report for each failing run.'}`; }
 else if (latestStatus === 'below') { tone = 'warn'; mark = '◆'; headline = 'Below 1.00, within threshold'; lede = 'Some cases are not at 1.00 but none dropped by more than the threshold. Watch the ribbon for a trend.'; }
-else if (latestStatus === 'noisy') { tone = 'warn'; mark = '◆'; headline = `${latest.track === 'canary' ? 'Canary' : 'Latest run'} noisy — within the historical band`; lede = `${latest.json.cases.filter((c) => caseStatus(c, latest) === 'noisy').map(key).join(', ')} dropped past ${TH} but stayed inside its noise band (the spread of its own past runs) — a warning, not a regression. More runs per case shrink the band.`; }
-else if (latest.track !== 'canary' && latestCanary && ['regressed', 'errored'].includes(runStatus(latestCanary))) { tone = 'warn'; mark = '◆'; headline = 'Baseline holding · canary red'; lede = `The pinned track passes, but the latest canary (${latestCanary.models.join(', ') || 'alias'} on Claude Code ${latestCanary.cc ?? '?'}, ${when(latestCanary.at)}) ${runStatus(latestCanary) === 'errored' ? 'errored' : `regressed on ${latestCanary.json.cases.filter((c) => caseStatus(c, latestCanary) === 'regressed').map(key).join(', ')}`}. That is what your developers get on the alias today — do not bump the pins; read the canary report.`; }
+else if (latestStatus === 'noisy') { tone = 'warn'; mark = '◆'; headline = `${latest.track === 'canary' ? 'Canary' : 'Latest run'} noisy: within the historical band`; lede = `${latest.json.cases.filter((c) => caseStatus(c, latest) === 'noisy').map(key).join(', ')} dropped past ${TH} but stayed inside its noise band (the spread of its own past runs), a warning, not a regression. More runs per case shrink the band.`; }
+else if (latest.track !== 'canary' && latestCanary && ['regressed', 'errored'].includes(runStatus(latestCanary))) { tone = 'warn'; mark = '◆'; headline = 'Baseline holding · canary red'; lede = `The pinned track passes, but the latest canary (${latestCanary.models.join(', ') || 'alias'} on Claude Code ${latestCanary.cc ?? '?'}, ${when(latestCanary.at)}) ${runStatus(latestCanary) === 'errored' ? 'errored' : `regressed on ${latestCanary.json.cases.filter((c) => caseStatus(c, latestCanary) === 'regressed').map(key).join(', ')}`}. That is what your developers get on the alias today, do not bump the pins; read the canary report.`; }
 else { tone = 'pass'; mark = '●'; headline = latest.track === 'canary' ? 'Canary green · baseline holding' : 'Holding at baseline'; lede = `${caseNames.length} case${caseNames.length === 1 ? '' : 's'} across ${runs.length} run${runs.length === 1 ? '' : 's'} and ${versions.length} Claude Code version${versions.length === 1 ? '' : 's'}${modelsSeen.length > 1 ? ` and ${modelsSeen.length} models` : ''}. ${streak?.greens ? `The canary is ${streak.greens} green${streak.greens === 1 ? '' : 's'} into a streak of ${cfg?.promoteAfter ?? 2}.` : latestCanary ? 'Latest canary agrees with the pinned baseline.' : 'No canary run yet.'}`; }
 
 // ---- stamp ----
@@ -195,8 +196,96 @@ const TLW = 1000, TLH = 26, seg = verdictsAsc.length ? TLW / verdictsAsc.length 
 const timelineHtml = verdictsAsc.length < 2 ? '' : `<div class="panel tlp"><div class="tlh">Verdict per Claude Code release <span class="tlk"><i class="pass">●</i> held <i class="warn">●</i> wobble, within noise <i class="fail">●</i> drift / errored</span></div>
 <svg viewBox="0 0 ${TLW} ${TLH + 18}" width="100%" role="img" aria-label="one verdict per Claude Code release">${verdictsAsc.map((v, i) => `<rect x="${(i * seg + 1).toFixed(1)}" y="0" width="${Math.max(seg - 2, 2).toFixed(1)}" height="${TLH}" rx="4" fill="${v.verdict === 'held' && !v.wobble ? 'var(--pass)' : v.verdict === 'held' ? 'var(--warn)' : 'var(--fail)'}"><title>cc${esc(v.claudeCode)} · ${v.verdict}${v.casesMoved.length ? ' · ' + esc(v.casesMoved.join(', ')) : ''} · overall ${v.overall === null ? 'n/a' : Number(v.overall).toFixed(2)}</title></rect>`).join('')}<text x="1" y="${TLH + 14}" class="tlt">cc${esc(verdictsAsc[0].claudeCode)}</text><text x="${TLW - 1}" y="${TLH + 14}" class="tlt" text-anchor="end">cc${esc(verdictsAsc.at(-1).claudeCode)}</text></svg></div>`;
 
+// ---- setup health: format drift. The rows above show behaviour drift; this shows whether the setup
+// itself (skills + eval suite) still loads. A run may carry json.preflight = { skills: <skill-lint --json>,
+// suite: <suite-doctor --json> }, either part optional; older runs carry none. With no preflight anywhere
+// this whole block renders nothing and the page is byte-for-byte what it was before.
+const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+// format word → status tone, glyph, label (status is never colour alone)
+const FORMAT = { healthy: ['pass', '✓', 'healthy'], warnings: ['warn', '⚠', 'warnings'], unconfirmed: ['warn', '⚠', 'not confirmed'], errors: ['fail', '✖', 'errors'] };
+function healthOf(p) {
+  const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null);
+  const sk = obj(p?.skills), sd = obj(p?.suite);
+  if (!sk && !sd) return null;
+  const list = (v) => (Array.isArray(v) ? v.filter(obj) : []);
+  const count = (fs2, lv) => fs2.filter((f) => f.level === lv).length;
+  const skF = list(sk?.findings), sdF = list(sd?.findings);
+  const skills = sk ? { checked: num(sk.skills), errors: num(sk.errors) ?? count(skF, 'ERROR'), warnings: num(sk.warnings) ?? count(skF, 'WARN') } : null;
+  let suiteH = null;
+  if (sd) {
+    const live = obj(sd.live) ?? {}, ran = live.status === 'ok' || live.status === 'failed';
+    const cases = num(sd.cases), failed = ran ? num(live.failedCount) : null;
+    suiteH = { cases, confirmed: live.status === 'ok', liveStatus: live.status ?? null, reason: live.reason ?? null, runnerVersion: live.version ?? null,
+      loaded: live.status === 'ok' ? num(live.loaded) ?? (cases !== null && failed !== null ? cases - failed : null) : null, failedToLoad: failed,
+      errors: num(sd.summary?.errors) ?? count(sdF, 'ERROR'), warnings: num(sd.summary?.warnings) ?? count(sdF, 'WARN'), fixable: num(sd.summary?.fixable) ?? sdF.filter((f) => f.fixable).length };
+  }
+  const errors = (skills?.errors ?? 0) + (suiteH?.errors ?? 0), warnings = (skills?.warnings ?? 0) + (suiteH?.warnings ?? 0);
+  const format = errors || suiteH?.failedToLoad > 0 ? 'errors' : warnings ? 'warnings' : suiteH && !suiteH.confirmed ? 'unconfirmed' : 'healthy';
+  const findings = [
+    ...sdF.map((f) => ({ level: f.level, source: 'suite', where: [f.case, f.file, f.key ? f.key + ':' : null].filter((s) => s && s !== '-').join(' · '), message: f.message, fix: f.fix, fixable: !!f.fixable, confirmed: !!f.confirmedByRunner })),
+    ...skF.map((f) => ({ level: f.level, source: 'skill', where: f.file ? f.file + (f.line ? ':' + f.line : '') : '', message: f.message, fix: f.fix, fixable: false, confirmed: false })),
+  ].sort((a, b) => (a.level === 'ERROR' ? 0 : 1) - (b.level === 'ERROR' ? 0 : 1)); // stable: errors first, source order kept
+  return { skills, suite: suiteH, errors, warnings, format, findings };
+}
+for (const r of runs) r.health = healthOf(r.preflight);
+const healthRuns = runs.filter((r) => r.health);
+const healthLatest = healthRuns.at(-1) ?? null;
+// one format verdict per Claude Code version (newest checked run on it), in the verdict timeline's version order
+const healthByVersion = new Map();
+for (const r of healthRuns) if (r.cc) healthByVersion.set(r.cc, r);
+const healthAsc = [...byVersion.keys()].filter((cc) => healthByVersion.has(cc)).map((cc) => { const r = healthByVersion.get(cc); return { claudeCode: cc, at: r.at ?? null, ...r.health }; });
+const loadPhrase = (s) => (!s ? 'skills only' : s.loaded !== null && s.cases !== null ? `loaded ${s.loaded} of ${s.cases}` : `not confirmed, ${plural(s.cases ?? 0, 'case')}`);
+const healthTip = (v) => `cc${v.claudeCode} · ${loadPhrase(v.suite)} · ${plural(v.errors, 'error')}${v.findings[0]?.message ? ' · ' + v.findings[0].message : ''}`;
+
+let healthHtml = '', healthCss = '';
+if (healthLatest) {
+  const h = healthLatest.health, s = h.suite, sk = h.skills, ver = s?.runnerVersion ?? healthLatest.cc ?? '?';
+  const skTone = !sk ? '' : sk.errors ? 'fail' : sk.warnings ? 'warn' : 'pass';
+  const skillsTile = !sk ? ['Skills', 'n/a', 'not checked in this run', '']
+    : [`Skills`, sk.errors ? `✖ ${plural(sk.errors, 'error')}` : sk.warnings ? `⚠ ${plural(sk.warnings, 'warning')}` : '✓ healthy', `${sk.checked ?? '?'} checked · ${plural(sk.errors, 'error')} · ${plural(sk.warnings, 'warning')}`, skTone];
+  let suiteTile = ['Eval suite format', 'n/a', 'not checked in this run', ''];
+  if (s) {
+    const bad = s.errors || s.failedToLoad > 0, [t, g] = FORMAT[bad ? 'errors' : s.warnings ? 'warnings' : s.confirmed ? 'healthy' : 'unconfirmed'];
+    const big = s.loaded !== null && s.cases !== null ? `${g} ${s.loaded} of ${s.cases} load` : bad ? `${g} ${plural(s.errors || s.failedToLoad, 'error')}` : `${g} not confirmed`;
+    const runnerNote = s.confirmed ? `on Claude Code ${ver} · confirmed by the runner`
+      : s.liveStatus === 'failed' ? `${plural(s.cases ?? 0, 'case')} · live check did not complete${s.reason ? ': ' + s.reason : ''}`
+      : `${plural(s.cases ?? 0, 'case')} · static checks only, not confirmed by the runner${s.reason ? ' (' + s.reason + ')' : ''}`;
+    suiteTile = ['Eval suite format', big, runnerNote + (s.errors ? ` · ${plural(s.errors, 'error')}${s.fixable ? `, ${s.fixable} fixable with --fix` : ''}` : s.warnings ? ` · ${plural(s.warnings, 'warning')}` : ''), t];
+  }
+  const tile2 = ([label, big, sub, tone2]) => `<div class="tile"><div class="tl">${esc(label)}</div><div class="tb ${tone2}">${esc(big)}</div><div class="ts">${esc(sub)}</div></div>`;
+  // the strip: one segment per release, glyph inside each segment so the state never rests on colour
+  const segW = healthAsc.length ? TLW / healthAsc.length : TLW, labelAll = healthAsc.length <= 10;
+  const strip = !healthAsc.length ? '' : `<div class="panel tlp"><div class="tlh">Format drift per Claude Code release <span class="tlk"><i class="pass">●</i> ✓ every case loads <i class="warn">●</i> ⚠ warnings or not confirmed <i class="fail">●</i> ✖ cases fail to load or errors</span></div>
+<svg viewBox="0 0 ${TLW} ${TLH + 18}" width="100%" role="img" aria-label="one setup format verdict per Claude Code release">${healthAsc.map((v, i) => { const [t, g] = FORMAT[v.format]; const cx = (i * segW + segW / 2).toFixed(1); return `<rect class="fd" x="${(i * segW + 1).toFixed(1)}" y="0" width="${Math.max(segW - 2, 2).toFixed(1)}" height="${TLH}" rx="4" fill="var(--${t})"><title>${esc(healthTip(v))}</title></rect>${segW >= 22 ? `<text x="${cx}" y="${TLH / 2 + 5}" class="fdg" text-anchor="middle" aria-hidden="true">${g}</text>` : ''}`; }).join('')}${labelAll
+    ? healthAsc.map((v, i) => `<text x="${(i * segW + segW / 2).toFixed(1)}" y="${TLH + 14}" class="tlt" text-anchor="middle">cc${esc(v.claudeCode)}</text>`).join('')
+    : `<text x="1" y="${TLH + 14}" class="tlt">cc${esc(healthAsc[0].claudeCode)}</text><text x="${TLW - 1}" y="${TLH + 14}" class="tlt" text-anchor="end">cc${esc(healthAsc.at(-1).claudeCode)}</text>`}</svg></div>`;
+  // the newest check's findings, errors first, at most 8
+  const MAX_FINDINGS = 8, shown = h.findings.slice(0, MAX_FINDINGS), more = h.findings.length - shown.length;
+  const allLoad = s?.confirmed && s.loaded !== null ? `all ${plural(s.cases ?? s.loaded, 'eval case')} load on Claude Code ${ver}` : null;
+  const clean = h.format === 'healthy' ? `✓ ${[sk ? `${sk.checked === 1 ? 'the one skill is' : 'every skill is'} well formed` : null, allLoad].filter(Boolean).join(' and ').replace(/^./, (c) => c.toUpperCase())}. Nothing to fix.`
+    : h.format === 'unconfirmed' ? `⚠ The static checks found nothing to fix, but loading was not confirmed against the runner${s?.reason ? ': ' + s.reason : ''}.`
+    : s?.failedToLoad > 0 ? `✖ ${plural(s.failedToLoad, 'case')} failed to load; the runner gave no further detail.`
+    : `${FORMAT[h.format][1]} ${plural(h.errors, 'error')} and ${plural(h.warnings, 'warning')} reported, without details.`;
+  const items = shown.map((f) => { const [t, g, w] = f.level === 'ERROR' ? ['fail', '✖', 'error'] : ['warn', '⚠', 'warning']; return `<li><span class="hfl ${t}">${g} ${w}</span><span class="hfw mono">${esc(f.source)}${f.where ? ' · ' + esc(f.where) : ''}</span><span class="hfm">${esc(f.message)}</span>${f.fix ? `<span class="hfx">Fix: ${esc(f.fix)}${f.fixable ? ' <i>--fix can apply</i>' : ''}${f.confirmed ? ' <i>runner agrees</i>' : ''}</span>` : ''}</li>`; }).join('');
+  const findingsHtml = `<div class="panel hfp"><div class="tlh">Findings in the newest check <span>cc${esc(healthLatest.cc ?? ver)} · ${esc(when(healthLatest.at))}</span></div>${items ? `<ul class="hf">${items}</ul>${more > 0 ? `<p class="hfmore">and ${more} more</p>` : ''}` : `<p class="hfok ${FORMAT[h.format][0]}">${esc(clean)}</p>`}</div>`;
+  healthHtml = `\n<h2>Setup health</h2>
+<p class="hh">Behaviour drift is above. This is format drift: does the setup itself still load? Skills are linted and the eval suite is loaded by the real runner before each run, so a release that breaks the suite shows here even when no case could run.</p>
+<div class="tiles">${tile2(skillsTile)}${tile2(suiteTile)}</div>
+${strip}
+${findingsHtml}`;
+  healthCss = `
+.tile .tb.warn{color:var(--warn)}.hh{font-size:13px;color:var(--muted);margin:-4px 0 0;max-width:80ch}
+.fdg{font-size:13px;font-weight:600;fill:var(--surface);pointer-events:none}
+.hfp{margin:0 0 18px}.hf{list-style:none;margin:0;padding:0}.hf li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:2px 12px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:13.5px}.hf li:last-child{border-bottom:0}
+.hfl{grid-row:span 3;font-size:12px;font-weight:600;white-space:nowrap;padding-top:1px}.hfw{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.hfm{overflow-wrap:anywhere}.hfx{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.hfx i{font-style:normal;font-size:11px;letter-spacing:.04em;padding:1px 6px;margin-left:6px;border-radius:4px;background:var(--track-bg);color:var(--track);white-space:nowrap}
+.hfmore{font-size:12.5px;color:var(--muted);margin:8px 0 0}.hfok{margin:0;font-size:14px}
+@media (max-width:820px){.hf li{grid-template-columns:1fr}.hfl{grid-row:auto}}`;
+}
+
 const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(suite)} · drift index</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}</style></head><body><div class="wrap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}${healthCss}</style></head><body><div class="wrap">
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>${esc(suite)}</b> · drift index</p>
     <h1 class="${tone}"><span class="mark">${mark}</span><span>${esc(headline)}</span></h1>
@@ -207,11 +296,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 <h2>Every case, every run</h2>
 <div class="panel">${ribbon || '<p class="muted">No runs yet.</p>'}${ribbonAxis}</div>
 ${tilesHtml}
-${timelineHtml}
+${timelineHtml}${healthHtml}
 ${runs.length > 1 ? `<h2>Score per case over Claude Code versions</h2><div class="panel">${svg}${legend}</div>` : ''}
 <h2>Runs</h2>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>when</th><th>track</th><th>claude code</th><th>model</th><th>overall</th>${caseNames.map((nm) => `<th class="case" title="${esc(nm)}">${esc(nm)}</th>`).join('')}<th>cost</th><th></th></tr></thead><tbody>${runRows}</tbody></table></div>
-<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${TH} against the pinned baseline is a regression — a drop inside the case's own noise band (the spread of its past runs) is a ⚠ noisy warning, shown amber. Filled cells are pinned-track runs, outlined cells are canaries on the alias model and latest Claude Code. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>; every run's report lists each grader's reason.</p>
+<p class="foot">Scores are the mean over a case's runs with the setup loaded; a drop of more than ${TH} against the pinned baseline is a regression, a drop inside the case's own noise band (the spread of its past runs) is a ⚠ noisy warning, shown amber. Filled cells are pinned-track runs, outlined cells are canaries on the alias model and latest Claude Code. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a>; every run's report lists each grader's reason.</p>
 </div></body></html>`;
 await fs.writeFile(outPath, html); console.log(outPath);
 
@@ -239,5 +328,9 @@ const badgeValue = !latest ? 'no runs' : latestStatus === 'errored' ? 'runs erro
 const badgeColor = !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestStatus === 'errored' ? '#f85149' : '#3fb950';
 const lw = 8 + badgeLabel.length * 6.3, vw = 12 + badgeValue.length * 6.5, bw = Math.round(lw + vw);
 await fs.writeFile(path.join(outDir, 'status.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="20" role="img" aria-label="${esc(badgeLabel)}: ${esc(badgeValue)}"><title>${esc(badgeLabel)}: ${esc(badgeValue)}</title><rect rx="3" width="${bw}" height="20" fill="#555"/><rect rx="3" x="${lw.toFixed(1)}" width="${vw.toFixed(1)}" height="20" fill="${badgeColor}"/><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,sans-serif" font-size="11"><text x="${(lw / 2).toFixed(1)}" y="14">${esc(badgeLabel)}</text><text x="${(lw + vw / 2).toFixed(1)}" y="14">${esc(badgeValue)}</text></g></svg>\n`);
-await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts }, null, 2) + '\n');
+// setup health per Claude Code version, newest first; the key is absent when no run carried preflight data
+const health = healthAsc.length ? { latest: healthAsc.at(-1).claudeCode, versions: [...healthAsc].reverse().map((v) => ({ claudeCode: v.claudeCode, at: v.at, format: v.format,
+  cases: v.suite?.cases ?? null, loaded: v.suite?.loaded ?? null, failedToLoad: v.suite?.failedToLoad ?? null, confirmed: v.suite ? v.suite.confirmed : null,
+  errors: v.errors, warnings: v.warnings, fixable: v.suite?.fixable ?? 0, skills: v.skills })) } : null;
+await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts, ...(healthAsc.length ? { health } : {}) }, null, 2) + '\n');
 console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, about ${streakDays} days clean)` : ''}`);

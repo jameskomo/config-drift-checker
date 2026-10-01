@@ -43,7 +43,7 @@ async function fixture() {
 
 test('dashboard: a drop inside the noise band is amber noisy, never red', async () => {
   const html = await fixture();
-  assert.match(html, /noisy — within the historical band/);
+  assert.match(html, /noisy: within the historical band/);
   assert.match(html, /class="cell noisy /, 'ribbon cell is amber');
   assert.doesNotMatch(html, /class="cell regressed /);
   assert.match(html, /<tr class="st-noisy">/, 'runs table row is noisy');
@@ -109,4 +109,119 @@ test('hero tiles and the verdict timeline render with status colors and per-vers
   assert.match(html, /<title>cc2\.1\.259 · held · b/, 'the tooltip names the wobbling case');
   assert.match(html, /fill="var\(--warn\)"><title>cc2\.1\.259/, 'an in-band wobble wears the warn status color, not red');
   assert.match(html, /fill="var\(--pass\)"><title>cc2\.1\.250/, 'clean versions are green');
+});
+
+// ---- setup health: format drift per Claude Code release ----
+const skillsDoc = ({ errors = 0, warnings = 0, findings = [] } = {}) => ({ schemaVersion: 1, pluginDir: 'p', skills: 3, errors, warnings, findings });
+const suiteDoc = ({ status = 'ok', version = null, cases = 4, failed = 0, findings = [], reason = null } = {}) => ({
+  pluginDir: 'p', evalDir: 'evals', cases, fixApplied: false, fixed: [], findings,
+  live: status === 'ok' ? { status, version, loadErrors: [], notes: [], failedCount: failed, runsStarted: 0, costUsd: 0, loaded: cases - failed } : { status, reason },
+  summary: { errors: findings.filter((f) => f.level === 'ERROR').length, warnings: findings.filter((f) => f.level === 'WARN').length, fixed: 0, fixable: findings.filter((f) => f.fixable).length },
+});
+const sdFinding = (level, n, extra = {}) => ({ level, rule: 'r', case: `case-${n}`, file: 'case.yaml', key: 'k', message: `${level.toLowerCase()} message ${n}`, fix: `fix ${n}`, fixable: false, ...extra });
+
+// writes one pinned run per entry ([cc, preflight|undefined]) and renders the page
+async function healthFixture(entries) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'health-'));
+  const hist = path.join(dir, 'history');
+  await fs.mkdir(hist);
+  for (const [i, [cc, preflight]] of entries.entries()) {
+    const r = result({ a: [1, 1, 1] }, { at: `2026-09-${String(i + 1).padStart(2, '0')}T10:00:00Z`, cc });
+    if (preflight !== undefined) r.preflight = preflight;
+    await fs.writeFile(path.join(hist, `202609${String(i + 1).padStart(2, '0')}T100000Z-cc${cc}-shim-pinned.json`), JSON.stringify(r));
+  }
+  const out = path.join(dir, 'index.html');
+  const r = spawnSync('node', [TOOL, hist, '--out', out, '--title', 'healthsuite'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  return { html: await fs.readFile(out, 'utf8'), verdicts: JSON.parse(await fs.readFile(path.join(dir, 'verdicts.json'), 'utf8')) };
+}
+const segments = (html) => [...html.matchAll(/<rect class="fd" [^>]*fill="var\(--(\w+)\)"><title>([^<]*)<\/title>/g)].map((m) => ({ tone: m[1], tip: m[2] }));
+
+test('setup health: no preflight anywhere renders nothing new and verdicts.json has no health key', async () => {
+  const { html, verdicts } = await healthFixture([['2.1.250'], ['2.1.251', {}], ['2.1.252', null]]);
+  assert.doesNotMatch(html, /Setup health/);
+  assert.doesNotMatch(html, /Format drift/);
+  assert.doesNotMatch(html, /class="fd"|\.hfp|\.fdg/, 'no extra markup or CSS');
+  assert.ok(!('health' in verdicts));
+  assert.deepEqual(Object.keys(verdicts), ['suite', 'generatedAt', 'pageUrl', 'streak', 'verdicts']);
+});
+
+test('setup health: mixed history draws a format segment only for versions with preflight data', async () => {
+  const { html } = await healthFixture([
+    ['2.1.250'],
+    ['2.1.251', { skills: skillsDoc(), suite: suiteDoc({ version: '2.1.251' }) }],
+    ['2.1.252'],
+    ['2.1.253', { suite: suiteDoc({ version: '2.1.253' }) }],
+    ['2.1.254'],
+  ]);
+  assert.match(html, /<h2>Setup health<\/h2>/);
+  assert.match(html, /Format drift per Claude Code release/);
+  const segs = segments(html);
+  assert.deepEqual(segs.map((s) => s.tip.split(' · ')[0]), ['cc2.1.251', 'cc2.1.253']);
+  assert.ok(html.indexOf('Verdict per Claude Code release') < html.indexOf('<h2>Setup health</h2>'), 'placed after the verdict timeline');
+  assert.match(html, /Findings in the newest check <span>cc2\.1\.253/, 'tiles and findings follow the newest checked run, even if later runs have none');
+});
+
+test('setup health: each state wears its reserved tone with a glyph, and the tooltip says what loaded', async () => {
+  const { html, verdicts } = await healthFixture([
+    ['2.1.250', { skills: skillsDoc(), suite: suiteDoc({ version: '2.1.250' }) }],
+    ['2.1.251', { skills: skillsDoc({ warnings: 1, findings: [{ level: 'WARN', rule: 'body-empty', file: 'skills/x/SKILL.md', line: 4, message: 'the body is empty', fix: 'write it' }] }), suite: suiteDoc({ version: '2.1.251' }) }],
+    ['2.1.252', { skills: skillsDoc(), suite: suiteDoc({ status: 'skipped', reason: 'no --runner given and no claude on PATH' }) }],
+    ['2.1.253', { skills: skillsDoc(), suite: suiteDoc({ version: '2.1.253', failed: 1 }) }],
+    ['2.1.254', { skills: skillsDoc(), suite: suiteDoc({ version: '2.1.254', failed: 1, findings: [sdFinding('ERROR', 1, { fixable: true, confirmedByRunner: true })] }) }],
+  ]);
+  const segs = segments(html);
+  assert.deepEqual(segs.map((s) => s.tone), ['pass', 'warn', 'warn', 'fail', 'fail'], 'clean, warnings, not confirmed, load failure, suite error');
+  assert.equal(segs[0].tip, 'cc2.1.250 · loaded 4 of 4 · 0 errors');
+  assert.equal(segs[1].tip, 'cc2.1.251 · loaded 4 of 4 · 0 errors · the body is empty');
+  assert.equal(segs[2].tip, 'cc2.1.252 · not confirmed, 4 cases · 0 errors');
+  assert.equal(segs[3].tip, 'cc2.1.253 · loaded 3 of 4 · 0 errors');
+  assert.equal(segs[4].tip, 'cc2.1.254 · loaded 3 of 4 · 1 error · error message 1');
+  for (const g of ['✓', '⚠', '✖']) assert.match(html, new RegExp(`class="fdg"[^>]*>${g}<`), `glyph ${g} drawn inside its segment`);
+  assert.match(html, /<div class="tl">Eval suite format<\/div><div class="tb fail">✖ 3 of 4 load<\/div><div class="ts">on Claude Code 2\.1\.254 · confirmed by the runner · 1 error, 1 fixable with --fix<\/div>/);
+  assert.match(html, /<div class="tl">Skills<\/div><div class="tb pass">✓ healthy<\/div><div class="ts">3 checked · 0 errors · 0 warnings<\/div>/);
+  assert.match(html, /<i>--fix can apply<\/i> <i>runner agrees<\/i>/);
+  assert.deepEqual(verdicts.health.versions.map((v) => [v.claudeCode, v.format]), [['2.1.254', 'errors'], ['2.1.253', 'errors'], ['2.1.252', 'unconfirmed'], ['2.1.251', 'warnings'], ['2.1.250', 'healthy']]);
+});
+
+test('setup health: a clean newest check says so in one line; an unconfirmed one says why', async () => {
+  const clean = await healthFixture([['2.1.250', { skills: skillsDoc(), suite: suiteDoc({ version: '2.1.250' }) }]]);
+  assert.match(clean.html, /<p class="hfok pass">✓ Every skill is well formed and all 4 eval cases load on Claude Code 2\.1\.250\. Nothing to fix\.<\/p>/);
+  const skipped = await healthFixture([['2.1.250', { suite: suiteDoc({ status: 'skipped', reason: 'no --runner given and no claude on PATH' }) }]]);
+  assert.match(skipped.html, /<div class="tb warn">⚠ not confirmed<\/div><div class="ts">4 cases · static checks only, not confirmed by the runner \(no --runner given and no claude on PATH\)<\/div>/);
+  assert.match(skipped.html, /<p class="hfok warn">⚠ The static checks found nothing to fix, but loading was not confirmed against the runner: no --runner given and no claude on PATH\.<\/p>/);
+  assert.match(skipped.html, /<div class="tl">Skills<\/div><div class="tb ">n\/a<\/div>/, 'a missing part is shown as not checked, not as healthy');
+});
+
+test('setup health: findings list errors first, at most 8, then "and N more"', async () => {
+  const findings = [];
+  for (let i = 1; i <= 12; i++) findings.push(sdFinding(i % 3 === 0 ? 'ERROR' : 'WARN', i));
+  const { html } = await healthFixture([['2.1.250', { suite: suiteDoc({ version: '2.1.250', findings }) }]]);
+  const items = [...html.matchAll(/<span class="hfm">([^<]*)<\/span>/g)].map((m) => m[1]);
+  assert.equal(items.length, 8);
+  assert.deepEqual(items.slice(0, 4), ['error message 3', 'error message 6', 'error message 9', 'error message 12'], 'errors first, in order');
+  assert.deepEqual(items.slice(4), ['warn message 1', 'warn message 2', 'warn message 4', 'warn message 5']);
+  assert.match(html, /<p class="hfmore">and 4 more<\/p>/);
+  assert.match(html, /<span class="hfl fail">✖ error<\/span><span class="hfw mono">suite · case-3 · case\.yaml · k:<\/span>/);
+});
+
+test('setup health: verdicts.json gains health per version and keeps every existing field', async () => {
+  const { verdicts } = await healthFixture([
+    ['2.1.250'],
+    ['2.1.251', { skills: skillsDoc({ errors: 1, findings: [{ level: 'ERROR', rule: 'name-missing', file: 'skills/x/SKILL.md', line: null, message: 'no name', fix: 'add name' }] }), suite: suiteDoc({ version: '2.1.251' }) }],
+  ]);
+  assert.deepEqual(Object.keys(verdicts), ['suite', 'generatedAt', 'pageUrl', 'streak', 'verdicts', 'health']);
+  assert.equal(verdicts.verdicts.length, 2);
+  for (const v of verdicts.verdicts) for (const k of ['claudeCode', 'at', 'track', 'runner', 'verdict', 'wobble', 'overall', 'casesMoved', 'report']) assert.ok(k in v, k);
+  assert.equal(verdicts.health.latest, '2.1.251');
+  assert.deepEqual(verdicts.health.versions, [{ claudeCode: '2.1.251', at: '2026-09-02T10:00:00Z', format: 'errors', cases: 4, loaded: 4, failedToLoad: 0, confirmed: true,
+    errors: 1, warnings: 0, fixable: 0, skills: { checked: 3, errors: 1, warnings: 0 } }]);
+});
+
+test('setup health: finding text, fixes and versions are HTML-escaped', async () => {
+  const evil = '<script>alert("x")</script> & co';
+  const { html } = await healthFixture([['2.1.250', { suite: suiteDoc({ version: '2.1.250<b>', findings: [sdFinding('ERROR', 1, { message: evil, fix: evil, case: evil })] }) }]]);
+  assert.doesNotMatch(html, /<script>alert/);
+  assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt; &amp; co/);
+  assert.match(html, /on Claude Code 2\.1\.250&lt;b&gt;/);
 });
