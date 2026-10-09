@@ -1,0 +1,3035 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-09T14:35:22.590Z",
+  "claudeCode": {
+    "version": "2.1.295",
+    "previous": "2.1.287"
+  },
+  "headline": "Claude Code 2.1.295: 11 public suites, 303 cases. 211 load, 0 broke on this release, 92 never loaded",
+  "totals": {
+    "suites": 11,
+    "cases": 303,
+    "loads": 211,
+    "broke": 0,
+    "fixed": 0,
+    "neverLoaded": 92,
+    "fails": 0,
+    "unchecked": 0
+  },
+  "method": "claude plugin eval --max-cost-usd 0 --trust-plugin --no-publish, bare env (PATH, empty HOME), depth-1 clone; no model runs, no credentials, no repo code executed",
+  "discovery": {
+    "queries": [
+      "filename:prompt.md path:evals graders"
+    ],
+    "error": null,
+    "optedOut": []
+  },
+  "suites": [
+    {
+      "repo": "jameskomo/config-drift-checker",
+      "path": "examples/komo-stack",
+      "ref": null,
+      "source": "list",
+      "stars": 30,
+      "description": "CI for your coding-agent setup (CLAUDE.md, skills, hooks): pinned baselines, a canary on every Claude Code release, self-diagnosing reports, autonomous repair. One suite, three agents: Claude Code, Codex, Gemini.",
+      "commit": "7a6524f9f0fd6a54529a7ec8466d6cdc087b6ca2",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "guard-blocks-destructive-git",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "spring-controller-follows-conventions",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "spring-request-dtos-are-validated-records",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "spring-service-owns-rules-and-errors",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "spring-work-triggers-skill",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "vue-request-does-not-trigger-skill",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "3x-haust/oh-my-design",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 198,
+      "description": "Design cognition loop for Codex, Claude Code, and Pi-compatible agents — frame, diverge, see, reframe",
+      "commit": "f6a21440d2abfc6800dd67ef57bf8c83a386ecc2",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 12
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 12
+        }
+      },
+      "doctor": {
+        "errors": 36,
+        "fixable": 36
+      },
+      "cases": [
+        {
+          "name": "award-bar",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/award-score.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "blog-multipage",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/cross-page-ladders.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "docs-site",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/density-spectrum-cited.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "figma-fidelity",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/original-design-slop-reported.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "human-design-loop",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/process-contract.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 0
+          }
+        },
+        {
+          "name": "korean-developer-portfolio",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/fact-and-message-fidelity.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "korean-showpiece",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/artifacts-in-english.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 6
+          }
+        },
+        {
+          "name": "landing-quality",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": null
+        },
+        {
+          "name": "motion-showpiece",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/filmstrip-has-energy.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 3
+          }
+        },
+        {
+          "name": "quiet-dashboard",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/no-showpiece-leak.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 0
+          }
+        },
+        {
+          "name": "reference-synthesis",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/synthesis-map.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 0
+          }
+        },
+        {
+          "name": "scout-only",
+          "status": "never-loaded",
+          "error": "graders: Required",
+          "previousError": "graders: Required",
+          "doctor": {
+            "rule": "grader-prose-rubric",
+            "file": "graders/board-coverage.md",
+            "fix": "make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)",
+            "fixable": true,
+            "more": 1
+          }
+        }
+      ]
+    },
+    {
+      "repo": "Roh00t/PE201_A2_Group6",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 1,
+      "description": "For Emerging AI Assignment 2",
+      "commit": "57973d846ca12bf943c628e4d9d8cb7537a18031",
+      "status": "not-a-suite",
+      "reason": "no case directory with graders/ or case.yaml, so this is not a claude plugin eval suite",
+      "cases": []
+    },
+    {
+      "repo": "owid/skills",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 5,
+      "description": "Agent Skills for Our World in Data",
+      "commit": "dcd402d1797978cd17525705a4d8c62f7c53d3fd",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "skills/owid/add-citations",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/admits-no-chart-exists",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/answers-with-latest-year",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/article-to-slides",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/consistent-with-owid",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/data-from-url",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/data-sources-on-topic",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/explain-spike",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/explain-term-in-chart",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/extract-claims",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/fact-check-article",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/find-chart",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/finds-a-map-link",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/finds-data-insights",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/how-was-data-produced",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/html-summary-with-charts",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/integrate-into-pipeline",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/is-that-true",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/licence-non-redistributable",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/lists-articles-by-author",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/png-of-chart",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/reproduce-in-notebook",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/topic-coverage",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/trap-filtered-default-selection",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/trap-map-default-country-filter",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/trap-multidim-url-params",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/user-agent-in-python",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/user-agent-in-shell",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/utm-on-fetches",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/owid/whats-interesting",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "evisoft/scio.md.plugin",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": "Scio plugin: search, cite and contribute to the agent-written encyclopedia through its OAuth MCP server",
+      "commit": "cd021b95bbf299a70527a62461f954d40e8cefbf",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "gap-offer",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "injected-panel",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "no-register",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "research-sources",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "review-paged-panel",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "review-seat",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "SamyakJhaveri/loam",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": "Copier template that bootstraps AI-agent-optimized project setups: layered context routing, curated skills, and an enforced validation gate — synced across projects.",
+      "commit": "5d20a192cfc7432b8cd84f3ef74e7a3ed2da0e22",
+      "status": "not-a-suite",
+      "reason": "no case directory with graders/ or case.yaml, so this is not a claude plugin eval suite",
+      "cases": []
+    },
+    {
+      "repo": "lukassykora/drupal-superpowers",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": "Claude Code Superpowers for Drupal.",
+      "commit": "f722e34d87659415881a8cef875eb252ca2c81a3",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 80
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 80
+        }
+      },
+      "doctor": {
+        "errors": 179,
+        "fixable": 34
+      },
+      "cases": [
+        {
+          "name": "acceptance/01-saved-items-endpoint",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "acceptance/02-previous-user-data",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "acceptance/03-upgrade-10-to-11",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "acceptance/04-form-validation-no-docker",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "acceptance/05-mcp-introspection",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "agents/no-duplicate-research",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "agents/no-subagent-for-trivial",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "integration/d10-deprecations-real-phpstan",
+          "status": "never-loaded",
+          "error": "invalid YAML frontmatter: YAML Parse error: Unexpected token",
+          "previousError": "invalid YAML frontmatter: YAML Parse error: Unexpected token",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "integration/d10-wrong-version-real-core",
+          "status": "never-loaded",
+          "error": "invalid YAML frontmatter: YAML Parse error: Unexpected token",
+          "previousError": "invalid YAML frontmatter: YAML Parse error: Unexpected token",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "integration/d11-cache-kernel-test-real",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 3
+          }
+        },
+        {
+          "name": "integration/d11-dangerous-in-lab",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "integration/d11-debugging-real-container",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 3
+          }
+        },
+        {
+          "name": "integration/d11-form-validation-real",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 3
+          }
+        },
+        {
+          "name": "integration/d11-runtime-verification-real",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "integration/ddev-plan-real-core",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 9
+          }
+        },
+        {
+          "name": "integration/ddev-saved-list-real-test",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"project_env\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove project_env: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 4
+          }
+        },
+        {
+          "name": "no-trigger/drupal-architecture",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-cacheability",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-code-review",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-config",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-contrib-research",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-debugging",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-frontend",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-hard-problem",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-migrate-api",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-module-development",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-performance",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-project-understanding",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-research",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-runtime-verification",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-security",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-setup-mcp",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-tailwind",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-testing",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-upgrade",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-verification",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "no-trigger/drupal-workflow",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/cache",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/create-module",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "scenarios/dangerous-env",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/debugging",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/english-code",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 4
+          }
+        },
+        {
+          "name": "scenarios/fake-api",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/frontend",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 3
+          }
+        },
+        {
+          "name": "scenarios/git-handoff",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/git-on-request",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/legacy",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/mcp-absent",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/mcp-present",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/migrate",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/performance",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/plan-real-code",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 6
+          }
+        },
+        {
+          "name": "scenarios/regression-test",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/runtime-ddev",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/runtime-none",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "scenarios/security",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/tailwind-scan-surface",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 4
+          }
+        },
+        {
+          "name": "scenarios/upgrade",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "scenarios/wrong-version",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-architecture",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 2
+          }
+        },
+        {
+          "name": "trigger/drupal-cacheability",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-code-review",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-config",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-contrib-research",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-debugging",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-frontend",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-hard-problem",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-migrate-api",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-module-development",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-performance",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-project-understanding",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-research",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-runtime-verification",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-security",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-setup-mcp",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-tailwind",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-testing",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-upgrade",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 0
+          }
+        },
+        {
+          "name": "trigger/drupal-verification",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        },
+        {
+          "name": "trigger/drupal-workflow",
+          "status": "never-loaded",
+          "error": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "previousError": "unknown frontmatter key \"fixture\" (expected one of: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+          "doctor": {
+            "rule": "prompt-frontmatter-keys",
+            "file": "prompt.md",
+            "fix": "remove fixture: (allowed: schema_version, name, description, tags, plugins, runs, expected_outcome, model, max_turns, timeout_seconds, allowed_tools, artifact_publish, growthbook_overrides, append_system_prompt, env)",
+            "fixable": false,
+            "more": 1
+          }
+        }
+      ]
+    },
+    {
+      "repo": "frederikgnie/lost-mary",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": null,
+      "commit": "ba55b61923e60f0ddfcf542206f1af14a137cd6a",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "evidence-in-report",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "keep-going",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "no-hand-back",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "no-menu",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-edit-existing",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-neg-markdown",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-neg-question",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-optional-return",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-pasted-latent-bug",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pycheck-wrong-arg-type",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "spawn-contract",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "Ahmed-G-Gad/apothem",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": "Host-agnostic configuration manager — author one shared profile (rules, skills, hooks, slash-commands, MCP servers) and materialize it into the native config of seventeen assistant harnesses (Claude Code, Cursor, Gemini CLI, Codex, and more) behind a conformity governance gate and signed, reproducible releases.",
+      "commit": "e10943774121eaddcf51909070eaf910a7338480",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "outcomes/audit/outcome-a11y-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-architecture-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-code-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-code-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-dependency-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-docs-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-perf-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-security-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-supply-chain-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-threat-model-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/audit/outcome-ux-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-amend",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-execute",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-generate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/plan/outcome-plan-status",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-analysis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-disseminate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-experiment",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-ideate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-paper",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-proposal",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-publish",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-sources",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-synthesis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "outcomes/research/outcome-research-theory",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-authority-inquiry-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-authority-inquiry-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-definitiveness-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-definitiveness-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-freshness-facade-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-freshness-facade-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-interactive-questions-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-interactive-questions-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-option-annotation-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-option-annotation-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-session-closure-off",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "rules/rule-session-closure-on",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-auto-trigger-freshify",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-auto-trigger-github-deploy-fresh",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-auto-trigger-github-deploy-next",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-codebase-explorer",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-convention-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-dependency-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-fact-checker",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-freshify",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-github-deploy-fresh",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-github-deploy-next",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-mcp-builder",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-memory-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-amend",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-execute",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-generate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-plan-status",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-prompt-evaluator",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-quality-gate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-refactor-surgeon",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-analysis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-experiment",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-paper",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-publish",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-scout",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-sources",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-research-synthesis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-security-scanner",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/no-trigger-test-runner",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-codebase-explorer",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-convention-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-dependency-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-fact-checker",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-mcp-builder",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-memory-auditor",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-amend",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-audit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-execute",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-generate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-plan-status",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-prompt-evaluator",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-quality-gate",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-refactor-surgeon",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-analysis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-design",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-experiment",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-paper",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-publish",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-review",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-scout",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-sources",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-spec",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-research-synthesis",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-security-scanner",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "triggers/trigger-test-runner",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "roselabs-io/pro-code",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": "Agent-amplified software pipeline (Frame → Plan → Implement), gated by graders. Two runnable example services + the reading map behind it.",
+      "commit": "66ade8f0a8e3145e270db98c3478280f9e10bca7",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "frame-completeness",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "plan-completeness",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "profile-completeness",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "jkrepublic/explain-like-12",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 1,
+      "description": "Adds a 12-year-old's explanation beneath the technical one instead of replacing it. A Claude Code agent skill.",
+      "commit": "e939758175977e11a2b1eae26cf94101eb3256a5",
+      "status": "not-a-suite",
+      "reason": "no case directory with graders/ or case.yaml, so this is not a claude plugin eval suite",
+      "cases": []
+    },
+    {
+      "repo": "CodeWarrior-debug/perspectize",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 1,
+      "description": "When 'like' is not enough : collect, refine, compare, and share your perspectives with all (or none) of the nuances in your mind. On YouTube videos, for starters :)",
+      "commit": "20a07a83d9d0e491bfcae8d70c02b853c7c0a30e",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "claude-md-audit/evals/planted-defects",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "claude-md-audit/evals/real-repo-snapshot",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "claude-md-audit/evals/subtle-defects",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "comedianhhh/job-agent-skills",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 2,
+      "description": "Job-search workflow for coding agents (North America): 10 Claude Code skills + jobs-mcp for scanning Greenhouse / Lever / Ashby / LinkedIn",
+      "commit": "f618215b3552cbdabb57c28a93ed8c9c17907775",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "career-init/existing-workspace-not-overwritten",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "career-init/scaffold-fresh-workspace",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "contributor/ai-disclosure-policy-surfaced",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "contributor/no-external-writes-without-confirmation",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "evidence-recap/nine-parts-prototype-stage",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "evidence-recap/refuses-to-inflate-stage",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "great-resume/linkedin-note-under-limit",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "great-resume/rewrite-bullets-from-facts",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "interview/grill-one-question-per-turn",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "interview/predict-questions-for-acme",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "job-apply/missing-materials-route-to-make-resume",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "job-apply/portal-handled-by-user",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "job-match/jd-fit-matrix",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "job-match/title-only-asks-for-jd",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "make-resume/tailor-from-master-with-tbd",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "make-resume/wording-only-does-not-touch-files",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "offer/receipt-is-applied-not-screen",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "offer/rejection-email-updates-row",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "offer/scan-without-jobs-mcp",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "project-guide/course-needs-source-code",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "project-guide/interview-material-from-description",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    },
+    {
+      "repo": "danielmalka/dev-harness",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 0,
+      "description": null,
+      "commit": "12f7573c00e032ece134db912afdcf52d883a2bb",
+      "status": "checked",
+      "load": {
+        "2.1.295": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.287": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 0,
+        "fixable": 0
+      },
+      "cases": [
+        {
+          "name": "archive/auto-questionnaire-before-action",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/coordinator-explore-then-ask",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/doc-validator-clean",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/document-validator-scope-overclaim",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-attribution",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-clone-isolation",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-clone-lifecycle",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-distinct-findings",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-document-merge-blocker",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-document-only",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-merge-blocker",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-missing-binary",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-only",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-parallel",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-security-merge-blocker",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-security-only",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/external-clis-transport-failure",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "archive/plan-loop-no-cli-fallback",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "cases/auto-hard-stop-recorded-state",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "cases/code-reviewer-equivalent-form-miss",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "cases/doc-validator-gap",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "cases/external-clis-risk-001",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "cases/security-reviewer-object-authz-miss",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "version": "2.1.295",
+      "previous": "2.1.287",
+      "generatedAt": "2026-10-09T14:35:22.590Z",
+      "totals": {
+        "suites": 11,
+        "cases": 303,
+        "loads": 211,
+        "broke": 0,
+        "fixed": 0,
+        "neverLoaded": 92,
+        "fails": 0,
+        "unchecked": 0
+      }
+    }
+  ]
+}

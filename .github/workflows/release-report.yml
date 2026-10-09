@@ -1,0 +1,63 @@
+name: release-report
+# The public Claude Code release report (docs/release-report/, served by Pages): when a new Claude Code ships,
+# every public plugin eval suite we know of is loaded by the official runner at $0 under the new and the
+# previous version. No model runs, no credentials, no secrets: repos are shallow-cloned and only loaded,
+# and the runner gets a bare environment (PATH and an empty HOME). See config-drift-checker/tools/release-report.mjs.
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+    inputs:
+      version:  { description: 'Claude Code version to report on (empty: npm latest)', default: '' }
+      previous: { description: 'Version to compare with (empty: the release before it)', default: '' }
+
+permissions: { contents: write }
+concurrency: { group: release-report, cancel-in-progress: false }
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: '22' }
+      - id: check
+        # env: + quoted "$VARS", never ${{ }} inside run:
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          latest=$(npm view @anthropic-ai/claude-code version)
+          last=$(node -e 'try { console.log(require("./docs/release-report/report.json").claudeCode.version) } catch { console.log("none") }')
+          echo "npm latest: $latest, last reported: $last"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$INPUT_VERSION" ]; then echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$latest" = "$last" ]; then echo "run=false" >> "$GITHUB_OUTPUT"; echo "Claude Code $latest is already reported; nothing to do."
+          else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.check.outputs.run == 'true'
+        env:
+          # the workflow's own token, only for GitHub code search and star counts; the tool never hands it to the runner or to git
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PREVIOUS: ${{ inputs.previous }}
+        run: |
+          set -e
+          args=()
+          if [ -n "$INPUT_VERSION" ]; then args+=(--version "$INPUT_VERSION"); fi
+          if [ -n "$INPUT_PREVIOUS" ]; then args+=(--previous "$INPUT_PREVIOUS"); fi
+          node config-drift-checker/tools/release-report.mjs "${args[@]}" --discover \
+            --suites .github/release-report/suites.yml --opt-out .github/release-report/opt-out.txt --out-dir docs/release-report
+      - if: steps.check.outputs.run == 'true'
+        run: |
+          set -e
+          if [ -z "$(git status --porcelain docs/release-report)" ]; then echo "release report unchanged"; exit 0; fi
+          version=$(node -p 'require("./docs/release-report/report.json").claudeCode.version')
+          git config user.name github-actions[bot]; git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/release-report && git commit -qm "release report: Claude Code $version [skip ci]"
+          # main may have moved during the run: rebase this generated-only commit and retry; in a rebase,
+          # -X theirs keeps the commit being replayed (our newer generation)
+          for i in 1 2 3; do
+            if git push -q origin HEAD:main; then exit 0; fi
+            git fetch -q origin main && git rebase -q -X theirs origin/main || { git rebase --abort; exit 1; }; sleep 3
+          done
+          echo "::error::could not push the release report after 3 attempts"; exit 1
