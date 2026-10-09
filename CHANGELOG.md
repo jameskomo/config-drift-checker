@@ -2,6 +2,18 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.5.0 (2026-10-09)
+Six features that answer questions `claude plugin eval` doesn't ask. `drift-matrix` runs one suite
+across models and Claude Code versions and says which ones your setup survives. `context-cost`
+measures the tokens your setup adds to every session with Claude Code's own `plugin details`, per
+release, and the Action now records it on every run. `usage-check` sets real skill usage from your
+local transcripts against your eval cases (tested but unused, used but untested, dead weight).
+`evals-convert` imports skill-creator `evals.json` suites into plugin-eval cases and exports them
+back. The bundled runner gains `--concurrency` and MCP mocks with `mock_calls` graders in the
+official format, and the Action a `concurrency` input. The suite doctor catches prose grader files
+the runner ignores and fixes them with `--fix`. And a public Claude Code release report loads every
+public eval suite we can find on each new release, for $0 and with no credentials.
+
 ## v1.4.0 (2026-10-01)
 Setup health reports. Every stored run now carries its preflight results, so each run's HTML
 report has a Setup health panel (skills and eval-suite-format tiles, every finding with its fix),

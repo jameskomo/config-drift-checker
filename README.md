@@ -35,6 +35,7 @@ behaviour on its own and proved it with a green re-run, for $0.28. Both artifact
 | [**The demo repo**](https://github.com/jameskomo/config-drift-checker-demo) | a small Spring Boot API whose whole setup (cases, config, workflow) was written by `/config-drift-checker:setup` unattended, kept exactly as generated |
 | [**The demo's drift index**](https://jameskomo.github.io/config-drift-checker-demo/) | the same observatory for that demo repo, built by its own CI |
 | [**What a setup is worth**](docs/community-suites.md) | the first community suite (Spring Boot conventions) with a published with/without measurement: the guard hook is worth +0.75, [the run itself](https://jameskomo.github.io/config-drift-checker/worth/report.html) |
+| [**The Claude Code release report**](https://jameskomo.github.io/config-drift-checker/release-report/) | every public `claude plugin eval` suite we can find, loaded on each new Claude Code release for $0: which still load, which broke on this release, which never loaded, with the fix for each |
 | [**The site**](https://jameskomo.github.io/config-drift-checker/) | one page with all of the above |
 
 ## Quick start
@@ -85,15 +86,19 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | Refusal labels | a model guardrail change is labelled a refusal, never blamed on your setup |
 | Discovered vs invoked | a red skill case says which repair it needs: fix the trigger wording, or fix the packaging. [Watch it self-diagnose a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
 | Efficiency drift | slower, pricier, longer gets flagged even when every case still passes |
+| [MCP plugins without the real service](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#plugins-with-mcp-servers-test-against-mocks) | mocks in the official `evals/mocks/` format answer for your MCP servers under both runners, real servers stay down by default, and `target: mock_calls` grades what the agent sent |
 | Coverage | which of your rules have no test: a percentage, a badge, and a `coverage-min` gate |
 | [Skill linter](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free) | `skill-lint` checks every SKILL.md before any model run: frontmatter that strict parsers reject, missing or vague trigger descriptions, overlapping skills without negative scope, broken file references |
 | [Format drift](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#preflight-catch-broken-skills-and-format-drift-for-free) | `suite-doctor` checks your eval cases against the runner of the Claude Code you're about to test, for free (no model runs), names every case the new version rejects, and `--fix` migrates the known changes. Runs as a preflight on every release, so a schema change shows up as "this case no longer loads", not as mysterious regressions |
+| [Context-cost drift](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#context-cost-drift-what-your-setup-costs-every-session) | `context-cost` measures the tokens your skills, agents, commands and CLAUDE.md add to every session, with Claude Code's own `plugin details`, per release. "Your setup got 18% more expensive on 2.1.295" shows up as a line, not as a surprise bill |
+| [Real usage vs evals](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#real-usage-vs-evals-is-your-suite-testing-what-people-do) | `usage-check` reads your local session history and sets it against your eval cases: skills that are tested but never used, used but never tested, or dead weight that costs context every session. Counts only, no prompt text ever leaves the transcripts |
 
 **Diagnose**: red comes with answers, not homework
 
 | | |
 |---|---|
 | Reports that show their work | every report lists the whole suite including skipped cases, every discovered skill and whether it fired, and exactly which checks ran beyond a bare `claude plugin eval` |
+| [Model and version matrix](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#model-and-version-matrix-which-model-can-my-setup-use) | `drift-matrix` runs your suite across models and Claude Code versions and draws one page: which model and release your setup survives, with a plain verdict per model ("haiku: safe on 2.1.290 to 2.1.295; fails one case on 2.1.288"). Budget-capped, `--dry-run` for $0 |
 | `drift-bisect` | a case passed weeks ago and fails today: binary-search the Claude Code releases in between, log2(N) runs, get the culprit version and the bug-report sentence |
 | `trace-keeper` | preserves the official runner's transcripts, which it otherwise deletes on exit |
 | What a setup is worth | the same tasks with and without your setup, published: [the guard hook measures +0.75](https://jameskomo.github.io/config-drift-checker/worth/report.html) |
@@ -117,6 +122,7 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | Hard budget caps | per run and per month, enforced from a ledger; on a Claude Pro/Max subscription token, $0 API, counted against the plan's usage limits |
 | One-command onboarding | `cdc-bootstrap` runs the whole setup headlessly with an auth preflight, or scaffolds everything for $0 with `--no-agent` |
 | Fleet + org rollout | one dashboard and pin policy across every repo, and a reusable org workflow that installs the check with a three-line caller. No hosted server, ever |
+| [Public release report](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#the-public-claude-code-release-report) | on every Claude Code release, a free job loads every public eval suite we can find on the new version and the one before. [Live page](https://jameskomo.github.io/config-drift-checker/release-report/) |
 | Community suites | maintained setups with published worth numbers ([Spring Boot first](docs/community-suites.md)); a [hosted-tier waitlist](https://github.com/jameskomo/config-drift-checker/issues/new?template=hosted-waitlist.yml) decides what we run for you |
 
 **Across agents**: one suite, three CLIs
@@ -126,6 +132,7 @@ Every row is shipped and tested; where a public receipt exists, it's linked.
 | Claude Code | first-class: skills, hooks, plugins, release canaries, the whole drift machinery |
 | Codex (experimental) | `--agent codex` with `AGENTS.md` bridging; live-calibrated on a ChatGPT plan |
 | Gemini (experimental) | `--agent gemini` with `GEMINI.md` bridging; live run scored 1.00 on the free Google tier |
+| [skill-creator suites](https://github.com/jameskomo/config-drift-checker/blob/main/docs/user-guide.md#bring-your-skill-creator-evals) | `evals-convert import` turns Anthropic's skill-creator `evals.json` into plugin-eval cases (and `export` goes back), so one set of evals runs under both |
 
 ## How this relates to `claude plugin eval`
 
@@ -149,6 +156,11 @@ exact format, the Action prefers the official runner (bundled fallback for older
 | Repair proposal on red | no | a PR with the smallest fix, [proven live](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) |
 | Why a skill case failed | a score | discovered vs invoked: trigger wording or packaging |
 | Transcripts | deleted when the command exits | `trace-keeper` copies them next to the JSON |
+| Which model and version is safe | one `--model` per run | `drift-matrix`: a grid of models and releases on one page |
+| Context cost | `plugin details` shows today's number | `context-cost` keeps it per release and names what moved |
+| Does real use match the suite | no (`/skill-doctor` shows usage, not evals) | `usage-check` crosses the two |
+| skill-creator `evals.json` | a separate format it doesn't read | `evals-convert` imports and exports |
+| Is my suite still valid on the new release | load errors when you run it | `suite-doctor` preflight for $0, plus a public report across every suite we can find |
 
 One sentence: their command answers "does my plugin work right now on my machine"; this answers
 "did anything stop working since the baseline, across every release, without me watching".
@@ -157,7 +169,7 @@ One sentence: their command answers "does my plugin work right now on my machine
 
 **Stable since v1.0**: the `v0`/`v1` moving tag never breaks your workflow; breaking changes mean
 a new major with an upgrade note in [CHANGELOG.md](CHANGELOG.md).
-Zero npm dependencies (Node builtins only), 170 tests that run against a fake `claude` with no API
+Zero npm dependencies (Node builtins only), 246 tests that run against a fake `claude` with no API
 key, every third-party action pinned to a verified commit SHA, CodeQL on every push. Runs on your
 runner with your key; nothing is sent to us, because there is no us to send it to. Details in
 [docs/security.md](docs/security.md).

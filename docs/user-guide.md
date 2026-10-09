@@ -22,6 +22,13 @@ didn't ship it.
 | Free preflight before any model run: skill linter, suite format doctor, format drift per release | §7 |
 | Reading reports: noise bands, refusals, discovered vs invoked, panels | §7 |
 | Which release broke it (`drift-bisect`) | §7 |
+| Which model and Claude Code version your setup survives (`drift-matrix`) | §7 |
+| Context-cost drift: tokens your setup adds to every session, per release (`context-cost`) | §7 |
+| Real usage vs evals: tested but unused, used but untested (`usage-check`) | §7 |
+| Bring skill-creator `evals.json` suites, or export to them (`evals-convert`) | §2 |
+| Plugins with MCP servers: mocks and `mock_calls` graders under both runners | §2 |
+| Parallel agent runs (`concurrency` input) | §4 |
+| The public Claude Code release report | §9 |
 | Autonomous repair: when it runs, its hard limits, a live example | §7 |
 | Fleet dashboard and pin policy across repos | §8 |
 | Org-wide rollout with a reusable workflow, no hosted app | §8 |
@@ -75,6 +82,39 @@ are idempotent, never overwrite existing files, and end with the same hand-off c
 setups with eval suites and a published with/without worth measurement; the first is Spring Boot
 conventions (`claude plugin install komo-stack@jameskomo`), where the guard hook measures +0.75
 on its case. Adopt one and adapt the rules; the suite keeps measuring your adaptation.
+
+### Bring your skill-creator evals
+
+If you built a skill with Anthropic's skill-creator, its `evals/evals.json` can become your
+plugin-eval suite. Claude Code's two eval formats don't read each other's cases; this converts:
+
+```bash
+node <plugin-root>/tools/evals-convert.mjs import skills/<skill>/evals/evals.json --dry-run   # see the plan
+node <plugin-root>/tools/evals-convert.mjs import skills/<skill>/evals/evals.json             # write the cases
+node <plugin-root>/tools/evals-convert.mjs export <plugin> --out evals.json                   # the other way
+```
+
+Each eval becomes a case directory. Its prompt becomes the case prompt, its expectations become
+judged (`llm`) graders, its input files are copied into the workspace by a scaffold script, and a
+check that your skill fired is added. skill-creator's trigger sets become trigger and
+negative-trigger cases. Existing cases are never overwritten unless you pass `--force`, and the
+import prints the exact `claude plugin eval` command to run them. `export` writes an `evals.json`
+and lists every check skill-creator has no place for (regex, tool order and similar) instead of
+dropping them silently. The full mapping is in
+[the format reference](eval-format-and-runner.md).
+
+### Plugins with MCP servers: test against mocks
+
+A plugin that talks to a tracker, a database or any other MCP server can be tested without the
+real service. Put mocks in `evals/mocks/<server>/<tool>.md` (or a case's own `mocks/` folder) in
+the official `claude plugin eval` format: the body is the tool's answer, and frontmatter can add
+`expect:` (the run fails if the agent sends something else), `error: true`, and substitutions like
+`{{input.id}}`. Both runners answer from the mocks and keep the plugin's real servers down by
+default (`--allow-real-servers` lets unmocked ones start). Grade what the agent sent with
+`target: mock_calls`. The bundled runner supports fixed mocks; a case that needs a `type: agent`
+mock (the judge model playing the server) is marked "needs the official runner" instead of
+failing. `suite-doctor` checks mock files before any run, which matters because the official $0
+load check does not validate them.
 
 ## 3. Wire CI (the parts only you can do)
 
@@ -152,6 +192,7 @@ the `watch` job from the full template at `ci/config-drift-checker.yml` in the p
 | `coverage-min: 80` | fail when under 80% of your rules have a case (empty = report only) |
 | `report-base-url: https://<you>.github.io/<repo>/history` | case names in the PR comment deep-link into that run's HTML report (needs Pages serving the results branch) |
 | `preflight: fail` | stop before any model run when the skill linter or suite doctor finds an error (default `warn` reports only) |
+| `concurrency: 3` | run up to three agent runs at once (1 to 8). They share one rate limit, so this saves wall-clock time, not money; results keep case order |
 
 **Which path is for me?**
 
@@ -324,6 +365,72 @@ prefix (your global install is untouched) and running just that case. Twenty rel
 or five runs. The output names the first bad and last good version, ready for a bug report or a
 `harness.pinned` decision. `--budget` caps the total spend; a subscription token makes it $0 API.
 
+### Model and version matrix: which model can my setup use?
+
+`drift-bisect` finds one bad release. `drift-matrix` answers the wider question before you change
+anything: would my setup survive Haiku, or Opus, or the last five Claude Code releases?
+
+```bash
+node <plugin-root>/tools/drift-matrix.mjs <plugin> --models sonnet,haiku,opus --last 5 --dry-run   # the grid and a cost estimate, $0
+node <plugin-root>/tools/drift-matrix.mjs <plugin> --models sonnet,haiku --last 5 --budget 5
+node <plugin-root>/tools/drift-matrix.mjs --from <plugin>/evals/results/matrix-<stamp>             # redraw the page, no runs
+```
+
+Each Claude Code version is installed into a throwaway folder, so your own install is never
+touched, and each cell runs with the official runner when that release has one (the bundled runner
+otherwise). You get one page: rows are cases, columns are version and model, and every cell is
+coloured against a reference cell, by default the model and version pinned in `.cdc.yml`. Each
+model also gets a plain verdict, such as "haiku: safe on 2.1.290 to 2.1.295; fails
+spring-service-owns-rules-and-errors on 2.1.288". `--budget` caps the whole grid; cells past it
+show as not run rather than failed. `--case` and `--tag` narrow the suite, and `--json` / `--md`
+write the same result as data. To run it in GitHub Actions on demand, copy
+`ci/drift-matrix.yml` from the plugin.
+
+### Context-cost drift: what your setup costs every session
+
+Every session pays for your skill, agent and command descriptions, and for CLAUDE.md, before
+anyone types a word. A Claude Code release can change that bill even when your files stay the
+same. `context-cost` measures it:
+
+```bash
+node <plugin-root>/tools/context-cost.mjs <plugin> --md -                       # today's figure
+node <plugin-root>/tools/context-cost.mjs <plugin> --store evals/results/context-cost
+node <plugin-root>/tools/context-cost.mjs --history evals/results --md -        # the trend per release
+```
+
+It asks Claude Code's own `claude plugin details` for the always-on and on-invoke tokens of each
+component, in a throwaway config with no credentials and no model calls, and adds CLAUDE.md
+(which that command doesn't count) as a labelled estimate. On releases without `plugin details`
+it falls back to an estimate and says so. With `--history` it reports the trend, for example
+"Your setup got 18% more expensive on Claude Code 2.1.295: 400 to 472 always-on tokens per
+session", names the components that moved most, and says whether your files changed or Claude
+Code did. The Action measures it on every run, and the observatory shows a "Context cost per
+release" strip once measurements exist.
+
+### Real usage vs evals: is your suite testing what people do?
+
+Your eval suite says which skills trigger. Your session history says which ones people actually
+use. `usage-check` sets the two side by side:
+
+```bash
+node <plugin-root>/tools/usage-check.mjs <plugin>                                     # last 30 days
+node <plugin-root>/tools/usage-check.mjs <plugin> results/aggregate-result.json --since 90d --projects '*my-repo*'
+claude -p "/skill-doctor" > sd.txt && node <plugin-root>/tools/usage-check.mjs <plugin> --skill-doctor sd.txt --html usage.html
+```
+
+It reads your local Claude Code transcripts (`~/.claude/projects`), counts how often each skill was
+invoked, and gives every skill one verdict:
+
+- **dead weight**: never invoked and no case. It costs context every session.
+- **tested but unused**: your suite may test a prompt nobody writes.
+- **used but untested**: if it breaks, nothing will tell you.
+- **healthy**.
+
+Add the text of `/skill-doctor` with `--skill-doctor` to include its measured context cost per
+skill. Output is text, `--json`, `--md` or a self-contained `--html` page. Only skill names, counts
+and dates are read out of the transcripts; no prompt or reply text is ever copied. This one runs
+on your machine, not in CI, because that's where the real usage lives.
+
 ### When and how repair runs
 
 Repair never runs on its own. It runs in exactly two situations: you invoke
@@ -389,6 +496,18 @@ Source: branch `eval-results`, folder `/docs`. Turn it off with `pages: 'false'`
   `feed.xml`) is published.
 - Locally: `node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html`
 
+### The public Claude Code release report
+
+Your own observatory watches your suite. The
+[release report](https://jameskomo.github.io/config-drift-checker/release-report/) watches
+everyone's: on every Claude Code release, a daily job loads every public `claude plugin eval` suite
+we can find, under the new version and the one before it. Each case is listed as loads, broke on
+this release, fixed on this release, or never loaded, with the runner's own error and the
+suite-doctor fix. It is free and safe by construction: the runner's $0 cost ceiling stops before
+any agent starts, the runner gets no credentials, and nothing from the cloned repos is installed or
+run. Suite authors can fix their cases with `node tools/suite-doctor.mjs <plugin> --fix`, or open an
+issue to opt out. Run it yourself with `node <plugin-root>/tools/release-report.mjs --discover`.
+
 ## 10. Local commands
 
 ```bash
@@ -407,6 +526,11 @@ node <plugin-root>/tools/config-coverage.mjs <plugin> --fail-under 80   # exit 1
 node <plugin-root>/tools/cdc-config.mjs <plugin> init              # write .cdc.yml; set-pins --model … --harness …
 node <plugin-root>/tools/release-watch.mjs --state .release-watch.json --models --pin claude-sonnet-5
 node <plugin-root>/tools/trace-keeper.mjs out.json --clean         # after claude plugin eval --keep-temp: keep transcripts
+node <plugin-root>/tools/drift-matrix.mjs <plugin> --models sonnet,haiku --last 5 --dry-run   # models x releases grid
+node <plugin-root>/tools/context-cost.mjs <plugin> --md -           # tokens your setup adds to every session
+node <plugin-root>/tools/usage-check.mjs <plugin> --since 30d       # real skill usage vs your eval cases
+node <plugin-root>/tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run   # skill-creator suites in
+node <plugin-root>/tools/release-report.mjs --discover              # every public suite on the newest release, $0
 ```
 
 `<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every

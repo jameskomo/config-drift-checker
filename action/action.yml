@@ -180,6 +180,18 @@ runs:
           echo "failed=false" >> "$GITHUB_OUTPUT"
         fi
 
+    - id: context-cost
+      # free: no model runs, no credentials. The tokens this setup adds to every session on the installed
+      # Claude Code (its own `plugin details`, in a throwaway config), stored per release for the trend
+      if: steps.gate.outputs.skipped != 'true' && inputs.preflight != 'off'
+      shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+      run: |
+        node "$TOOLS/context-cost.mjs" "$PLUGIN_DIR" --runner "$(command -v claude)" --store "$RUNNER_TEMP/context-cost" --md "$RUNNER_TEMP/context-cost.md" >/dev/null || echo "::notice::context-cost could not measure this setup"
+        cat "$RUNNER_TEMP/context-cost.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
     - id: run
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
@@ -350,6 +362,8 @@ runs:
         cd "$wt"; mkdir -p history canary
         name="$STEM"; stamp="${STEM%%-cc*}"
         cp "$RESULT" "history/${name}.json"
+        # context-cost measurements accumulate per release; the dashboard reads history/context-cost
+        mkdir -p history/context-cost && cp "$RUNNER_TEMP"/context-cost/*.json history/context-cost/ 2>/dev/null || true
         if [ "$TRACK" = "pinned" ]; then
           if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then
             if node "$TOOLS/baseline-check.mjs" "$RESULT" --config "$GITHUB_WORKSPACE/$PLUGIN_DIR"; then

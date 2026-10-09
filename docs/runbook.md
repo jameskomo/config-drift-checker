@@ -108,6 +108,11 @@ node tools/drift-digest.mjs docs/drift --md digest.md --post post.txt   # weekly
 node tools/skill-lint.mjs komo-stack                     # static checks on every SKILL.md, no model runs
 node tools/suite-doctor.mjs komo-stack --fix            # eval cases vs the installed runner's format; --fix migrates known changes
 node tools/drift-bisect.mjs komo-stack --case 'spring-work*' --good 2.1.258 --bad 2.1.274   # which release broke this case? log2(N) runs
+node tools/drift-matrix.mjs komo-stack --models sonnet,haiku --last 5 --budget 5   # which model and release does the setup survive? --dry-run for $0
+node tools/context-cost.mjs komo-stack --store evals/results/context-cost       # always-on tokens per session, per release; --history for the trend
+node tools/usage-check.mjs komo-stack --since 90d                               # skills tested but unused, used but untested (local transcripts)
+node tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run       # skill-creator evals.json into plugin-eval cases; export goes back
+node tools/release-report.mjs --discover --out-dir docs/release-report          # every public suite on the newest Claude Code, $0, no credentials
 node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # EXPERIMENTAL: same suite through Codex CLI
 node tools/eval-shim.mjs komo-stack --agent gemini --ablation none --scaffold  # EXPERIMENTAL: through Gemini CLI (free Google tier)
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
