@@ -35,7 +35,7 @@ Code 2.1.287 rejects it.
 
 | type | fields | shim | semantics |
 |---|---|---|---|
-| `regex` | `pattern`, `flags`, `match` = contains \| not_contains \| count:N, `target` = last_message \| trace \| files \| `{ source: file, path: <path> }` | ✅ | pattern test on the chosen text |
+| `regex` | `pattern`, `flags`, `match` = contains \| not_contains \| count:N, `target` = last_message \| trace \| files \| mock_calls \| `{ source: file, path: <path> }` | ✅ | pattern test on the chosen text |
 | `tool_used` | `tool`, `input_match`, `min` (default 1), `max` | ✅ | count matching tool calls. To assert "never called", set **both** `min: 0` and `max: 0` (with only `max: 0` the official runner requires 1..0 calls, which can never pass) |
 | `tool_order` | `before`, `after` | ⏳ | first `before` call precedes first `after` call |
 | `file_exists` | `path` glob | ✅ | any created file matches |
@@ -45,7 +45,9 @@ Code 2.1.287 rejects it.
 **What `target` and `focus` point at**, as the official runner defines them: `last_message`
 (default), `trace`, `files` (the list of paths Claude *created*, not their contents), or
 `{ source: file, path: <path> }` (the contents of one workspace file after the run, including files
-a scaffold wrote). The shim keeps an older meaning of `files` (the contents of changed files) for
+a scaffold wrote), and `mock_calls` (one JSON line per call to a mocked MCP tool:
+`{"tool","input","output","isError","verdict"}`, with `verdict` = ok, tool_error, abort or
+no_result, the same shape the official runner builds). The shim keeps an older meaning of `files` (the contents of changed files) for
 suites written before this, so to grade code portably either have the agent print it and grade
 `last_message`, or grade the file with `{ source: file, path }`. Any grader may carry `weight`, and
 `arm` = `with-only` or `both`, the only two values the official runner accepts.
@@ -66,7 +68,8 @@ claude -p <prompt> --output-format stream-json --verbose
        --setting-sources "" --permission-mode dontAsk
        --max-turns N --model M                 # M: --model > case frontmatter > .cdc.yml track > sonnet
        [--plugin-dir <plugin>]            # "with" arm only
-       [--allowedTools <case.allowed_tools>]
+       [--allowedTools <case.allowed_tools> <mocked tools>]
+       [--mcp-config <mock servers>]      # only when MCP mocks apply to the case
 env: CLAUDE_CONFIG_DIR=cfg, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1, ANTHROPIC_MODEL unset
 ```
 
@@ -115,6 +118,33 @@ Judge: `claude -p` with the judge model, tools disallowed, single turn, strict J
 
 Exit codes: 0 always for the shim (the Action gates on the diff), matching "report, don't judge";
 2 when every run errored. `--agent` other than `claude` exits 1 (adapters are on the roadmap).
+
+**MCP mocks** (`--mocks record|off`, default record, plus `--allow-real-servers`, as in the official
+runner from Claude Code 2.1.295). The shim reads the official layout: `<eval dir>/mocks/<server>/<tool>.md`
+for the suite and `<case>/mocks/<server>/<tool>.md` for one case, the case overriding the suite file
+by file. The body is the tool result, with `{{input.<field>}}` and `{{file:fixtures/{input.<field>}.json}}`
+substitutions; frontmatter takes `type` (fixed or agent), `expect` (dotted input paths mapped to a type
+name, a `/regex/` in the runner's small dialect, a literal, or a list of literals), `error: true`
+and `abort_when`; `_server.md` and `_tools.json` sit beside the tool files. In record mode the plugin's
+own MCP servers never start: the with arm loads a copy of the plugin with its MCP declarations removed
+(`--allow-real-servers` keeps the unmocked ones). Each mock directory is then served for real by
+`tools/eval-mock-server.mjs`, a stdio MCP server passed with `--mcp-config` and registered under the
+plugin's own server name (`plugin_<plugin>_<server>`), so the agent calls the same
+`mcp__plugin_<plugin>_<server>__<tool>` names it would call on the real server. A directory that matches
+none of the plugin's servers is registered standalone under its own name, in both arms; a shadow of a
+plugin server exists only in the with arm. Mocked tools are added to `--allowedTools`, since they need
+no grant, and a tool with no mock file is not offered. A call that breaks `expect:` gets a tool error
+and the run scores 0 with `aborted: { server, tool, reason }` and no error, which is the official
+verdict; the official runner stops the run at that call, while the shim lets it finish and then scores
+it 0. `mock_calls` graders read the calls from the trace; with no stand-ins active (`--mocks off`, or no
+mock for the case) they fail with the official reason. Under ablation they are with-only indicators when
+every mocked server in the case is the plugin's, like `tool_used: Skill`. What the shim does not do:
+`type: agent` mocks and `_server.md` (the judge model playing the server), the agent-mock call budget,
+and `.replay/` recordings. A case that needs one is recorded with `unsupported: "needs the official
+runner: ..."`, no runs and a `null` score (unknown, never a fail). A mock file the official runner would
+refuse to load scores the case 0 with `loadError`, without running it. `suite-doctor` checks the same
+files statically (rules `mock-files`, `mock-calls-needs-mocks`, `mock-server-unknown`); the official
+runner only validates mocks when a run starts, so its free `--max-cost-usd 0` load check does not see them.
 
 **Regrade.** `--regrade <aggregate-result.json>` re-scores the saved runs of that file with the
 *current* grader definitions and no agent calls (responses, tool calls and changed-file contents
@@ -356,7 +386,7 @@ Written by the Action with a bot identity; one commit per run. The branch is pla
 
 ## 7. Known limitations
 
-`tool_order`, `baseline`, `history_file`, `add_dirs`, MCP mocks not implemented in the shim; LLM
+`tool_order`, `baseline`, `history_file`, `add_dirs` and `type: agent` MCP mocks not implemented in the shim; LLM
 grader single vote; runs are sequential unless `--concurrency` is raised; `repair` and the
 official-runner path are exercised on real accounts only, not by the test suite (which drives the shim
 with a fake `claude`); Claude-only (`agent:` is reserved for Codex/Gemini adapters).

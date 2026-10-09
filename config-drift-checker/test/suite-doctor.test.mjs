@@ -419,3 +419,24 @@ test('live layer: "graders: Required" from the runner confirms the prose-rubric 
   assert.deepEqual(merged.map((f) => `${f.rule} ${f.case} ${f.confirmedByRunner ?? false}`), ['grader-prose-rubric prose true', 'runner-load bare false'],
     'a case with no grader files at all stays a plain runner finding');
 });
+
+test('mocks: bad suite and case mock files are errors (suite ones reported once), mock_calls with no mock and an unknown server warn', async () => {
+  const root = await suite({
+    calls: { ...GOOD, 'graders/d-mock.md': fm({ type: 'regex', target: 'mock_calls', pattern: 'create_issue' }), 'mocks/tracker/close_issue.md': '---\nexpect:\n  id: /(a|b)/\n---\nclosed' },
+    'no-mocks': { ...GOOD, 'graders/d-mock.md': fm({ type: 'llm', focus: 'mock_calls', criteria: 'filed' }) },
+  }, { manifest: { name: 'demo', mcpServers: { tracker: { command: 'tracker-server' } } } });
+  await fs.mkdir(path.join(root, 'evals/mocks/tracker'), { recursive: true });
+  await fs.writeFile(path.join(root, 'evals/mocks/tracker/create_issue.md'), '---\ntype: agent\nerror: true\n---\nx');
+  await fs.mkdir(path.join(root, 'evals/mocks/wether'), { recursive: true });
+  await fs.writeFile(path.join(root, 'evals/mocks/wether/forecast.md'), 'sunny');
+  const rules = rulesOf(root);
+  assert.ok(rules.includes('ERROR mock-files calls mocks/tracker/close_issue.md expect'), rules.join('\n'));
+  assert.equal(rules.filter((r) => r.startsWith('ERROR mock-files (suite mocks) mocks/tracker/create_issue.md')).length, 1, 'suite mocks are checked once, not per case');
+  assert.ok(rules.includes('WARN mock-server-unknown (suite mocks) mocks/wether null'), rules.join('\n'));
+  // suite mocks apply to every case, so no mock_calls warning while they exist
+  assert.ok(!rules.some((r) => r.startsWith('WARN mock-calls-needs-mocks')), rules.join('\n'));
+  await fs.rm(path.join(root, 'evals/mocks'), { recursive: true });
+  const after = rulesOf(root);
+  assert.ok(after.includes('WARN mock-calls-needs-mocks no-mocks graders/d-mock.md focus'), after.join('\n'));
+  assert.ok(!after.some((r) => r.includes('mock-calls-needs-mocks calls')), 'a case\'s own mocks/ count');
+});

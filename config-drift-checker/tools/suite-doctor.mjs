@@ -26,6 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { loadMockRoots, loadMocks, declaredServers, planMocks } from './eval-mocks.mjs';
 
 // ---------- the official format (Claude Code 2.1.287) ----------
 export const PROMPT_KEYS = ['schema_version', 'name', 'description', 'tags', 'plugins', 'runs', 'expected_outcome', 'model', 'max_turns', 'timeout_seconds', 'allowed_tools', 'artifact_publish', 'growthbook_overrides', 'append_system_prompt', 'env'];
@@ -121,7 +122,7 @@ export function loadCase(evalDir, dir) {
     })
     : [];
   return {
-    name: path.relative(evalDir, dir), dir,
+    name: path.relative(evalDir, dir), dir, evalDir,
     prompt: promptText === null ? null : { file: 'prompt.md', path: path.join(dir, 'prompt.md'), ...parseFrontmatter(promptText) },
     caseYaml: caseText === null ? null : { file: 'case.yaml', path: path.join(dir, 'case.yaml'), text: caseText, lines: caseText.split(/\r?\n/), entries: scanKeys(caseText.split(/\r?\n/)) },
     graders,
@@ -363,11 +364,49 @@ export const RULES = [
       if (!existsSync(sidecar)) writeFileSync(sidecar, `# rule ids this case exercises (config-coverage.mjs --list prints valid ids)\n${items.length ? items.map((x) => `- ${x}`).join('\n') : '[]'}\n`);
     },
   },
+  {
+    id: 'mock-files',
+    level: 'ERROR',
+    description: 'MCP mock files (mocks/<server>/<tool>.md, _server.md, _tools.json) must use the keys, types and /regex/ dialect the runner accepts; a bad one stops the case loading',
+    detect: (c) => loadMockRoots([path.join(c.dir, 'mocks')], c.dir).problems.map((p) => mockFinding(p)),
+  },
+  {
+    id: 'mock-calls-needs-mocks',
+    level: 'WARN',
+    description: 'a mock_calls grader needs a mock that applies to its case; with none the runner fails the grader every time',
+    detect: (c) => {
+      const graders = c.graders.filter((g) => (g.meta.type === 'regex' && g.meta.target === 'mock_calls') || (g.meta.type === 'llm' && g.meta.focus === 'mock_calls'));
+      if (!graders.length) return [];
+      const { servers } = loadMocks(c.evalDir, c.dir);
+      if ([...servers.values()].some((s) => s.tools.size || s.server)) return [];
+      return graders.map((g) => graderFinding(g, g.meta.type === 'llm' ? 'focus' : 'target',
+        'grades mock_calls, but no mocks/<server>/<tool>.md applies to this case, so the runner fails it ("no mock stand-ins were active")',
+        'add evals/mocks/<server>/<tool>.md (or <case>/mocks/...) for the tools the case should call, or grade another target', false));
+    },
+  },
 ];
+const mockFinding = (p) => ({ file: p.file, path: null, key: p.key ?? null, message: p.message, fix: 'correct the mock file (see the mock file reference in the plugin-evals docs)', fixable: false, level: p.level });
+
+// Suite-wide mocks (<eval dir>/mocks/) are checked once, not once per case. A directory that matches none
+// of the plugin's MCP servers registers a standalone server, which the plugin's skills never call by name.
+export function diagnoseSuiteMocks(suite) {
+  const { servers, problems } = loadMocks(suite.evalDir, null);
+  const findings = problems.map((p) => ({ level: p.level, rule: 'mock-files', case: '(suite mocks)', source: 'static', ...mockFinding(p) }));
+  let name = null;
+  try { name = JSON.parse(readFileSync(path.join(suite.pluginDir, '.claude-plugin/plugin.json'), 'utf8')).name; } catch { /* no manifest */ }
+  const { servers: decl } = declaredServers(suite.pluginDir);
+  for (const p of planMocks(servers, name, decl).filter((x) => !x.shadow)) findings.push({ level: 'WARN', rule: 'mock-server-unknown', case: '(suite mocks)', source: 'static', file: `mocks/${p.dir}`, path: null, key: null,
+    message: `mocks/${p.dir}/ matches none of the plugin's MCP servers (${Object.keys(decl).join(', ') || 'it declares none'}), so it registers a standalone server whose tools are mcp__${p.dir}__<tool>`,
+    fix: `name the directory after a server in the plugin's MCP config${Object.keys(decl).length ? ` (${Object.keys(decl).join(', ')})` : ''}, or keep it if a standalone server is intended`, fixable: false });
+  return findings;
+}
 
 // ---------- static layer ----------
 export function diagnose(suite) {
-  return suite.cases.flatMap((c) => RULES.flatMap((r) => r.detect(c).map((f) => ({ level: r.level, rule: r.id, case: c.name, source: 'static', ...f }))));
+  return [
+    ...suite.cases.flatMap((c) => RULES.flatMap((r) => r.detect(c).map((f) => ({ level: r.level, rule: r.id, case: c.name, source: 'static', ...f })))),
+    ...diagnoseSuiteMocks(suite),
+  ];
 }
 
 // Apply every fixable finding, rule by rule, reloading each case after an edit. Returns what was fixed.

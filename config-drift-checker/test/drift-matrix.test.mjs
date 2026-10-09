@@ -37,7 +37,7 @@ function fakeInstaller(state, { failModel = {}, extraEnv = {} } = {}) {
   };
   return { install, installed };
 }
-const calls = async (state) => { try { return (await fs.readFile(path.join(state, 'calls.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); } catch { return []; } };
+const calls = async (state) => { try { return (await fs.readFile(path.join(state, 'calls.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)).filter((e) => !e.done); } catch { return []; } };
 
 // a minimal normalized result: { case: score }
 const result = (scores, { model = 'claude-x', cost = 0.1, turns = 2, errored = false } = {}) => ({
