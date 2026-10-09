@@ -1,3 +1,4 @@
+<!-- {% raw %} -->
 # User guide
 
 Everything from install to reading a red report. What the tool is and how it relates to
@@ -615,3 +616,5 @@ publication.
 
 **Uninstall:** delete the workflow file, `.cdc.yml` and the `evals/` folder;
 `claude plugin uninstall config-drift-checker@jameskomo`.
+
+<!-- {% endraw %} -->

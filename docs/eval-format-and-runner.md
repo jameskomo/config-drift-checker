@@ -1,3 +1,4 @@
+<!-- {% raw %} -->
 # Eval format, runner, graders, diff and storage
 
 ## 1. Eval format (Anthropic's; we implement a subset and extend nothing)
@@ -390,3 +391,5 @@ Written by the Action with a bot identity; one commit per run. The branch is pla
 grader single vote; runs are sequential unless `--concurrency` is raised; `repair` and the
 official-runner path are exercised on real accounts only, not by the test suite (which drives the shim
 with a fake `claude`); Claude-only (`agent:` is reserved for Codex/Gemini adapters).
+
+<!-- {% endraw %} -->
