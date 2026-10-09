@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>komo-stack · No drift</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>komo-stack · No regressions · 1 efficiency drift</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>
 :root{--paper:#F3F5F8;--surface:#FFFFFF;--ink:#111827;--muted:#5F6B7A;--rule:#DCE1E8;--code:#EEF1F5;--pass:#1E7A4D;--pass-bg:#E3F3EA;--fail:#C1382C;--fail-bg:#FAE6E3;--warn:#A8701A;--warn-bg:#FBF0DC;--track:#2E5BD7;--track-bg:#E4EBFB;--shadow:0 1px 2px rgba(17,24,39,.05)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0E1319;--surface:#161C25;--ink:#E8EDF3;--muted:#97A3B2;--rule:#2A3441;--code:#0B0F14;--pass:#4CC286;--pass-bg:#173124;--fail:#EE7A6C;--fail-bg:#3B1E1B;--warn:#E0B052;--warn-bg:#3A2D14;--track:#7FA0F5;--track-bg:#1B2742;--shadow:none}}
@@ -56,14 +56,17 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}</style></head><body><div class="wrap">
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>komo-stack</b> · canary track</p>
-    <h1 class="pass"><span class="mark">●</span><span>No drift</span></h1>
-    <p class="lede">5 of 6 cases hold against the baseline. Nothing to do.</p></div>
-  <dl class="stamp"><dt>overall</dt><dd><b class="pass">0.99</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>5</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>?</b> <span class="moved">moved from claude-sonnet-5</span></dd><dt>claude code</dt><dd><b>2.1.287</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>official</b></dd><dt>cost</dt><dd><b>$0.97</b></dd><dt>when</dt><dd><b>2026-10-01 21:28</b></dd></dl>
+    <h1 class="warn"><span class="mark">◆</span><span>No regressions · 1 efficiency drift</span></h1>
+    <p class="lede">Every case still passes, but the agent needed noticeably more turns, cost or time than the baseline. Worth a look before it becomes a habit.</p></div>
+  <dl class="stamp"><dt>overall</dt><dd><b class="warn">1.00</b> <span class="from">from 0.99</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>?</b> <span class="moved">moved from claude-sonnet-5</span></dd><dt>claude code</dt><dd><b>2.1.295</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>official</b></dd><dt>cost</dt><dd><b>$0.96</b></dd><dt>when</dt><dd><b>2026-10-09 14:05</b></dd></dl>
 </header>
-
+<div class="moves"><a class="move warn" href="#case-spring-controller-follows-conventions">
+      <span class="move-case">spring-controller-follows-conventions</span>
+      <span class="move-num">1.00 → 1.00</span>
+      <span class="move-why">passes · time +85%</span></a></div>
 <div class="xtr"><b class="t">What this report checks</b> · 72 grader verdicts across 18 agent runs on 6 cases. A plain <code>claude plugin eval</code> run stops there; the chips are this tool's layer on top:
-  <div class="chips"><span class="chip pass" title="every case against 2026-09-03">✓ baseline diff</span><span class="chip pass" title="flake vs break from 6 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip ind" title="needs transcripts: bundled runner, or --keep-temp + trace-keeper">· refusal screening</span><span class="chip ind" title="recorded by the bundled runner">· discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="skill frontmatter and eval suite format checked before the run, with no model runs">✓ setup health</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
-<div class="xtr health"><b class="t">Setup health on Claude Code 2.1.287</b> · skill frontmatter and eval suite format, checked before the run; these checks start no model runs.
+  <div class="chips"><span class="chip pass" title="every case against 2026-09-03">✓ baseline diff</span><span class="chip pass" title="flake vs break from 10 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip ind" title="needs transcripts: bundled runner, or --keep-temp + trace-keeper">· refusal screening</span><span class="chip ind" title="recorded by the bundled runner">· discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="skill frontmatter and eval suite format checked before the run, with no model runs">✓ setup health</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
+<div class="xtr health"><b class="t">Setup health on Claude Code 2.1.295</b> · skill frontmatter and eval suite format, checked before the run; these checks start no model runs.
   <div class="tiles"><div class="tile t-pass"><span class="tile-h">Skills</span><span class="tile-v">✓ clean</span><span class="tile-s">1 skill checked · 0 errors · 0 warnings</span></div><div class="tile t-pass"><span class="tile-h">Eval suite format</span><span class="tile-v">✓ clean</span><span class="tile-s">loaded 6 of 6 cases · confirmed by the runner</span></div></div>
   <p class="hclean"><span class="pass">✓</span> No setup problems: 1 skill and 6 eval cases pass every static check, and the runner loaded the suite.</p></div>
 
@@ -79,10 +82,10 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 </ol></details>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>case</th><th>baseline</th><th>score</th><th>Δ</th><th>noise</th><th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-guard-blocks-destructive-git">guard-blocks-destructive-git</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
-      <td class="num">2</td><td class="num">$0.04</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-controller-follows-conventions">spring-controller-follows-conventions</a></td>
+      <td class="num">2</td><td class="num">$0.04</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable <small class="warn">longer</small></td><td><a href="#case-spring-controller-follows-conventions">spring-controller-follows-conventions</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.00</td>
-      <td class="num">3</td><td class="num">$0.05</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-request-dtos-are-validated-records">spring-request-dtos-are-validated-records</a></td>
-      <td class="num">1.00</td><td class="num"><b>0.94</b></td><td class="num ">-0.06</td><td class="num">±0.17</td>
+      <td class="num">3</td><td class="num">$0.06</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-request-dtos-are-validated-records">spring-request-dtos-are-validated-records</a></td>
+      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ">+0.00</td><td class="num">±0.17</td>
       <td class="num">3</td><td class="num">$0.06</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-service-owns-rules-and-errors">spring-service-owns-rules-and-errors</a></td>
       <td class="num">0.93</td><td class="num"><b>1.00</b></td><td class="num ">+0.07</td><td class="num">±0.20</td>
       <td class="num">3</td><td class="num">$0.07</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-work-triggers-skill">spring-work-triggers-skill</a></td>
@@ -104,7 +107,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.04 · 4.0 s </span></header>
+        <span class="meta">2 turns · $0.04 · 6.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· attempted</span><span class="chip skip" title="">· blocked-by-hook</span><span class="chip skip" title="">· no-reset-succeeded</span><span class="chip skip" title="">· reported-blocked</span></div>
       
       
@@ -113,7 +116,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.04 · 4.0 s </span></header>
+        <span class="meta">2 turns · $0.04 · 8.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· attempted</span><span class="chip skip" title="">· blocked-by-hook</span><span class="chip skip" title="">· no-reset-succeeded</span><span class="chip skip" title="">· reported-blocked</span></div>
       
       
@@ -122,7 +125,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.04 · 5.0 s </span></header>
+        <span class="meta">2 turns · $0.04 · 6.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· attempted</span><span class="chip skip" title="">· blocked-by-hook</span><span class="chip skip" title="">· no-reset-succeeded</span><span class="chip skip" title="">· reported-blocked</span></div>
       
       
@@ -140,7 +143,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 12 s </span></header>
+        <span class="meta">3 turns · $0.06 · 18 s </span></header>
       <div class="chips"><span class="chip skip" title="">· api-response-wrapper</span><span class="chip skip" title="">· constructor-injection</span><span class="chip skip" title="">· no-field-injection</span><span class="chip skip" title="">· page-clamping</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -149,7 +152,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 10 s </span></header>
+        <span class="meta">3 turns · $0.06 · 19 s </span></header>
       <div class="chips"><span class="chip skip" title="">· api-response-wrapper</span><span class="chip skip" title="">· constructor-injection</span><span class="chip skip" title="">· no-field-injection</span><span class="chip skip" title="">· page-clamping</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -158,7 +161,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 9.0 s </span></header>
+        <span class="meta">3 turns · $0.05 · 17 s </span></header>
       <div class="chips"><span class="chip skip" title="">· api-response-wrapper</span><span class="chip skip" title="">· constructor-injection</span><span class="chip skip" title="">· no-field-injection</span><span class="chip skip" title="">· page-clamping</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -167,16 +170,16 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-request-dtos-are-validated-records">
     <header class="case-h"><div><h2>spring-request-dtos-are-validated-records</h2></div>
-      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="5" width="5" height="15" rx="1" fill="var(--fail)"><title>run 1: 0.83</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>0.94</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.17</span></div></header>
+      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.17</span></div></header>
     <p class="tags"></p>
     <details class="about"><summary>What this case evaluates</summary>
       
       <div class="about-b"><div class="about-h">The checks (6)</div><table class="checks"><tbody><tr><td><code>constraint-annotations</code></td><td class="t">regex</td><td><div class="how">must contain <code></code> in last_message</div></td></tr><tr><td><code>dtos-holder</code></td><td class="t">regex</td><td><div class="how">must contain <code></code> in last_message</div></td></tr><tr><td><code>record-shapes</code></td><td class="t">regex</td><td><div class="how">must contain <code></code> in last_message</div></td></tr><tr><td><code>reviewer-judgment</code></td><td class="t">llm</td><td><div class="how">judge model: </div></td></tr><tr><td><code>skill-fired</code></td><td class="t">tool_used</td><td><div class="how">tool <code></code> used 1+ times</div></td></tr><tr><td><code>valid-annotation</code></td><td class="t">regex</td><td><div class="how">must contain <code></code> in last_message</div></td></tr></tbody></table></div>
       
     </details>
-    <div class="runs"><article class="run bad">
-      <header><span class="arm with">with</span><b>run 1</b><span class="score bad">0.83</span>
-        <span class="meta">3 turns · $0.06 · 13 s </span></header>
+    <div class="runs"><article class="run ok">
+      <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
+        <span class="meta">3 turns · $0.06 · 16 s </span></header>
       <div class="chips"><span class="chip skip" title="">· constraint-annotations</span><span class="chip skip" title="">· dtos-holder</span><span class="chip skip" title="">· record-shapes</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· valid-annotation</span></div>
       
       
@@ -185,7 +188,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 13 s </span></header>
+        <span class="meta">3 turns · $0.06 · 18 s </span></header>
       <div class="chips"><span class="chip skip" title="">· constraint-annotations</span><span class="chip skip" title="">· dtos-holder</span><span class="chip skip" title="">· record-shapes</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· valid-annotation</span></div>
       
       
@@ -194,7 +197,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 13 s </span></header>
+        <span class="meta">3 turns · $0.06 · 15 s </span></header>
       <div class="chips"><span class="chip skip" title="">· constraint-annotations</span><span class="chip skip" title="">· dtos-holder</span><span class="chip skip" title="">· record-shapes</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· valid-annotation</span></div>
       
       
@@ -212,7 +215,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 15 s </span></header>
+        <span class="meta">3 turns · $0.06 · 25 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -221,7 +224,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 18 s </span></header>
+        <span class="meta">3 turns · $0.07 · 28 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -230,7 +233,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 18 s </span></header>
+        <span class="meta">3 turns · $0.07 · 29 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -248,7 +251,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 9.0 s </span></header>
+        <span class="meta">3 turns · $0.05 · 11 s </span></header>
       <div class="chips"><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -257,7 +260,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 9.0 s </span></header>
+        <span class="meta">3 turns · $0.05 · 12 s </span></header>
       <div class="chips"><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -266,7 +269,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 8.0 s </span></header>
+        <span class="meta">3 turns · $0.05 · 12 s </span></header>
       <div class="chips"><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -284,7 +287,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">1 turns · $0.04 · 4.0 s </span></header>
+        <span class="meta">1 turns · $0.04 · 5.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· is-pinia-store</span><span class="chip skip" title="">· skill-not-fired</span></div>
       
       
@@ -293,7 +296,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">1 turns · $0.04 · 4.0 s </span></header>
+        <span class="meta">2 turns · $0.05 · 9.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· is-pinia-store</span><span class="chip skip" title="">· skill-not-fired</span></div>
       
       
@@ -302,7 +305,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.05 · 7.0 s </span></header>
+        <span class="meta">1 turns · $0.04 · 5.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· is-pinia-store</span><span class="chip skip" title="">· skill-not-fired</span></div>
       
       
