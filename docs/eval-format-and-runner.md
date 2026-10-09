@@ -291,6 +291,36 @@ runs as the noise evidence, so a cell the diff would call noisy is amber here to
 x labels are thinned so they never overlap; the series legend wraps below the chart with full case
 names. The Action writes it as `docs/index.html` on the results branch when `pages` is true.
 
+## 5f. skill-creator conversion (`tools/evals-convert.mjs`)
+
+Anthropic's skill-creator plugin keeps its cases in `<skill>/evals/evals.json`, and the official
+runner does not read that file (nor does skill-creator read case dirs). `import` turns an evals.json,
+or a skill-creator trigger set (`[{ query, should_trigger }]`), into case dirs; `export` goes back.
+
+| skill-creator | plugin-eval case |
+|---|---|
+| `prompt` | `prompt.md` body (plus an `Input files:` line when there are files) |
+| each `expectations[]` item (or `assertions[]`) | `graders/expect-NN-<slug>.md`: `type: llm`, the statement as the body (the criteria), `focus: last_message`, or `focus: files` when it names a file or says file/folder/directory |
+| `expected_output` | `expected_outcome:` in prompt.md and `graders/expected-output.md` (llm, same focus rule) |
+| `files` (relative to the skill root) | `scaffold.sh` + `case.yaml` (`context.scaffold_script`), copying each file from `$ROOT` (the self-locating pattern above) to its path as written; a file outside the plugin is first copied into the case's `files/` |
+| `skill_name` (or `--skill`) | `graders/skill-fired.md`: `tool_used: Skill`, the namespaced `input_match`, `min: 1`, `arm: with-only` |
+| trigger set item | one case; `should_trigger: false` gets `skill-not-fired.md` (`min: 0`, `max: 0`, `arm: both`) |
+| `id`, eval `name` | the case dir: `<skill>-<id>-<first prompt words>`, or the slug of `name` |
+
+Every case also gets `allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]` (change it with
+`--allowed-tools`), since skill-creator runs have every tool; the official runner still needs
+`--allow-tools Bash,Write,Edit` and `--scaffold` to use them, and the import prints that command.
+An existing case dir is never touched: any clash, or a missing input file, refuses the whole import.
+`--force` replaces clashing dirs whole, `--dry-run` prints the plan only, and `covers.yaml` is
+written only with `--covers id,id`.
+
+`export` writes evals.json (stdout or `--out`) from prompts, llm criteria (frontmatter `criteria:` or
+the body), `expected_outcome`, the inputs an imported scaffold copies, and the Skill trigger's name.
+Everything else (regex, non-Skill `tool_used`, `tool_order`, `file_exists`, `baseline`, other
+scaffolds, `runs`/`model`/`allowed_tools`, weights, `covers.yaml`, mocks) is listed on stderr under
+"not carried over". Imported cases pass every suite-doctor rule, and Claude Code 2.1.295 loads them
+in the doctor's run-free check.
+
 ## 6. Results branch layout
 
 ```
