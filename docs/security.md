@@ -48,6 +48,18 @@
   and approve pull requests* (Settings → Actions → General); without it the branch is pushed and the
   job warns. The `repair` skill may edit `CLAUDE.md`, skills and hooks only, never `evals/`, and runs
   under the remaining monthly budget with a hard cap of $2 per incident.
+- **MCP servers** stay down during eval runs by default (`--mocks record`, the official runner's
+  default too): mocks in `evals/mocks/` answer instead. `--allow-real-servers` or `--mocks off`
+  start real servers as you, outside any sandbox; use them only on plugins you trust.
+- **`usage-check`** reads your local Claude Code transcripts to count skill invocations. It runs
+  only on your machine, keeps only skill names, counts and dates, and never copies prompt or reply
+  text into its output.
+- **`context-cost`** runs `claude plugin details` with a throwaway config dir and HOME, no API keys
+  and no model calls, and deletes the temp dir afterwards; your real `~/.claude` is never touched.
+- **The public release report** clones third-party repos (shallow, size and time capped) and runs
+  only the official runner's load check on them, under `env -i` with an empty HOME, so no token can
+  leak into it, with `--max-cost-usd 0`, no `--scaffold` and no `npm install`. Repo names are
+  validated before cloning. The workflow needs no secrets and has `contents: write` only.
 - `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`; Pro/Max/Team/Enterprise) is accepted as an
   alternative to an API key and passed straight to the official CLI, the same mechanism Anthropic
   documents for its own GitHub Action. It is a long-lived credential tied to one person's

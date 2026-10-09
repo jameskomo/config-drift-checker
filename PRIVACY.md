@@ -7,10 +7,14 @@
 - The only network traffic is Claude Code's own calls to Anthropic's API using **your** credentials
   (your subscription locally, your API key in CI), and `npm view` to check the published Claude Code
   version for release-watch.
-- Eval runs happen in throwaway directories that are deleted after each run. Results — scores,
-  the agent's responses and tool calls, and files it changed — are written only to your repository
+- Eval runs happen in throwaway directories that are deleted after each run. Results (scores,
+  the agent's responses and tool calls, and files it changed) are written only to your repository
   (`evals/results/`, the `eval-results` branch) and your workflow artifacts. You decide whether that
   repository is public or private.
+- `usage-check` reads your local Claude Code session transcripts on your own machine to count how
+  often each skill was used. It outputs only skill names, counts and dates, never prompt or reply
+  text, and sends nothing anywhere.
+- The public release report reads public GitHub repositories only and runs with no credentials.
 - A PreToolUse "safety net" hook is injected into eval sessions to block destructive commands; it
   reads the command being run and nothing else, and writes nothing.
 - Anthropic's handling of the prompts and responses in those API calls is governed by

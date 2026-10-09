@@ -66,6 +66,12 @@ flowchart LR
 | `drift-bisect.mjs` | binary-search Claude Code releases for the one that broke a case (throwaway installs, log2 runs) | none |
 | `skill-lint.mjs` | static checks on every SKILL.md and the manifest before any model run | none |
 | `suite-doctor.mjs` | eval cases vs the current official format plus a free load check on the installed runner; `--fix` migrates known changes | edits case files only with `--fix` |
+| `drift-matrix.mjs` | one suite across models x Claude Code versions (throwaway installs via `cc-release.mjs`, official runner with shim fallback) → one page and a verdict per model; `--budget` caps the grid | results under `evals/results/matrix-<stamp>/` |
+| `context-cost.mjs` | always-on and on-invoke tokens per component from `claude plugin details` in a throwaway config (no credentials, no model calls), estimate fallback; `--history` trend per release | `history/context-cost/` on the results branch |
+| `usage-check.mjs` | local session transcripts (counts only) vs eval results → tested but unused, used but untested, dead weight | none (reads `~/.claude/projects`) |
+| `evals-convert.mjs` | skill-creator `evals.json` ⇄ plugin-eval case folders | writes case folders only on `import` |
+| `eval-mocks.mjs`, `eval-mock-server.mjs` | the shim's MCP mocks: loads `evals/mocks/` in the official format and serves it over stdio under the plugin's server names | temp dirs only |
+| `release-report.mjs` | every public eval suite we can find, loaded on the newest and the previous Claude Code with `--max-cost-usd 0`, `env -i` and an empty HOME | `docs/release-report/` |
 | `drift-digest.mjs` | published verdicts → weekly digest + the pre-written release post | docs/drift/digest.md, post.txt |
 | `ci/` templates | the per-repo two-track workflow, the fleet workflow, and the org pair (reusable workflow + three-line caller) | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |
@@ -76,6 +82,10 @@ flowchart LR
   tools make themselves are `npm view` and `GET /v1/models` with your key (the watch job).
 - Prompts, transcripts, and files created by the agent stay in your runner and results
   branch (you choose whether that branch is in a private repo).
+- `usage-check` reads your local transcripts on your machine and reports skill names, counts and
+  dates only; it never copies prompt or reply text and never runs in CI.
+- The release report clones public repos and only loads their cases: no credentials (`env -i`, an
+  empty HOME), no scaffold, no `npm install`, and a $0 cost ceiling that stops before any agent starts.
 - The action runs `case.yaml` `scaffold_script` only when `scaffold: true` (the same gate as the
   official runner); never run suites you didn't author with scaffold on.
 - PRs the Action opens (bump, pin, repair) are never auto-merged and need the repo to allow Actions
