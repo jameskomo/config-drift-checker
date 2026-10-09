@@ -1,0 +1,67 @@
+name: drift-matrix
+# Which model and Claude Code version can this setup safely use? Runs the eval suite on every cell of
+# a grid (models × Claude Code versions) and uploads one page with a verdict per model, e.g.
+# "haiku: safe on 2.1.290–2.1.295; fails spring-service-owns-rules-and-errors on 2.1.288".
+#
+# Manual only, never on a schedule: a grid is cells × cases × runs agent runs. The budget input is a
+# hard ceiling for the whole grid (cells past it show as not run); start with dry-run to see the grid
+# and a cost estimate for $0. The reference column is the model and Claude Code version .cdc.yml pins.
+on:
+  workflow_dispatch:
+    inputs:
+      models:   { description: 'Models, comma-separated (aliases or full ids)', default: 'sonnet,haiku' }
+      versions: { description: 'Claude Code versions, comma-separated, or last:N for the newest N', default: 'last:3' }
+      budget:   { description: 'Total ceiling in USD for the whole grid', default: '5' }
+      runs:     { description: 'Runs per case in each cell', default: '1' }
+      case:     { description: 'Only cases matching this glob (empty = all)', default: '' }
+      dry-run:  { description: 'Print the grid and cost estimate only ($0)', type: boolean, default: false }
+permissions: { contents: read }
+concurrency: { group: drift-matrix, cancel-in-progress: false }
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # One of the two. An API key bills prepaid API credit; a subscription token (`claude setup-token`)
+      # bills nothing beyond the subscription. If both are set, the API key wins.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { repository: jameskomo/config-drift-checker, ref: v1, path: .cdc-tools }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: '22' }
+      - name: Sandbox for the official runner
+        # newer Claude Code refuses shell tools in plugin eval without an OS sandbox (bubblewrap on Linux)
+        run: sudo apt-get install -y -qq bubblewrap socat >/dev/null 2>&1 || echo "::notice::could not install bubblewrap; cells fall back to the bundled runner"
+      - name: Run the matrix
+        # inputs reach the script through env: and quoted "$VARS", never ${{ }} inside run:
+        env:
+          MODELS: ${{ inputs.models }}
+          VERSIONS: ${{ inputs.versions }}
+          BUDGET: ${{ inputs.budget }}
+          RUNS: ${{ inputs.runs }}
+          CASE: ${{ inputs.case }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+          test -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" || [ "$DRY_RUN" = "true" ] || { echo "::error::Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set"; exit 1; }
+          case "$VERSIONS" in
+            last:*) grid=(--last "${VERSIONS#last:}") ;;
+            *) grid=(--versions "$VERSIONS") ;;
+          esac
+          args=(. --models "$MODELS" "${grid[@]}" --budget "$BUDGET" --runs "$RUNS" --out-dir matrix-out)
+          [ -n "$CASE" ] && args+=(--case "$CASE")
+          if [ "$DRY_RUN" = "true" ]; then
+            node .cdc-tools/config-drift-checker/tools/drift-matrix.mjs "${args[@]}" --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            node .cdc-tools/config-drift-checker/tools/drift-matrix.mjs "${args[@]}" --md matrix.md
+            cat matrix.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ !inputs.dry-run && always() }}
+        with:
+          name: drift-matrix
+          path: matrix-out/
+          if-no-files-found: warn

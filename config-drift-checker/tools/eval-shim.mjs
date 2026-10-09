@@ -25,6 +25,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { renderReport } from './eval-report.mjs';
 import { loadConfig, resolveTrack } from './cdc-config.mjs';
+import { globToRe } from './cc-release.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
@@ -80,6 +81,12 @@ function parseFrontmatter(src) {
     const kv = line.match(/^([\w-]+):\s*(.*)$/);
     if (!kv) continue;
     let [, k, v] = kv;
+    if (v === '' && /^\s+-\s/.test(lines[i + 1] ?? '')) { // block list (tags:\n  - a)
+      const buf = [];
+      while (i + 1 < lines.length && /^\s+-\s/.test(lines[i + 1])) buf.push(parseScalar(lines[++i].replace(/^\s+-\s*/, '')));
+      meta[k] = buf;
+      continue;
+    }
     if (v === '|' || v === '>') { // block scalar
       const buf = [];
       while (i + 1 < lines.length && /^\s+/.test(lines[i + 1])) buf.push(lines[++i].replace(/^\s{2}/, ''));
@@ -171,7 +178,6 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
   cases.push({ scaffoldScript, scaffoldPath, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
 }
 if (!cases.length) die('No eval cases found');
-function globToRe(g) { const alts = g.replace(/^\{(.*)\}$/, '$1').split(',').map((x) => x.trim()).filter(Boolean); return new RegExp('^(?:' + alts.map((a) => a.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*')).join('|') + ')$'); } // supports a,b and {a,b}
 
 // ---------- isolated config (mirrors the official sandbox: fresh CLAUDE_CONFIG_DIR + creds copied in) ----------
 const userConfig = process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude');

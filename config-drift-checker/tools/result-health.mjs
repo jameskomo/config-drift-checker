@@ -10,6 +10,7 @@
 import { promises as fs } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { normalizeResult } from './eval-classify.mjs';
+import { usableReason } from './cc-release.mjs';
 
 const argv = process.argv.slice(2);
 const file = argv.find((a) => !a.startsWith('--'));
@@ -19,8 +20,5 @@ const out = (k, v) => console.log(`${k}=${String(v).replace(/\n/g, ' ')}`);
 if (!file || !existsSync(file)) { out('usable', false); out('reason', 'no result file'); out('errored', 0); out('total', 0); out('cases', 0); process.exit(0); }
 const j = normalizeResult(JSON.parse(await fs.readFile(file, 'utf8')));
 const total = j.aggregates?.totalRuns ?? 0, errored = j.aggregates?.erroredRuns ?? 0, cases = (j.cases ?? []).length;
-let reason = '';
-if (total === 0) reason = 'no agent runs in the result';
-else if (errored === total) reason = `every run errored: ${j.aggregates?.partialReason ?? 'unknown'}`;
-else if (expect !== null && cases < expect) reason = `only ${cases} of ${expect} cases loaded (the runner rejected the rest)`;
+const reason = usableReason(j, expect);
 out('usable', !reason); out('reason', reason); out('errored', errored); out('total', total); out('cases', cases);

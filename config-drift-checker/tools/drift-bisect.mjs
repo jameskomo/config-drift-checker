@@ -12,21 +12,10 @@
 //
 // Spend: each step is one case × --runs agent runs, capped by --budget overall; $0 API on a
 // subscription token, same as any local run.
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
-import { spawnSync } from 'node:child_process';
+import { versionsBetween, publishedVersions, installRelease, runSuite } from './cc-release.mjs';
 
-const cmpV = (a, b) => {
-  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] ?? 0) - (pb[i] ?? 0); if (d) return d; }
-  return 0;
-};
-
-// stable versions strictly after good, up to and including bad, ascending
-export function versionsBetween(all, good, bad) {
-  return all.filter((v) => /^\d+\.\d+\.\d+$/.test(v) && cmpV(v, good) > 0 && cmpV(v, bad) <= 0).sort(cmpV);
-}
+export { versionsBetween }; // lives in cc-release.mjs, shared with drift-matrix
 
 // classic first-bad binary search. isGood(version) → boolean. candidates ascending; the last one
 // (bad) is assumed bad and never re-tested; returns { firstBad, steps: [{version, good}] }.
@@ -60,34 +49,29 @@ if (isMain) {
   }
   for (const v of [opt.good, opt.bad]) if (!/^\d+\.\d+\.\d+$/.test(v)) { console.error(`'${v}' is not a version`); process.exit(2); }
 
-  const nv = spawnSync('npm', ['view', '@anthropic-ai/claude-code', 'versions', '--json'], { encoding: 'utf8' });
-  if (nv.status !== 0) { console.error('npm view failed — network?'); process.exit(1); }
-  const candidates = versionsBetween(JSON.parse(nv.stdout), opt.good, opt.bad);
+  let all;
+  try { all = publishedVersions(); } catch { console.error('npm view failed — network?'); process.exit(1); }
+  const candidates = versionsBetween(all, opt.good, opt.bad);
   if (!candidates.length) { console.error(`no published versions in (${opt.good}, ${opt.bad}]`); process.exit(1); }
   console.log(`${candidates.length} candidate version(s) in (${opt.good} … ${opt.bad}] — about ${Math.ceil(Math.log2(Math.max(candidates.length, 2)))} test run(s)\n`);
 
-  const SHIM = path.join(path.dirname(new URL(import.meta.url).pathname), 'eval-shim.mjs');
   let spent = 0;
   const isGood = async (version) => {
     if (spent >= opt.budget) { console.error(`budget $${opt.budget} reached — narrow the range or raise --budget`); process.exit(3); }
-    const prefix = await fs.mkdtemp(path.join(os.tmpdir(), `cdc-bisect-${version}-`));
     process.stdout.write(`· installing Claude Code ${version} … `);
-    const inst = spawnSync('npm', ['install', `@anthropic-ai/claude-code@${version}`, '--prefix', prefix, '--no-fund', '--no-audit'], { encoding: 'utf8' });
-    if (inst.status !== 0) { console.log('install failed, treating as untestable (bad)'); return false; }
-    const binDir = path.join(prefix, 'node_modules', '.bin');
+    const inst = await installRelease(version);
+    if (!inst) { console.log('install failed, treating as untestable (bad)'); return false; }
     process.stdout.write('running the case … ');
-    const out = await fs.mkdtemp(path.join(os.tmpdir(), 'cdc-bisect-out-'));
-    const r = spawnSync('node', [SHIM, opt.plugin, '--case', opt.case, '--runs', String(opt.runs), '--ablation', 'none', '--scaffold', '--budget', String(Math.max(0.1, opt.budget - spent)), '--output-dir', out], { encoding: 'utf8', env: { ...process.env, PATH: `${binDir}:${process.env.PATH}` } });
+    const { json: j } = await runSuite({ plugin: opt.plugin, binDir: inst.binDir, runner: 'shim', caseGlob: opt.case, runs: opt.runs, budget: Math.max(0.1, opt.budget - spent) });
     let good = false, scoreTxt = '?';
     try {
-      const j = JSON.parse(await fs.readFile(path.join(out, 'aggregate-result.json'), 'utf8'));
       spent += j.aggregates?.costUsd ?? 0;
       const scores = (j.cases ?? []).map((c) => c.summary?.score).filter((s) => typeof s === 'number');
       good = scores.length > 0 && scores.every((s) => s >= opt.passScore) && !(j.aggregates?.erroredRuns > 0);
       scoreTxt = scores.map((s) => s.toFixed(2)).join(',') || 'none';
     } catch { good = false; }
-    console.log(`${good ? 'GOOD' : 'BAD'} (score ${scoreTxt})${r.status !== 0 && !good ? '' : ''}`);
-    await fs.rm(prefix, { recursive: true, force: true }).catch(() => {});
+    console.log(`${good ? 'GOOD' : 'BAD'} (score ${scoreTxt})`);
+    await inst.cleanup();
     return good;
   };
 

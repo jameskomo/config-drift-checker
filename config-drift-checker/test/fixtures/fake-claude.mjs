@@ -8,6 +8,8 @@
 //   FAKE_CLAUDE_TURNS    num_turns per agent call (default 2)
 //   FAKE_CLAUDE_FAIL     comma-separated agent-call indices (0-based) that answer without "DONE"
 //   FAKE_CLAUDE_ERROR    comma-separated agent-call indices that return an is_error result (e.g. credit exhausted)
+//   FAKE_CLAUDE_FAIL_MODEL     comma-separated --model values whose agent calls answer without "DONE"
+//   FAKE_CLAUDE_EARLY_ACCESS   when set, `claude plugin eval` answers like a release without the official runner
 import { promises as fs, existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -15,6 +17,8 @@ const args = process.argv.slice(2);
 const out = (o) => process.stdout.write(JSON.stringify(o) + '\n');
 
 if (args.includes('--version')) { process.stdout.write(`${process.env.FAKE_CLAUDE_VERSION ?? '9.9.9'} (Claude Code)\n`); process.exit(0); }
+
+if (args[0] === 'plugin' && args[1] === 'eval' && process.env.FAKE_CLAUDE_EARLY_ACCESS) { console.error('claude plugin eval is in early access'); process.exit(1); }
 
 const fmt = args[args.indexOf('--output-format') + 1];
 if (fmt === 'json') { // an LLM-judge call
@@ -38,7 +42,8 @@ if (list('FAKE_CLAUDE_ERROR').includes(n)) {
   out({ type: 'result', subtype: 'error_during_execution', is_error: true, result: 'Credit balance is too low', total_cost_usd: 0, num_turns: 0, modelUsage: { [model]: {} } });
   process.exit(1);
 }
-const text = list('FAKE_CLAUDE_FAIL').includes(n) ? 'I could not finish this.' : 'DONE — the task is complete.';
+const failModel = (process.env.FAKE_CLAUDE_FAIL_MODEL ?? '').split(',').filter(Boolean).includes(args[args.indexOf('--model') + 1]);
+const text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel ? 'I could not finish this.' : 'DONE — the task is complete.';
 out({ type: 'system', subtype: 'init', model });
 out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'echo hello' } }] } });
 out({ type: 'user', message: { content: [{ type: 'tool_result', content: 'hello', is_error: false }] } });
