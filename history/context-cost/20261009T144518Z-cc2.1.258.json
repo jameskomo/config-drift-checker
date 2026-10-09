@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "tool": "context-cost",
+  "generatedAt": "2026-10-09T14:45:18.459Z",
+  "plugin": {
+    "name": "komo-stack",
+    "version": "0.1.0"
+  },
+  "pluginDir": "komo-stack",
+  "claudeVersion": "2.1.258",
+  "source": "official",
+  "totals": {
+    "alwaysOn": 123,
+    "onInvoke": 440
+  },
+  "components": [
+    {
+      "kind": "skill",
+      "name": "spring-boot-conventions",
+      "alwaysOn": 120,
+      "onInvoke": 440,
+      "source": "official"
+    },
+    {
+      "kind": "hook",
+      "name": "PreToolUse",
+      "alwaysOn": 0,
+      "onInvoke": 0,
+      "note": "harness only, no model context cost",
+      "source": "estimate"
+    }
+  ],
+  "fingerprint": "517076096942e51a",
+  "official": {
+    "status": "ok",
+    "reason": null,
+    "via": "plugin-dir",
+    "alwaysOn": 123,
+    "inventory": {
+      "skills": {
+        "count": 1,
+        "names": [
+          "spring-boot-conventions"
+        ],
+        "note": null
+      },
+      "agents": {
+        "count": 0,
+        "names": [],
+        "note": null
+      },
+      "hooks": {
+        "count": 1,
+        "names": [
+          "PreToolUse"
+        ],
+        "note": "harness-only — no model context cost"
+      },
+      "mcp servers": {
+        "count": 0,
+        "names": [],
+        "note": null
+      },
+      "lsp servers": {
+        "count": 0,
+        "names": [],
+        "note": null
+      }
+    }
+  },
+  "estimate": {
+    "totals": {
+      "alwaysOn": 120,
+      "onInvoke": 440
+    },
+    "components": [
+      {
+        "kind": "skill",
+        "name": "spring-boot-conventions",
+        "alwaysOn": 120,
+        "onInvoke": 440,
+        "file": "skills/spring-boot-conventions/SKILL.md"
+      },
+      {
+        "kind": "hook",
+        "name": "PreToolUse",
+        "alwaysOn": 0,
+        "onInvoke": 0,
+        "note": "harness only, no model context cost"
+      }
+    ]
+  }
+}
