@@ -98,7 +98,10 @@ each time a slot is granted, right before a run would start. Runs already in fli
 stopped, so with `n` slots the spend can pass the cap by up to `n - 1` runs. Expansion runs are
 queued as soon as an arm's first runs are in, ahead of later cases. The official runner has the same
 option (`-j`, from Claude Code 2.1.295); every run is a full `claude` child on your credential and
-they share one rate limit, so this cuts wall-clock time, not cost. 3 is a sensible CI value.
+they share one rate limit, so this cuts wall-clock time, not cost. 3 is a sensible CI value. The
+Action's `concurrency` input (default 1) passes `--concurrency` to the shim and `-j` to the official
+runner, but only when the installed runner's `--help` lists the option; on an older Claude Code it
+prints a notice and the official runs go one at a time.
 
 Safety net (both arms): the isolated config's `settings.json` carries a PreToolUse(Bash) hook
 (`tools/safety-net.mjs`) and the run uses `--setting-sources user` so it applies. It blocks

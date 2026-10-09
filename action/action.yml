@@ -10,6 +10,7 @@ inputs:
   plugin-dir:            { description: 'Path to the plugin (contains .claude-plugin/plugin.json, evals/ and optionally .cdc.yml)', required: true }
   track:                 { description: 'pinned (baseline, deterministic) or canary (alias model, latest Claude Code). Empty = .cdc.yml `track`', default: '' }
   runs:                  { description: 'Runs per case (overrides case default and .cdc.yml)', default: '' }
+  concurrency:           { description: 'Agent runs at once, 1 to 8. They share one rate limit, so this saves wall-clock time, not cost; 3 suits most CI suites. Passed as -j to the official runner when the installed Claude Code supports it (2.1.295+), and to the bundled runner always', default: '1' }
   model:                 { description: 'Agent model alias or id (overrides the track)', default: '' }
   judge-model:           { description: 'LLM grader model (overrides .cdc.yml judge_model)', default: '' }
   ablation:              { description: 'with-without (baseline proof) or none (cheaper regression runs)', default: 'none' }
@@ -197,19 +198,27 @@ runs:
         RUNS_INPUT: ${{ inputs.runs }}
         SCAFFOLD: ${{ inputs.scaffold }}
         ABLATION: ${{ inputs.ablation }}
+        CONCURRENCY: ${{ inputs.concurrency }}
         BUDGET_PER_RUN: ${{ steps.config.outputs.budget_per_run_usd }}
       run: |
         set -euo pipefail
+        case "$CONCURRENCY" in [1-8]) ;; *) echo "::error::concurrency must be a whole number from 1 to 8, got '$CONCURRENCY'"; exit 1;; esac
         test -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" || { echo "::error::Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set (BYOK: agent runs bill to your key or your subscription)"; exit 1; }
         out="$RUNNER_TEMP/eval-out"; mkdir -p "$out"
         model="$MODEL_INPUT"; [ -n "$model" ] || model="$CONFIG_MODEL"
         judge="$JUDGE_INPUT"; [ -n "$judge" ] || judge="$CONFIG_JUDGE"
         runs_args=(); [ -n "$RUNS_INPUT" ] && runs_args=(--runs "$RUNS_INPUT")
         scaffold_args=(); [ "$SCAFFOLD" = "true" ] && scaffold_args=(--scaffold)
+        shim_conc_args=(--concurrency "$CONCURRENCY")
         if [ "$RUNNER" = "official" ]; then
+          # -j arrived in Claude Code 2.1.295: probe the installed runner's help (free) rather than trust a version compare
+          conc_args=()
+          runner_help=$(claude plugin eval --help 2>&1 || true)
+          if grep -q -- '--concurrency' <<< "$runner_help"; then conc_args=(-j "$CONCURRENCY")
+          elif [ "$CONCURRENCY" != "1" ]; then echo "::notice::Claude Code $CC_VERSION's plugin eval has no --concurrency; runs go one at a time"; fi
           # --trust-plugin: CI cannot answer the first-run trust prompt; the suite is this repo's own checkout
           claude plugin eval "$PLUGIN_DIR" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
-            "${runs_args[@]}" "${scaffold_args[@]}" --allow-tools Bash Write Edit --no-publish --trust-plugin --json "$out/aggregate-result.json" || true
+            "${runs_args[@]}" "${scaffold_args[@]}" "${conc_args[@]}" --allow-tools Bash Write Edit --no-publish --trust-plugin --json "$out/aggregate-result.json" || true
           # a CLI change in the official runner must never take the whole check down: if its result
           # is not a usable measurement (nothing written, every run refused, cases rejected), fall back
           expect=$(PLUGIN_DIR="$PLUGIN_DIR" node -e 'const fs=require("fs"),p=require("path");let d="evals";try{d=JSON.parse(fs.readFileSync(p.join(process.env.PLUGIN_DIR,".claude-plugin/plugin.json"),"utf8")).experimental?.evals||d}catch{};const e=p.join(process.env.PLUGIN_DIR,d);console.log(fs.existsSync(e)?fs.readdirSync(e,{withFileTypes:true}).filter(x=>x.isDirectory()&&!["results","mocks"].includes(x.name)).length:0)')
@@ -220,14 +229,14 @@ runs:
             rm -f "$out/aggregate-result.json"
             RUNNER=shim
             node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
-              --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
+              --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" "${shim_conc_args[@]}" --output-dir "$out" || true
           fi
           # the official runner does not know tracks yet: stamp provenance so diff/store/promote can reason about it
           OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
         else
           model_args=(); [ -n "$MODEL_INPUT" ] && model_args=(--model "$MODEL_INPUT")
           node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
-            "${model_args[@]}" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" --output-dir "$out" || true
+            "${model_args[@]}" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" "${shim_conc_args[@]}" --output-dir "$out" || true
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
         # carry the preflight (skill lint + suite format) inside the result, so every stored run has its
