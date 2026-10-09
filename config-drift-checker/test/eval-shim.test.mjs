@@ -31,9 +31,9 @@ async function runShim(plugin, extraArgs = [], fakeEnv = {}) {
   const r = spawnSync('node', [SHIM, plugin, '--ablation', 'none', '--no-isolate', '--output-dir', out, ...extraArgs], { env, encoding: 'utf8' });
   const reportPath = path.join(out, 'aggregate-result.json');
   const report = r.status === 0 || r.status === null ? JSON.parse(await fs.readFile(reportPath, 'utf8')) : null;
-  let calls = [];
-  try { calls = (await fs.readFile(path.join(state, 'calls.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); } catch {}
-  return { report, calls, stderr: r.stderr, status: r.status };
+  let events = [];
+  try { events = (await fs.readFile(path.join(state, 'calls.jsonl'), 'utf8')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)); } catch {}
+  return { report, calls: events.filter((e) => !e.done), events, stderr: r.stderr, status: r.status };
 }
 const argOf = (call, flag) => call.args[call.args.indexOf(flag) + 1];
 
@@ -110,6 +110,61 @@ test('errored runs are still counted and surfaced (credit exhausted), score null
   assert.equal(report.aggregates.erroredRuns, 1);
   assert.match(report.aggregates.partialReason, /Credit balance is too low/);
   assert.equal(report.cases[0].arms.with[0].score, null); assert.equal(report.cases[0].arms.with[1].score, 1);
+});
+
+// Three one-run cases whose prompts name them, so each reply (with FAKE_CLAUDE_ECHO) says which case it answered.
+async function makeThreeCasePlugin() {
+  const plugin = await makePlugin({ runs: 1 });
+  for (const name of ['case-b', 'case-c']) {
+    await fs.cp(path.join(plugin, 'evals/case-a'), path.join(plugin, 'evals', name), { recursive: true });
+  }
+  for (const name of ['case-a', 'case-b', 'case-c']) {
+    await fs.writeFile(path.join(plugin, 'evals', name, 'prompt.md'), `---\nruns: 1\nmax_turns: 4\n---\nPROMPT ${name}\nDo the thing and say DONE.\n`);
+  }
+  return plugin;
+}
+
+test('--concurrency 3: runs overlap and finish out of order, yet the result keeps case order', async () => {
+  const slow = { FAKE_CLAUDE_ECHO: '1', FAKE_CLAUDE_SLOW: 'PROMPT case-a:1500' };
+  const { report, events, stderr } = await runShim(await makeThreeCasePlugin(), ['--concurrency', '3'], slow);
+  const startOf = (k) => events.find((e) => !e.done && e.args[e.args.indexOf('-p') + 1].startsWith(`PROMPT ${k}`));
+  const doneOf = (k) => events.find((e) => e.done && e.n === startOf(k).n);
+  assert.ok(doneOf('case-b').at < doneOf('case-a').at && doneOf('case-c').at < doneOf('case-a').at, 'b and c finished while a was still running');
+  assert.ok(startOf('case-c').at < doneOf('case-a').at, 'c started before a finished');
+  assert.deepEqual(report.cases.map((c) => c.dir), ['case-a', 'case-b', 'case-c']);
+  report.cases.forEach((c) => assert.match(c.arms.with[0].response, new RegExp(`\\[PROMPT ${c.dir}\\]`), 'each case keeps its own run'));
+  assert.match(stderr, /concurrency=3/);
+
+  const seq = await runShim(await makeThreeCasePlugin(), [], slow);
+  const order = seq.events.filter((e) => e.done).map((e) => e.n);
+  assert.deepEqual(order, [0, 1, 2], 'the default of 1 still runs one at a time, in order');
+});
+
+test('--concurrency keeps run order within a case and checks the budget before every launch', async () => {
+  // two slots, 1.50 per run, cap 4.00: grants happen at 0, 0, 1.50 and 3.00 spent; at 4.50 the fifth never starts
+  const { report, calls } = await runShim(await makePlugin({ runs: 5 }), ['--concurrency', '2', '--budget', '4'], { FAKE_CLAUDE_COST: '1.5' });
+  assert.equal(calls.length, 4);
+  assert.deepEqual(report.cases[0].arms.with.map((r) => r.runIndex), [0, 1, 2, 3]);
+  assert.deepEqual(report.aggregates.budget, { capUsd: 4, spentUsd: 6, exceeded: true, skippedRuns: 1 });
+  // the cap is checked at launch, so runs already in flight finish: three slots all start at 0 spent
+  const wide = await runShim(await makePlugin({ runs: 3 }), ['--concurrency', '3', '--budget', '1'], { FAKE_CLAUDE_COST: '1.5' });
+  assert.equal(wide.calls.length, 3);
+  assert.equal(wide.report.aggregates.budget.skippedRuns, 0);
+});
+
+test('--concurrency with deviation expansion: the extra runs follow the first look, in order', async () => {
+  const { report, calls } = await runShim(await makePlugin({ cdcYml: CDC }), ['--track', 'canary', '--concurrency', '4'], { FAKE_CLAUDE_FAIL: '0' });
+  assert.equal(calls.length, 3);
+  assert.deepEqual(report.cases[0].arms.with.map((r) => r.runIndex), [0, 1, 2]);
+  assert.deepEqual(report.cases[0].arms.with.map((r) => r.score), [0, 1, 1]);
+});
+
+test('--concurrency outside 1-8 is refused before anything runs', async () => {
+  for (const bad of ['0', '9', '2.5', 'many']) {
+    const r = spawnSync('node', [SHIM, await makePlugin(), '--concurrency', bad], { encoding: 'utf8' });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /--concurrency must be a whole number from 1 to 8/);
+  }
 });
 
 test('--agent outside the supported set exits with a clear message', async () => {

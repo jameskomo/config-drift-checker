@@ -10,7 +10,11 @@
 //   FAKE_CLAUDE_ERROR    comma-separated agent-call indices that return an is_error result (e.g. credit exhausted)
 //   FAKE_CLAUDE_FAIL_MODEL     comma-separated --model values whose agent calls answer without "DONE"
 //   FAKE_CLAUDE_EARLY_ACCESS   when set, `claude plugin eval` answers like a release without the official runner
-import { promises as fs, existsSync, readFileSync } from 'node:fs';
+//   FAKE_CLAUDE_SLOW     "<text>:<ms>": an agent call whose prompt contains <text> waits <ms> before answering
+//   FAKE_CLAUDE_ECHO     when set, the reply quotes the prompt's first line, so a test can tell runs apart
+// Every agent call appends a start record and a done record to calls.jsonl; call indices are claimed
+// atomically, so concurrent calls never share one.
+import { promises as fs, existsSync, readFileSync, appendFileSync } from 'node:fs';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
@@ -28,10 +32,14 @@ if (fmt === 'json') { // an LLM-judge call
 
 const state = process.env.FAKE_CLAUDE_STATE;
 if (!state) { console.error('fake-claude: FAKE_CLAUDE_STATE not set'); process.exit(3); }
-const counter = path.join(state, 'n');
-const n = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) : 0;
-await fs.writeFile(counter, String(n + 1));
-await fs.appendFile(path.join(state, 'calls.jsonl'), JSON.stringify({ n, args, cwd: process.cwd(), configDir: process.env.CLAUDE_CONFIG_DIR ?? null }) + '\n');
+let n = 0;
+for (;; n++) { try { await fs.writeFile(path.join(state, `call-${n}`), '', { flag: 'wx' }); break; } catch (e) { if (e.code !== 'EEXIST') throw e; } }
+const log = path.join(state, 'calls.jsonl');
+await fs.appendFile(log, JSON.stringify({ n, args, cwd: process.cwd(), configDir: process.env.CLAUDE_CONFIG_DIR ?? null, at: Date.now() }) + '\n');
+const prompt = args[args.indexOf('-p') + 1] ?? '';
+const [slowText, slowMs] = (process.env.FAKE_CLAUDE_SLOW ?? '').split(':');
+if (slowText && prompt.includes(slowText)) await new Promise((r) => setTimeout(r, Number(slowMs)));
+process.on('exit', () => { try { appendFileSync(log, JSON.stringify({ n, done: true, at: Date.now() }) + '\n'); } catch {} });
 
 const list = (k) => (process.env[k] ?? '').split(',').filter(Boolean).map(Number);
 const model = process.env.FAKE_CLAUDE_MODEL ?? 'claude-sonnet-5';
@@ -43,7 +51,8 @@ if (list('FAKE_CLAUDE_ERROR').includes(n)) {
   process.exit(1);
 }
 const failModel = (process.env.FAKE_CLAUDE_FAIL_MODEL ?? '').split(',').filter(Boolean).includes(args[args.indexOf('--model') + 1]);
-const text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel ? 'I could not finish this.' : 'DONE — the task is complete.';
+let text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel ? 'I could not finish this.' : 'DONE — the task is complete.';
+if (process.env.FAKE_CLAUDE_ECHO) text += ` [${prompt.split('\n')[0]}]`;
 out({ type: 'system', subtype: 'init', model });
 out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'echo hello' } }] } });
 out({ type: 'user', message: { content: [{ type: 'tool_result', content: 'hello', is_error: false }] } });

@@ -90,6 +90,16 @@ before starting any run, if the invocation's spend has reached the cap, no furth
 already ran is kept and scored, `aggregates.budget` records the cap, spend and skipped runs, and a
 case with no runs scores `null` (❔ in the diff, never a regression). `--budget 0` disables the cap.
 
+**Concurrency** (`--concurrency n`, also `-j n`, 1 to 8, default 1): up to `n` agent runs at once,
+across cases and arms, through a small slot pool. A free slot always goes to the earliest waiting
+case, arm and run, and results are stored by position, so the JSON keeps case and run order whatever
+finishes first; at 1 the order of execution is exactly the old sequential one. The budget is checked
+each time a slot is granted, right before a run would start. Runs already in flight are not
+stopped, so with `n` slots the spend can pass the cap by up to `n - 1` runs. Expansion runs are
+queued as soon as an arm's first runs are in, ahead of later cases. The official runner has the same
+option (`-j`, from Claude Code 2.1.295); every run is a full `claude` child on your credential and
+they share one rate limit, so this cuts wall-clock time, not cost. 3 is a sensible CI value.
+
 Safety net (both arms): the isolated config's `settings.json` carries a PreToolUse(Bash) hook
 (`tools/safety-net.mjs`) and the run uses `--setting-sources user` so it applies. It blocks
 host-global destructive commands; a matched command is allowed only if `scaffold_script` created
@@ -344,6 +354,6 @@ Written by the Action with a bot identity; one commit per run. The branch is pla
 ## 7. Known limitations
 
 `tool_order`, `baseline`, `history_file`, `add_dirs`, MCP mocks not implemented in the shim; LLM
-grader single vote; no parallelism (sequential runs of roughly 30 s each for short cases); `repair` and the
+grader single vote; runs are sequential unless `--concurrency` is raised; `repair` and the
 official-runner path are exercised on real accounts only, not by the test suite (which drives the shim
 with a fake `claude`); Claude-only (`agent:` is reserved for Codex/Gemini adapters).

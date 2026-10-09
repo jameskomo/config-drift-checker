@@ -7,6 +7,7 @@
 //        [--track pinned|canary]        which .cdc.yml track to run (model/harness/runs/budget come from there)
 //        [--expand-on-deviation n]      sequential testing: after the configured runs, add n more if any run deviated
 //        [--budget <usd>]               stop starting new agent runs once this much has been spent in this invocation
+//        [--concurrency n | -j n]       run up to n agent runs at once (1-8, default 1); results keep case and run order
 //        [--output-dir <dir>] [--eval-dir <dir>] [--scaffold] [--no-isolate] [--no-safety-net] [--verbose]
 //        [--regrade <aggregate-result.json>] [--regrade-llm]   re-score saved runs with the current graders (no agent calls;
 //                                                          llm graders keep their saved verdict unless --regrade-llm)
@@ -29,7 +30,7 @@ import { globToRe } from './cc-release.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
-const opt = { case: null, runs: null, model: null, judgeModel: null, ablation: 'with-without', json: null, outputDir: null, isolate: true, verbose: false, scaffold: false, evalDir: null, safetyNet: true, regrade: null, regradeLlm: false, track: null, expand: null, budget: null, agent: null };
+const opt = { case: null, runs: null, model: null, judgeModel: null, ablation: 'with-without', json: null, outputDir: null, isolate: true, verbose: false, scaffold: false, evalDir: null, safetyNet: true, regrade: null, regradeLlm: false, track: null, expand: null, budget: null, agent: null, concurrency: 1 };
 let pluginDir = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i], next = () => argv[++i];
@@ -42,6 +43,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--expand-on-deviation') opt.expand = Number(next());
   else if (a === '--budget') opt.budget = Number(next());
   else if (a === '--agent') opt.agent = next();
+  else if (a === '--concurrency' || a === '-j') opt.concurrency = Number(next());
   else if (a === '--json') opt.json = argv[i + 1] && !argv[i + 1].startsWith('--') ? next() : '-';
   else if (a === '--output-dir') opt.outputDir = next();
   else if (a === '--no-isolate') opt.isolate = false;
@@ -55,6 +57,7 @@ for (let i = 0; i < argv.length; i++) {
   else die(`unknown option ${a}`);
 }
 if (!pluginDir) die('usage: eval-shim.mjs <plugin-dir> [options]');
+if (!Number.isInteger(opt.concurrency) || opt.concurrency < 1 || opt.concurrency > 8) die('--concurrency must be a whole number from 1 to 8');
 function die(m) { console.error(m); process.exit(1); }
 const log = (...m) => { if (opt.json !== '-') console.error(...m); };
 
@@ -408,7 +411,7 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = opt.outputDir ?? path.join(evalDir, 'results', stamp);
 await fs.mkdir(outDir, { recursive: true });
 const modelLabel = opt.model ?? (new Set(cases.map((c) => c.model)).size === 1 ? cases[0].model : 'per-case');
-log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(',')} · track=${track.track} · model=${modelLabel}${track.track === 'pinned' && !track.modelIsPinned && !opt.model ? ' (unpinned alias)' : ''} · claude-code=${harnessVersion ?? '?'} · judge=${opt.judgeModel}${opt.expand ? ` · expand-on-deviation=${opt.expand}` : ''}${opt.budget ? ` · budget=$${opt.budget}` : ''}${opt.regrade ? ' · REGRADE of ' + path.basename(path.dirname(opt.regrade)) : ''}`);
+log(`eval-shim: ${pluginName} · ${cases.length} case(s) · arms=${arms.join(',')} · track=${track.track} · model=${modelLabel}${track.track === 'pinned' && !track.modelIsPinned && !opt.model ? ' (unpinned alias)' : ''} · claude-code=${harnessVersion ?? '?'} · judge=${opt.judgeModel}${opt.expand ? ` · expand-on-deviation=${opt.expand}` : ''}${opt.budget ? ` · budget=$${opt.budget}` : ''}${opt.concurrency > 1 ? ` · concurrency=${opt.concurrency}` : ''}${opt.regrade ? ' · REGRADE of ' + path.basename(path.dirname(opt.regrade)) : ''}`);
 const report = {
   schemaVersion: '1.1', shim: true, agent, track: track.track,
   harness: { name: 'claude-code', version: opt.regrade ? (regradeSource?.harness?.version ?? harnessVersion) : harnessVersion },
@@ -421,18 +424,31 @@ const report = {
 };
 let totalCost = 0, erroredRuns = 0, truncatedRuns = 0, firstError = null, budgetExceeded = false, skippedRuns = 0;
 const overBudget = () => opt.budget !== null && totalCost >= opt.budget;
-for (const c of cases) {
-  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, focus: g.focus ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
-  for (const arm of arms) {
-    entry.arms[arm] = [];
-    const saved = opt.regrade ? (regradeSource.cases.find((x) => (x.dir ?? x.name) === c.dir)?.arms?.[arm] ?? []) : null;
-    if (saved && !saved.length) { delete entry.arms[arm]; continue; }
-    const nRuns = saved ? saved.length : c.runs;
-    let target = nRuns, expanded = false;
-    for (let i = 0; i < target; i++) {
+
+// A FIFO-by-key slot pool: at most opt.concurrency agent runs in flight, and a free slot always goes to
+// the earliest waiting (case, arm, run). At --concurrency 1 that is exactly the old sequential order.
+function makePool(size) {
+  let active = 0;
+  const waiting = [];
+  const before = (a, b) => a.key[0] - b.key[0] || a.key[1] - b.key[1];
+  const pump = () => { while (active < size && waiting.length) { waiting.sort(before); active++; waiting.shift().go(); } };
+  return { acquire: (key) => new Promise((go) => { waiting.push({ key, go }); pump(); }), release: () => { active--; pump(); } };
+}
+const pool = makePool(opt.concurrency);
+
+// One (case, arm) group: its runs go through the pool; results land by index, so order never depends on
+// which run finished first. The budget is checked when a slot is granted, right before a run would start.
+async function runGroup(gi, c, arm, saved) {
+  const nRuns = saved ? saved.length : c.runs;
+  const results = [], extra = [];
+  let target = nRuns, firstLeft = nRuns, firstSkipped = false;
+  const slot = async (i) => {
+    await pool.acquire([gi, i]);
+    try {
       if (!saved && overBudget()) { // budget: never start a run past the cap; what already ran is kept and scored
         if (!budgetExceeded) log(`  ■ budget: $${totalCost.toFixed(2)} spent ≥ $${opt.budget} cap — not starting more agent runs`);
-        budgetExceeded = true; skippedRuns += target - i; break;
+        budgetExceeded = true; skippedRuns++; if (i < nRuns) firstSkipped = true;
+        return;
       }
       log(`  ▸ ${c.dir} [${arm}] ${saved ? 'regrade' : 'run'} ${i + 1}/${target} …`);
       const run = saved ? fromSaved(saved[i]) : await runAgent(c, arm);
@@ -445,18 +461,41 @@ for (const c of cases) {
       const score = run.isError ? null : (scored.length ? scored.reduce((s, g) => s + g.score, 0) / scored.length : null);
       if (run.isError) { erroredRuns++; if (!firstError) firstError = (run.lastMessage || run.stderr || run.rawTail || `claude exited ${run.exitCode} with no output`).trim().slice(0, 300); }
       totalCost += run.costUsd ?? 0;
-      entry.arms[arm].push({ runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), toolResults: run.toolResults ?? [], prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, workspaceFiles: run.workspaceFiles ?? {}, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode });
-      if (run.isError) log(`    ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
-      if (run.truncated) { truncatedRuns++; log(`    TRUNCATED (${run.resultSubtype || 'exit ' + run.exitCode}, ${run.numTurns} turns): scored as-is — raise max_turns for this case`); }
-      log(`    score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
-      // sequential testing: the configured runs are the cheap first look; only a deviation buys more evidence
-      if (!saved && !expanded && opt.expand > 0 && i === nRuns - 1 && entry.arms[arm].some((r) => r.score !== 1)) {
-        expanded = true; target += opt.expand;
-        log(`    ↳ deviation in the first ${nRuns} run(s) — expanding by ${opt.expand} more`);
+      results[i] = { runIndex: i, score, graders, costUsd: run.costUsd, inputTokens: run.inputTokens, outputTokens: run.outputTokens, numTurns: run.numTurns, durationMs: run.durationMs, model: run.model, isError: run.isError, truncated: run.truncated, resultSubtype: run.resultSubtype, timedOut: run.timedOut, toolUses: run.toolUses.map((u) => ({ tool: u.tool, input: typeof u.input === 'string' ? u.input : JSON.stringify(u.input).slice(0, 500) })), toolResults: run.toolResults ?? [], prompt: c.prompt, response: run.lastMessage, filesChanged: run.files, fileContents: run.fileContents, workspaceFiles: run.workspaceFiles ?? {}, stderrTail: run.isError ? (run.stderr || run.rawTail || `exit ${run.exitCode}, no output`) : undefined, exitCode: run.exitCode };
+      const tag = opt.concurrency > 1 ? `${c.dir} [${arm}] ${i + 1}: ` : '';
+      if (run.isError) log(`    ${tag}ERROR (exit ${run.exitCode}): ${(run.lastMessage || run.stderr || run.rawTail || 'no output').trim().slice(0, 300)}`);
+      if (run.truncated) { truncatedRuns++; log(`    ${tag}TRUNCATED (${run.resultSubtype || 'exit ' + run.exitCode}, ${run.numTurns} turns): scored as-is — raise max_turns for this case`); }
+      log(`    ${tag}score=${fmt(score)}  ${graders.map((g) => `${g.verdict === 'pass' ? '✓' : g.verdict === 'fail' ? '✗' : '·'}${g.name}${g.scored ? '' : '(ind)'}`).join(' ')}`);
+    } finally {
+      // sequential testing: the configured runs are the cheap first look; only a deviation buys more evidence.
+      // Queued before this slot is released, so at --concurrency 1 the extra runs go next, as they always did.
+      if (i < nRuns && --firstLeft === 0 && !saved && !firstSkipped && opt.expand > 0 && results.some((r) => r && r.score !== 1)) {
+        target += opt.expand;
+        log(`    ↳ ${c.dir} [${arm}]: deviation in the first ${nRuns} run(s) — expanding by ${opt.expand} more`);
+        for (let k = nRuns; k < target; k++) extra.push(slot(k));
       }
+      pool.release();
     }
+  };
+  await Promise.all(Array.from({ length: nRuns }, (_, i) => slot(i)));
+  await Promise.all(extra);
+  return results.filter(Boolean);
+}
+
+const groups = [];
+const entries = cases.map((c) => {
+  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, focus: g.focus ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
+  for (const arm of arms) {
+    const saved = opt.regrade ? (regradeSource.cases.find((x) => (x.dir ?? x.name) === c.dir)?.arms?.[arm] ?? []) : null;
+    if (saved && !saved.length) continue;
+    entry.arms[arm] = [];
+    groups.push(runGroup(groups.length, c, arm, saved).then((runs) => { entry.arms[arm] = runs; }));
   }
-  if (opt.regrade && !Object.keys(entry.arms).length) { log(`  ▸ ${c.dir}: no saved runs in source — skipped`); continue; }
+  return entry;
+});
+await Promise.all(groups);
+for (const entry of entries) {
+  if (opt.regrade && !Object.keys(entry.arms).length) { log(`  ▸ ${entry.dir}: no saved runs in source — skipped`); continue; }
   const mean = (arr) => arr.filter((x) => x !== null).length ? arr.filter((x) => x !== null).reduce((a, b) => a + b, 0) / arr.filter((x) => x !== null).length : null;
   entry.summary.score = mean((entry.arms.with ?? []).map((r) => r.score));
   if (ablating && entry.arms.without) { entry.summary.baselineScore = mean(entry.arms.without.map((r) => r.score)); entry.summary.delta = entry.summary.score !== null && entry.summary.baselineScore !== null ? entry.summary.score - entry.summary.baselineScore : null; }
