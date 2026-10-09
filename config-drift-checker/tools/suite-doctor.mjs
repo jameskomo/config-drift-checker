@@ -116,7 +116,8 @@ export function loadCase(evalDir, dir) {
   const graders = existsSync(gdir)
     ? readdirSync(gdir).filter((f) => f.endsWith('.md')).sort().map((f) => {
       const text = readFileSync(path.join(gdir, f), 'utf8');
-      return { file: `graders/${f}`, path: path.join(gdir, f), ...parseFrontmatter(text) };
+      const split = splitFrontmatter(text);
+      return { file: `graders/${f}`, path: path.join(gdir, f), hasFrontmatter: split.has, body: split.after.join('\n').trim(), ...parseFrontmatter(text) };
     })
     : [];
   return {
@@ -302,10 +303,25 @@ export const RULES = [
     fix: (c, f) => editFrontmatter(f.path, (fm, entries) => { const e = entries.find((x) => x.key === 'arm'); fm[e.start] = fm[e.start].replace(/^arm:([ \t]*)(['"]?)with\2/, 'arm:$1with-only'); return fm; }),
   },
   {
+    id: 'grader-prose-rubric',
+    level: 'ERROR',
+    description: 'a grader file needs YAML frontmatter with a type:; a prose rubric without it is not a grader to the runner (with no other graders the case fails with "graders: Required")',
+    detect: (c) => c.graders.filter((g) => !g.hasFrontmatter).map((g) => graderFinding(g, 'type',
+      `grader file has no frontmatter, so the runner does not count it as a grader${c.graders.every((x) => !x.hasFrontmatter) ? ' and the case has no graders ("graders: Required")' : ' and its rubric is never applied'}`,
+      g.body ? 'make it an llm grader: add frontmatter with type: llm and focus: last_message above the rubric, which becomes its criteria (the body)' : 'the file is empty: write the rubric with type: frontmatter, or delete it',
+      !!g.body)),
+    fix: (c, f) => {
+      const text = readFileSync(f.path, 'utf8');
+      if (splitFrontmatter(text).has) return;
+      const eol = text.includes('\r\n') ? '\r\n' : '\n';
+      writeFileSync(f.path, ['---', 'type: llm', 'focus: last_message', '---', ''].join(eol) + text.replace(/^(\s*\r?\n)+/, ''));
+    },
+  },
+  {
     id: 'grader-known-keys',
     level: 'ERROR',
     description: 'every grader key must be one the runner allows for its type (unknown keys fail the whole case)',
-    detect: (c) => c.graders.flatMap((g) => {
+    detect: (c) => c.graders.filter((g) => g.hasFrontmatter).flatMap((g) => {
       const type = g.meta.type;
       if (!type) return [graderFinding(g, 'type', 'grader has no type:', `add type: (one of ${Object.keys(GRADER_KEYS).join(', ')})`, false)];
       if (!GRADER_KEYS[type]) return [graderFinding(g, 'type', `unknown grader type ${type}`, `use one of ${Object.keys(GRADER_KEYS).join(', ')}`, false)];
@@ -458,7 +474,9 @@ export function liveLoadCheck(suite, runnerPath, { timeoutMs = 180_000 } = {}) {
 export function mergeLive(findings, loadErrors) {
   const extra = [];
   for (const le of loadErrors) {
-    const hit = findings.find((f) => f.level === 'ERROR' && f.case === le.case && f.file === le.file && (!le.key || f.key === le.key));
+    const hit = findings.find((f) => f.level === 'ERROR' && f.case === le.case && f.file === le.file && (!le.key || f.key === le.key))
+      // "graders: Required" is how the runner sees a case whose grader files are all prose rubrics
+      ?? (le.key === 'graders' ? findings.find((f) => f.rule === 'grader-prose-rubric' && f.case === le.case) : undefined);
     if (hit) { hit.confirmedByRunner = true; hit.runnerMessage = le.message; continue; }
     extra.push({ level: 'ERROR', rule: 'runner-load', case: le.case, file: le.file, key: le.key, source: 'runner',
       message: `the runner refused this case: ${le.message}`, fix: 'no doctor rule covers this yet; fix it from the runner message', fixable: false });

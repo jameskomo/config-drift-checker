@@ -377,3 +377,45 @@ test('live layer on older Claude Code: retries without --trust-plugin, skips hon
     assert.doesNotMatch(r.stdout, /Every case is valid/);
   }
 });
+
+test('a grader file with no frontmatter (a prose rubric) is an error; --fix makes it an llm grader judged on its body', async () => {
+  const RUBRIC = '# Process contract grader\n\nPass only when all are true:\n\n- `.omd/copy-deck.md` exists: before any sketch\n- the reply says "done"\n';
+  const root = await suite({
+    prose: { 'prompt.md': PROMPT, 'graders/rubric.md': RUBRIC },
+    mixed: { ...GOOD, 'graders/z-notes.md': RUBRIC },
+    empty: { 'prompt.md': PROMPT, 'graders/blank.md': '\n' },
+  });
+  assert.deepEqual(rulesOf(root), [
+    'ERROR grader-prose-rubric empty graders/blank.md type',
+    'ERROR grader-prose-rubric mixed graders/z-notes.md type fixable',
+    'ERROR grader-prose-rubric prose graders/rubric.md type fixable',
+  ], 'only the prose rule fires, not grader-known-keys as well');
+  assert.match(diagnose(loadSuite(root)).find((f) => f.case === 'prose').message, /graders: Required/);
+  assert.match(diagnose(loadSuite(root)).find((f) => f.case === 'mixed').message, /never applied/);
+
+  const before = await snapshot(root);
+  const dry = await cli([root]);
+  assert.equal(dry.status, 1);
+  assert.deepEqual(await snapshot(root), before, 'nothing changes without --fix');
+
+  const r = await cli([root, '--fix']);
+  assert.equal(r.status, 1, 'the empty grader still needs a human');
+  assert.match(r.stdout, /FIXED  prose  graders\/rubric\.md  type:/);
+  const text = await fs.readFile(path.join(root, 'evals/prose/graders/rubric.md'), 'utf8');
+  assert.equal(text, `---\ntype: llm\nfocus: last_message\n---\n${RUBRIC}`, 'frontmatter added, rubric kept word for word as the criteria');
+  assert.deepEqual(parseFrontmatter(text).meta, { type: 'llm', focus: 'last_message' });
+  assert.deepEqual(rulesOf(root), ['ERROR grader-prose-rubric empty graders/blank.md type']);
+  const once = await snapshot(root);
+  await cli([root, '--fix']);
+  assert.deepEqual(await snapshot(root), once, 'a second --fix changes nothing');
+});
+
+test('live layer: "graders: Required" from the runner confirms the prose-rubric finding instead of adding an unknown one', async () => {
+  const { mergeLive } = await import('../tools/suite-doctor.mjs');
+  const root = await suite({ prose: { 'prompt.md': PROMPT, 'graders/rubric.md': 'Pass when it works.\n' }, bare: { 'prompt.md': PROMPT } });
+  const s = loadSuite(root);
+  const out = ['prose', 'bare'].map((c) => `✗ ${path.join(s.evalDir, c)}: invalid case.yaml:   graders: Required`).join('\n');
+  const merged = mergeLive(diagnose(s), parseRunnerOutput(`${out}\n2 case file(s) failed to load\n`, s).loadErrors);
+  assert.deepEqual(merged.map((f) => `${f.rule} ${f.case} ${f.confirmedByRunner ?? false}`), ['grader-prose-rubric prose true', 'runner-load bare false'],
+    'a case with no grader files at all stays a plain runner finding');
+});
