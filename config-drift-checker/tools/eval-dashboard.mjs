@@ -4,6 +4,7 @@
 //
 //   node tools/eval-dashboard.mjs <history-dir> [--baseline baseline.json] [--reports <dir>] [--out dashboard.html]
 //        [--title <name>] [--spend spend.json] [--streak streak.json] [--coverage coverage.json] [--config <plugin-dir>]
+//        [--context-cost <dir>]
 //
 // <history-dir> holds aggregate-result.json files (the Action names them <stamp>-cc<version>-<runner>[-<track>].json)
 // or subdirectories each containing aggregate-result.json (local evals/results/). If --reports is given, a run's
@@ -13,8 +14,8 @@ import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 import { key, caseMap, classifyCase, normalizeResult } from './eval-classify.mjs';
 
-const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null, repoUrl: null, pageUrl: null };
-for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (a === '--repo-url') opt.repoUrl = argv[++i]; else if (a === '--page-url') opt.pageUrl = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
+const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null, repoUrl: null, pageUrl: null, contextCost: null };
+for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (a === '--repo-url') opt.repoUrl = argv[++i]; else if (a === '--page-url') opt.pageUrl = argv[++i]; else if (a === '--context-cost') opt.contextCost = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
 if (!opt.dir) { console.error('usage: eval-dashboard.mjs <history-dir> [--baseline b.json] [--reports dir] [--out dashboard.html] [--spend s.json] [--streak s.json] [--coverage c.json] [--config <plugin-dir>]'); process.exit(2); }
 const readJson = async (p) => (p && existsSync(p) ? normalizeResult(JSON.parse(await fs.readFile(p, 'utf8'))) : null);
 
@@ -284,8 +285,43 @@ ${findingsHtml}`;
 @media (max-width:820px){.hf li{grid-template-columns:1fr}.hfl{grid-row:auto}}`;
 }
 
+// ---- context cost per release: tokens the setup adds to every session, from context-cost.mjs --store files
+// in <history-dir>/context-cost/ (or --context-cost <dir>). With no such files this renders nothing, and the
+// page and verdicts.json are byte-for-byte what they were before.
+const costDir = opt.contextCost ?? path.join(opt.dir, 'context-cost');
+let costHtml = '', costCss = '', costTrend = null, contextCost = null;
+if (existsSync(costDir)) {
+  const cc = await import('./context-cost.mjs');
+  const t = cc.trend(cc.loadHistory(costDir));
+  if (t.points.length) {
+    costTrend = t;
+    const pts = t.points, stepTo = (i) => (i ? t.steps[i - 1] : null);
+    const max = Math.max(1, ...pts.map((p) => p.alwaysOn)), segW = TLW / pts.length, BH = 44, labelAll = pts.length <= 10;
+    // a comparable rise of 5% or more wears the warn tone; everything else is the neutral track colour
+    const rose = (s) => !!s && s.comparable && s.alwaysOn.pct !== null && s.alwaysOn.pct >= 5;
+    const tip = (p, s) => `cc${p.claudeVersion} · ${p.alwaysOn} always-on tokens · ${p.source}${s ? ` · ${cc.fmtPct(s.alwaysOn.pct)} vs ${s.from}` : ''}${s?.movers[0] ? ` · most moved: ${s.movers[0].kind} ${s.movers[0].name}` : ''}`;
+    const bars = pts.map((p, i) => {
+      const h = Math.max(2, (p.alwaysOn / max) * BH), x0 = i * segW, s = stepTo(i);
+      return `<rect class="ccb" x="${(x0 + 1).toFixed(1)}" y="${(14 + BH - h).toFixed(1)}" width="${Math.max(segW - 2, 2).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="var(--${rose(s) ? 'warn' : 'track'})"><title>${esc(tip(p, s))}</title></rect>`
+        + (labelAll ? `<text x="${(x0 + segW / 2).toFixed(1)}" y="${(10 + BH - h).toFixed(1)}" class="tlt" text-anchor="middle">${esc(p.alwaysOn)}</text>` : '');
+    }).join('');
+    const xlabels = labelAll ? pts.map((p, i) => `<text x="${(i * segW + segW / 2).toFixed(1)}" y="${BH + 30}" class="tlt" text-anchor="middle">cc${esc(p.claudeVersion)}</text>`).join('')
+      : `<text x="1" y="${BH + 30}" class="tlt">cc${esc(pts[0].claudeVersion)}</text><text x="${TLW - 1}" y="${BH + 30}" class="tlt" text-anchor="end">cc${esc(pts.at(-1).claudeVersion)}</text>`;
+    const last = t.steps.at(-1);
+    const moverItem = (m) => `<li><span class="mono">${esc(m.kind)} ${esc(m.name)}</span> ${m.status === 'added' ? `added, ${esc(m.alwaysOn.after)} always-on` : m.status === 'removed' ? `removed, was ${esc(m.alwaysOn.before)} always-on`
+      : `always-on ${esc(m.alwaysOn.before)} to ${esc(m.alwaysOn.after)} (${esc(cc.fmtPct(m.alwaysOn.pct))}), on-invoke ${esc(m.onInvoke.before)} to ${esc(m.onInvoke.after)}`}</li>`;
+    costHtml = `\n<div class="panel tlp ccp"><div class="tlh">Context cost per Claude Code release <span>always-on tokens added to every session · ${esc(pts.at(-1).source)}</span></div>
+<p class="cch">${esc(t.headline)}</p>
+<svg viewBox="0 0 ${TLW} ${BH + 36}" width="100%" role="img" aria-label="always-on context tokens per Claude Code release">${bars}${xlabels}</svg>${last?.movers.length ? `<div class="tlh">Biggest movers ${esc(last.from)} to ${esc(last.to)}</div><ul class="ccm">${last.movers.map(moverItem).join('')}</ul>` : ''}</div>`;
+    costCss = `
+.cch{font-size:14px;margin:0 0 8px}.ccm{margin:0;padding-left:18px;font-size:13px}.ccm li{margin:2px 0}.ccm .mono{font-size:12px}`;
+    contextCost = { latest: t.latest.claudeVersion, headline: t.headline,
+      versions: pts.map((p, i) => ({ claudeCode: p.claudeVersion, at: p.at, source: p.source, alwaysOn: p.alwaysOn, onInvoke: p.onInvoke, changePct: stepTo(i)?.alwaysOn.pct ?? null })).reverse() };
+  }
+}
+
 const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(suite)} · drift index</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}${healthCss}</style></head><body><div class="wrap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}${healthCss}${costCss}</style></head><body><div class="wrap">
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>${esc(suite)}</b> · drift index</p>
     <h1 class="${tone}"><span class="mark">${mark}</span><span>${esc(headline)}</span></h1>
@@ -296,7 +332,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 <h2>Every case, every run</h2>
 <div class="panel">${ribbon || '<p class="muted">No runs yet.</p>'}${ribbonAxis}</div>
 ${tilesHtml}
-${timelineHtml}${healthHtml}
+${timelineHtml}${healthHtml}${costHtml}
 ${runs.length > 1 ? `<h2>Score per case over Claude Code versions</h2><div class="panel">${svg}${legend}</div>` : ''}
 <h2>Runs</h2>
 <div class="tablewrap"><table><thead><tr><th>status</th><th>when</th><th>track</th><th>claude code</th><th>model</th><th>overall</th>${caseNames.map((nm) => `<th class="case" title="${esc(nm)}">${esc(nm)}</th>`).join('')}<th>cost</th><th></th></tr></thead><tbody>${runRows}</tbody></table></div>
@@ -332,5 +368,5 @@ await fs.writeFile(path.join(outDir, 'status.svg'), `<svg xmlns="http://www.w3.o
 const health = healthAsc.length ? { latest: healthAsc.at(-1).claudeCode, versions: [...healthAsc].reverse().map((v) => ({ claudeCode: v.claudeCode, at: v.at, format: v.format,
   cases: v.suite?.cases ?? null, loaded: v.suite?.loaded ?? null, failedToLoad: v.suite?.failedToLoad ?? null, confirmed: v.suite ? v.suite.confirmed : null,
   errors: v.errors, warnings: v.warnings, fixable: v.suite?.fixable ?? 0, skills: v.skills })) } : null;
-await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts, ...(healthAsc.length ? { health } : {}) }, null, 2) + '\n');
+await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts, ...(healthAsc.length ? { health } : {}), ...(costTrend ? { contextCost } : {}) }, null, 2) + '\n');
 console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, about ${streakDays} days clean)` : ''}`);
