@@ -42,12 +42,12 @@ export function pickReference(versions, models, { spec = null, pinnedVersion = n
   return { version, model };
 }
 
-// consecutive members of `subset` within the ordered tested list, as "a–b" ranges
+// consecutive members of `subset` within the ordered tested list, as "a to b" ranges
 export function versionRanges(subset, ordered) {
   const out = []; let start = null, prev = null;
   for (const v of [...ordered, null]) {
     if (v !== null && subset.includes(v)) { start ??= v; prev = v; continue; }
-    if (start !== null) out.push(start === prev ? start : `${start}–${prev}`);
+    if (start !== null) out.push(start === prev ? start : `${start} to ${prev}`);
     start = null;
   }
   return out.join(', ');
@@ -101,7 +101,7 @@ export function evaluateMatrix(cells, { versions, models, reference, passScore =
   return { versions, models, reference, refUsable, refBelow, passScore, threshold, cases: caseNames, cells: out, verdicts };
 }
 
-// "haiku: safe on 2.1.290–2.1.295; fails spring-service-owns-rules-and-errors on 2.1.288"
+// "haiku: safe on 2.1.290 to 2.1.295; fails spring-service-owns-rules-and-errors on 2.1.288"
 export function verdictLine(model, cells, versions) {
   const on = (verdict) => versions.filter((v) => cells.find((c) => c.version === v)?.verdict === verdict);
   if (cells.every((c) => c.verdict === 'unrun')) return `${model}: not run`;

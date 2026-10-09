@@ -55,7 +55,7 @@ test('pickReference: explicit spec, then the .cdc.yml pins when in the grid, the
 
 test('versionRanges and lastVersions: consecutive tested versions collapse, prereleases never count', () => {
   const tested = ['2.1.288', '2.1.289', '2.1.290', '2.1.291', '2.1.293', '2.1.295'];
-  assert.equal(versionRanges(['2.1.289', '2.1.290', '2.1.291', '2.1.295'], tested), '2.1.289–2.1.291, 2.1.295');
+  assert.equal(versionRanges(['2.1.289', '2.1.290', '2.1.291', '2.1.295'], tested), '2.1.289 to 2.1.291, 2.1.295');
   assert.equal(versionRanges(['2.1.288'], tested), '2.1.288');
   assert.deepEqual(lastVersions(['2.1.9', '2.1.10', '2.1.11-beta.1', '2.1.8', '2.1.10'], 2), ['2.1.9', '2.1.10']);
 });
@@ -81,8 +81,8 @@ test('evaluateMatrix: colors against the reference and writes one plain-English 
     { version: '2.1.295', model: 'haiku', state: 'ran', json: result({ a: 1, b: 1 }) },
   ];
   const ev = evaluateMatrix(cells, { versions, models, reference: { version: '2.1.290', model: 'sonnet' } });
-  assert.equal(ev.verdicts.haiku, 'haiku: safe on 2.1.290–2.1.295; fails b on 2.1.288');
-  assert.equal(ev.verdicts.sonnet, 'sonnet: safe on 2.1.288–2.1.290; not run on 2.1.295');
+  assert.equal(ev.verdicts.haiku, 'haiku: safe on 2.1.290 to 2.1.295; fails b on 2.1.288');
+  assert.equal(ev.verdicts.sonnet, 'sonnet: safe on 2.1.288 to 2.1.290; not run on 2.1.295');
   const h288 = ev.cells.find((c) => c.version === '2.1.288' && c.model === 'haiku');
   assert.equal(h288.cases.b.status, 'regressed'); assert.equal(h288.cases.b.delta, -1);
   assert.equal(h288.passed, 1); assert.equal(h288.total, 2); assert.equal(h288.meanTurns, 4); assert.ok(Math.abs(h288.costUsd - 0.2) < 1e-9);
@@ -96,7 +96,7 @@ test('evaluateMatrix: colors against the reference and writes one plain-English 
   ], { versions: ['1.0.0', '1.0.1', '1.0.2'], models: ['m'], reference: { version: '1.0.0', model: 'm' } });
   assert.equal(ev2.cells[1].cases.b.status, 'below');
   assert.deepEqual(ev2.refBelow, ['b']);
-  assert.equal(ev2.verdicts.m, 'm: safe on 1.0.0–1.0.1; errored on 1.0.2');
+  assert.equal(ev2.verdicts.m, 'm: safe on 1.0.0 to 1.0.1; errored on 1.0.2');
 
   // without a usable reference, the pass score alone decides
   const ev3 = evaluateMatrix([{ version: '1.0.1', model: 'm', state: 'ran', json: result({ a: 0 }) }], { versions: ['1.0.0', '1.0.1'], models: ['m'], reference: { version: '1.0.0', model: 'm' } });
@@ -104,10 +104,10 @@ test('evaluateMatrix: colors against the reference and writes one plain-English 
   assert.equal(ev3.verdicts.m, 'm: not safe on any tested version; fails a on 1.0.1; not run on 1.0.0');
 
   const html = renderMatrixHtml(ev, { suite: 'demo', budget: 5, spent: 1.2 });
-  for (const s of ['<title>demo model matrix</title>', 'haiku: safe on 2.1.290–2.1.295; fails b on 2.1.288', 'Claude Code 2.1.295', 'st-regressed', 'not run', '>2/2<', '$1.20', 'prefers-color-scheme:dark', 'Safe on 4 of 6 cells']) assert.ok(html.includes(s), `page has ${s}`);
+  for (const s of ['<title>demo model matrix</title>', 'haiku: safe on 2.1.290 to 2.1.295; fails b on 2.1.288', 'Claude Code 2.1.295', 'st-regressed', 'not run', '>2/2<', '$1.20', 'prefers-color-scheme:dark', 'Safe on 4 of 6 cells']) assert.ok(html.includes(s), `page has ${s}`);
   assert.ok(!/[—~]/.test(html.replace(/<style>[\s\S]*<\/style>/, '')), 'no em dashes or tildes in the visible text');
   const md = renderMatrixMd(ev, { suite: 'demo', spent: 1.2, budget: 5 });
-  assert.match(md, /- haiku: safe on 2\.1\.290–2\.1\.295; fails b on 2\.1\.288/);
+  assert.match(md, /- haiku: safe on 2\.1\.290 to 2\.1\.295; fails b on 2\.1\.288/);
   assert.match(md, /\| 2\.1\.288 \| haiku \| 1\/2 \| \$0\.20 \| 4\.0 \| fails b \|/);
   assert.match(md, /\| 2\.1\.290 \| sonnet \(reference\) \| 2\/2 \|/);
   const j = matrixJson(ev, { suite: 'demo' });
@@ -139,7 +139,7 @@ test('runMatrix + fake claude: every cell is a stored aggregate result on its ow
     assert.ok(existsSync(path.join(outDir, `${cellId(c.version, c.model)}.html`)));
   }
   const ev = evaluateMatrix(res.cells, { versions: ['2.1.1', '2.1.2'], models: ['sonnet', 'haiku'], reference });
-  assert.equal(ev.verdicts.sonnet, 'sonnet: safe on 2.1.1–2.1.2');
+  assert.equal(ev.verdicts.sonnet, 'sonnet: safe on 2.1.1 to 2.1.2');
   assert.equal(ev.verdicts.haiku, 'haiku: safe on 2.1.2; fails case-a and case-b on 2.1.1');
 
   // --from: the same dir re-rendered without running anything (no installs, no new calls)
