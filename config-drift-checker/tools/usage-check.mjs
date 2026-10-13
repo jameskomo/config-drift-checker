@@ -295,7 +295,7 @@ export function formatText(r) {
   return out.join('\n');
 }
 
-const cell = (s) => String(s).replace(/\|/g, '\\|');
+const cell = (s) => String(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 export function markdown(r) {
   const lines = [`### Skill usage vs evals: ${r.plugin}`, '', `${cap(sourceLine(r))}.`, '', '| status | skill | real uses | last used | eval cases | evals trigger | context |', '|---|---|---|---|---|---|---|'];
   for (const x of r.rows) lines.push(`| ${STATUS[x.status].label} | \`${cell(x.skill)}\` | ${x.uses} | ${x.lastUsed ?? 'never'} | ${x.cases.length ? x.cases.map((c) => `\`${cell(c.dir)}\``).join(', ') : 'none'} | ${x.evalsTrigger === null ? 'unknown' : x.evalsTrigger ? 'yes' : 'no'} | ${x.contextSource === 'estimate' ? 'about ' : ''}${x.contextTokens} tokens |`);
