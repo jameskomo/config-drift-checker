@@ -323,7 +323,7 @@ runs:
         [ "$BUDGET_HIT" = "true" ] && echo "■ The per-run budget cap (\`budget.per_run_usd\`) stopped this run early; cases without runs show as ❔." >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"; echo "<sub>Running this on several repos, or want history across Claude Code versions? → <a href=\"https://jameskomo.github.io/config-drift-checker/#hosted\">hosted beta</a> · <a href=\"https://github.com/jameskomo/config-drift-checker\">⭐ repo</a></sub>" >> "$GITHUB_STEP_SUMMARY"
 
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       if: steps.gate.outputs.skipped != 'true'
       with:
         name: eval-report
