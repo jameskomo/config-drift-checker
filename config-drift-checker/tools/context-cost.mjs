@@ -276,7 +276,7 @@ export function formatMeasure(m, { md = false } = {}) {
     return [`### Context cost: ${head}`, '',
       `**${tok(m.totals.alwaysOn)} tokens** added to every session (always-on), **${tok(m.totals.onInvoke)}** more across components when each fires (on-invoke). Source: ${SOURCE_NOTE[m.source]}.`,
       ...(why ? ['', `> ${why}; showing the static estimate.`] : []), '',
-      '| component | kind | always-on | on-invoke | source |', '|---|---|---:|---:|---|', ...rows.map((r) => `| ${r.map((x) => String(x).replace(/\|/g, '\\|')).join(' | ')} |`),
+      '| component | kind | always-on | on-invoke | source |', '|---|---|---:|---:|---|', ...rows.map((r) => `| ${r.map((x) => String(x).replace(/\\/g, '\\\\').replace(/\|/g, '\\|')).join(' | ')} |`),
       ...(notes.length ? ['', ...notes.map((n) => `- ${n}`)] : [])].join('\n') + '\n';
   }
   const w = [9, 4, 9, 9].map((n, i) => Math.max(n, ...rows.map((r) => String(r[i]).length)));
