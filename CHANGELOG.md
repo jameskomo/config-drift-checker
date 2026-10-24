@@ -2,6 +2,19 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.6.2 (2026-10-24)
+Claude Code 2.1.310's official runner refused every shell-granting run on GitHub's Ubuntu 24.04
+runners, because AppArmor stops bubblewrap from creating its sandbox. Our canary caught it, and
+the Action fell back to the bundled runner, which kept the check green but hid the change. The
+Action now lifts that restriction for the job (the fix Claude Code's own message names) and checks
+that bubblewrap works; a re-run on 2.1.310 passed on the official runner. Any future fallback is
+recorded in the result and shown in the report and `verdicts.json`. Also: the trigger map's
+prompt generation no longer gets cut off, and its first published map is live.
+
+## v1.6.1 (2026-10-24)
+The free floor's once-per-version check no longer fails the step the first time it meets a new
+release. Caught by the new weekly self-test, which runs the Marketplace Action exactly as users do.
+
 ## v1.6.0 (2026-10-24)
 Testing the tests. `mutate` sabotages copies of your setup on purpose and scores how many breaks
 your suite catches; ours caught 6 of 15, and the misses are published. `trigger-map` measures how

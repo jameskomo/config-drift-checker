@@ -41,6 +41,8 @@ import { loadPlugin, parseFrontmatter } from './skill-lint.mjs';
 import { loadConfig, resolveTrack } from './cdc-config.mjs';
 
 export const SCHEMA_VERSION = 1;
+// a trial only needs room to call the Skill tool; generation writes 2n prompts as JSON and needs far more
+const GENERATION_MAX_OUTPUT_TOKENS = 8192;
 export const DEFAULTS = { generate: 10, runs: 1, maxTurns: 1, budget: 1, concurrency: 4, minFire: 0.8, maxFalseFire: 0.1, model: 'haiku', maxOutputTokens: 1024 };
 export const CACHE_FILE = '.cdc-trigger-prompts.json';
 
@@ -492,14 +494,14 @@ function exec(cmd, args, { cwd, env, timeout }) {
 }
 // a fresh CLAUDE_CONFIG_DIR with only the credentials copied in, and an empty cwd: nothing of the user's
 // setup (skills, CLAUDE.md, settings, MCP servers) leaks into the measurement
-async function isolated(fn) {
+async function isolated(fn, { maxOutputTokens = DEFAULTS.maxOutputTokens } = {}) {
   const userConfig = process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude');
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'trigger-map-'));
   const cfg = path.join(root, 'cfg'), ws = path.join(root, 'ws');
   await fs.mkdir(cfg); await fs.mkdir(ws);
   if (existsSync(path.join(userConfig, '.credentials.json'))) await fs.copyFile(path.join(userConfig, '.credentials.json'), path.join(cfg, '.credentials.json'));
   await fs.writeFile(path.join(cfg, 'settings.json'), JSON.stringify({ hasCompletedOnboarding: true }));
-  const env = { ...process.env, CLAUDE_CONFIG_DIR: cfg, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_MAX_OUTPUT_TOKENS: String(DEFAULTS.maxOutputTokens) };
+  const env = { ...process.env, CLAUDE_CONFIG_DIR: cfg, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_MAX_OUTPUT_TOKENS: String(maxOutputTokens) };
   delete env.ANTHROPIC_MODEL;
   try { return await fn({ cwd: ws, env }); } finally { await fs.rm(root, { recursive: true, force: true }); }
 }
@@ -510,7 +512,7 @@ async function generateFor(skill, n, model) {
     const costUsd = typeof j?.total_cost_usd === 'number' ? j.total_cost_usd : 0;
     try { return { ...parseGenerated(j?.result, n), costUsd }; }
     catch (e) { return { error: `${e.message}${r.timedOut ? ' (timed out)' : ''}${!j ? `: ${(r.stderr || r.stdout).trim().slice(0, 200)}` : ''}`, costUsd }; }
-  });
+  }, { maxOutputTokens: GENERATION_MAX_OUTPUT_TOKENS }); // 2n prompts in JSON outgrow the one-turn trial cap and arrive cut off
 }
 async function runTrial(text, { pluginDir, pluginName, names, model, maxTurns }) {
   return isolated(async ({ cwd, env }) => {

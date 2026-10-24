@@ -516,8 +516,8 @@ by one cheap model call per skill (cached in `.cdc-trigger-prompts.json`, so rer
 can edit the set). Each prompt runs as a fresh one-turn session with your plugin loaded and the
 Skill tool as the only tool. You get a fire rate and a false-fire rate per skill, each with a 95%
 range, and a matrix of which skill took which prompts, so collisions between skills show up. On
-Haiku, 100 prompts cost about $0.14. Our own measurement: the Spring Boot skill fires on 79% of
-in-scope prompts and on 27% of out-of-scope ones, which is exactly what a trigger description
+Haiku, 100 prompts cost about $0.14. [Our own measurement](https://jameskomo.github.io/config-drift-checker/triggers/report.html): the Spring Boot skill fires on 71%
+of in-scope prompts and on 30% of out-of-scope ones, which is exactly what a trigger description
 rewrite should fix.
 
 ### Confidence ranges and runs needed

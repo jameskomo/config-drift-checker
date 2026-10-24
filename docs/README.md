@@ -10,4 +10,5 @@
 | [Claude Code release report](https://jameskomo.github.io/config-drift-checker/release-report/) | every public eval suite we can find, loaded on each new Claude Code release for $0; regenerated daily by `.github/workflows/release-report.yml` |
 | [One suite, three agents](agents/) | the same suite on Claude Code, Gemini and Codex, with each report |
 | [Mutation test of our suite](https://jameskomo.github.io/config-drift-checker/mutation/report.html) | 15 sabotages of our own setup and which ones the suite caught |
+| [Trigger map of our skill](https://jameskomo.github.io/config-drift-checker/triggers/report.html) | how often the Spring skill fires in and out of scope, with the prompts |
 | [Community suites](community-suites.md) | maintained setups with published with/without worth measurements; Spring Boot first |
