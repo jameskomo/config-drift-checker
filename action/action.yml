@@ -36,6 +36,8 @@ outputs:
   track:           { description: 'pinned or canary', value: '${{ steps.config.outputs.track }}' }
   skipped:         { description: 'true when the budget or interval gate skipped the run', value: '${{ steps.gate.outputs.skipped }}' }
   skip-reason:     { description: 'budget | interval | (empty)', value: '${{ steps.gate.outputs.skip_reason }}' }
+  floor:           { description: 'true when the gate skipped the agent runs and the free checks (preflight + context cost, $0) ran on the new Claude Code instead', value: '${{ steps.floor.outputs.ran }}' }
+  untested-version: { description: 'Claude Code version the skip left without a behaviour test (set when floor is true)', value: '${{ steps.floor.outputs.untested_version }}' }
   spent-month:     { description: 'USD spent this month on this suite after this run (from the ledger)', value: '${{ steps.store.outputs.spent_month }}' }
   runner:          { description: 'official or shim', value: '${{ steps.runner.outputs.runner }}' }
   claude-version:  { description: 'Claude Code version that was exercised', value: '${{ steps.install.outputs.version }}' }
@@ -124,15 +126,36 @@ runs:
           { echo "## Agent-config eval: skipped"; echo; echo "$msg"; } >> "$GITHUB_STEP_SUMMARY"; echo "::notice::config-drift-checker: $msg"
         else echo "skipped=false" >> "$GITHUB_OUTPUT"; echo "skip_reason=" >> "$GITHUB_OUTPUT"; fi
 
-    - id: install
-      if: steps.gate.outputs.skipped != 'true'
+    - id: floor-plan
+      # The free floor: a skipped run still installs the new Claude Code and runs the $0 checks on it
+      # (preflight + context-cost), once per version, so a release the gate skipped is a visible gap
+      if: steps.gate.outputs.skipped == 'true' && inputs.preflight != 'off'
       shell: bash
       env:
         VERSION_INPUT: ${{ inputs.claude-code-version }}
         HARNESS: ${{ steps.config.outputs.harness }}
+        BRANCH: ${{ inputs.results-branch }}
+      run: |
+        set -uo pipefail
+        v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
+        case "$v" in *[!A-Za-z0-9.-]*) echo "::notice::free checks skipped: claude-code-version '$v' is not a version"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0;; esac
+        exact=$(npm view "@anthropic-ai/claude-code@$v" version 2>/dev/null | tail -1)
+        if ! [[ "$exact" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::notice::free checks skipped: could not resolve Claude Code '$v' to one version"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+        # once per version: a behaviour run or an earlier floor record on the results branch already covers it
+        seen=$( { git ls-tree --name-only "origin/$BRANCH" history/ history/floor/ 2>/dev/null || true; } | grep -F -e "-cc$exact-" -e "-cc$exact.json" | head -1)
+        if [ -n "$seen" ]; then echo "free checks already recorded for Claude Code $exact ($seen)"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+        echo "run=true" >> "$GITHUB_OUTPUT"; echo "version=$exact" >> "$GITHUB_OUTPUT"
+
+    - id: install
+      if: steps.gate.outputs.skipped != 'true' || steps.floor-plan.outputs.run == 'true'
+      shell: bash
+      env:
+        VERSION_INPUT: ${{ inputs.claude-code-version }}
+        HARNESS: ${{ steps.config.outputs.harness }}
+        FLOOR_VERSION: ${{ steps.floor-plan.outputs.version }}
       run: |
         set -euo pipefail
-        v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
+        v="$FLOOR_VERSION"; [ -n "$v" ] || v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
         case "$v" in *[!A-Za-z0-9.-]*) echo "::error::claude-code-version '$v' is not a version"; exit 1;; esac
         npm install -g "@anthropic-ai/claude-code@$v" >/dev/null
         # newer Claude Code refuses shell tools in plugin eval without an OS sandbox (bubblewrap on Linux)
@@ -153,7 +176,7 @@ runs:
     - id: preflight
       # free: no model runs. Catches skills that will not load or trigger, and eval cases the installed
       # Claude Code's runner will reject (format drift between releases), before a token is spent
-      if: steps.gate.outputs.skipped != 'true' && inputs.preflight != 'off'
+      if: (steps.gate.outputs.skipped != 'true' || steps.floor-plan.outputs.run == 'true') && inputs.preflight != 'off'
       shell: bash
       env:
         TOOLS: ${{ steps.config.outputs.tools }}
@@ -182,8 +205,9 @@ runs:
 
     - id: context-cost
       # free: no model runs, no credentials. The tokens this setup adds to every session on the installed
-      # Claude Code (its own `plugin details`, in a throwaway config), stored per release for the trend
-      if: steps.gate.outputs.skipped != 'true' && inputs.preflight != 'off'
+      # Claude Code (its own `plugin details`, in a throwaway config), stored per release for the trend.
+      # Runs after a failed preflight too: on a skipped run it is half of the free floor
+      if: ${{ !cancelled() && steps.install.outcome == 'success' && (steps.gate.outputs.skipped != 'true' || steps.floor-plan.outputs.run == 'true') && inputs.preflight != 'off' }}
       shell: bash
       env:
         TOOLS: ${{ steps.config.outputs.tools }}
@@ -191,6 +215,40 @@ runs:
       run: |
         node "$TOOLS/context-cost.mjs" "$PLUGIN_DIR" --runner "$(command -v claude)" --store "$RUNNER_TEMP/context-cost" --md "$RUNNER_TEMP/context-cost.md" >/dev/null || echo "::notice::context-cost could not measure this setup"
         cat "$RUNNER_TEMP/context-cost.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+    - id: floor
+      # the free floor's record: one history/floor/<stamp>-cc<version>.json per version the gate skipped,
+      # with the preflight, the context cost and the skip reason. No agent runs, no credentials, $0
+      if: ${{ !cancelled() && steps.floor-plan.outputs.run == 'true' && steps.install.outcome == 'success' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        TOOLS: ${{ steps.config.outputs.tools }}
+        TRACK: ${{ steps.config.outputs.track }}
+        BRANCH: ${{ inputs.results-branch }}
+        CC_VERSION: ${{ steps.install.outputs.version }}
+        SKIP_REASON: ${{ steps.gate.outputs.skip_reason }}
+        SPENT: ${{ steps.gate.outputs.spent_month }}
+        CAP: ${{ steps.gate.outputs.cap_month }}
+        NEXT_ALLOWED: ${{ steps.gate.outputs.next_allowed }}
+      run: |
+        set -euo pipefail
+        node "$TOOLS/floor-record.mjs" --version "$CC_VERSION" --reason "$SKIP_REASON" --track "$TRACK" --spent "${SPENT:-0}" --cap "${CAP:-0}" --next-allowed "${NEXT_ALLOWED:-none}" \
+          --skills "$RUNNER_TEMP/preflight-skills.json" --suite "$RUNNER_TEMP/preflight-suite.json" --context-cost "$RUNNER_TEMP/context-cost" \
+          --out "$RUNNER_TEMP/floor.json" --md "$RUNNER_TEMP/floor.md" > "$RUNNER_TEMP/floor.txt"
+        name=$(grep '^name=' "$RUNNER_TEMP/floor.txt" | cut -d= -f2-); summary=$(grep '^summary=' "$RUNNER_TEMP/floor.txt" | cut -d= -f2-)
+        { echo; cat "$RUNNER_TEMP/floor.md"; } >> "$GITHUB_STEP_SUMMARY"
+        echo "::warning::config-drift-checker: $summary"
+        echo "ran=true" >> "$GITHUB_OUTPUT"; echo "untested_version=$CC_VERSION" >> "$GITHUB_OUTPUT"
+        wt="$RUNNER_TEMP/floor-wt"
+        git fetch origin "$BRANCH" 2>/dev/null && git worktree add "$wt" "origin/$BRANCH" || { git worktree add --detach "$wt"; (cd "$wt" && git checkout --orphan "$BRANCH" && git rm -rfq . 2>/dev/null || true); }
+        cd "$wt"; mkdir -p history/floor history/context-cost
+        cp "$RUNNER_TEMP/floor.json" "history/floor/$name"
+        cp "$RUNNER_TEMP"/context-cost/*.json history/context-cost/ 2>/dev/null || true
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
+        git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "floor ${name%.json} ${TRACK} ($SKIP_REASON)" || true
+        git push -q origin "HEAD:$BRANCH"
+        cd "$GITHUB_WORKSPACE" && git worktree remove --force "$wt" || true
 
     - id: run
       if: steps.gate.outputs.skipped != 'true'
