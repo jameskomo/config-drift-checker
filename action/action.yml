@@ -172,7 +172,7 @@ runs:
         exact=$(npm view "@anthropic-ai/claude-code@$v" version 2>/dev/null | tail -1)
         if ! [[ "$exact" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::notice::free checks skipped: could not resolve Claude Code '$v' to one version"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
         # once per version: a behaviour run or an earlier floor record on the results branch already covers it
-        seen=$( { git ls-tree --name-only "origin/$BRANCH" history/ history/floor/ 2>/dev/null || true; } | grep -F -e "-cc$exact-" -e "-cc$exact.json" | head -1)
+        seen=$( { git ls-tree --name-only "origin/$BRANCH" history/ history/floor/ 2>/dev/null || true; } | grep -F -e "-cc$exact-" -e "-cc$exact.json" | head -1 || true)
         if [ -n "$seen" ]; then echo "free checks already recorded for Claude Code $exact ($seen)"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
         echo "run=true" >> "$GITHUB_OUTPUT"; echo "version=$exact" >> "$GITHUB_OUTPUT"
 
