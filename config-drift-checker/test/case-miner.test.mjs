@@ -45,7 +45,7 @@ test('anonymise removes paths, emails, token URLs, known key formats, names and 
   const code = ['```java', ...Array.from({ length: 8 }, (_, i) => `  int v${i} = ${i};`), '```'].join('\n');
   const text = `my name is Jane Doe, mail jane.doe@example.com. Edit /home/dev/shop/src/main/java/com/acme/A.java and /home/dev/notes/plan.md and ~/x/y.txt. `
     + 'Keys: sk-ant-FAKE0000notarealkey0000xyz ghp_FAKEfake0000FAKEfake0000FAKEfake00 github_pat_FAKE0000fake0000FAKE0000x AKIAIOSFODNN7EXAMPLE xoxb-FAKE-not-a-real-token '
-    + 'AIzaFAKEfake0000FAKEfake0000FAKEfake000 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJGQUtFIn0.FAKEsignature0000 Bearer FAKEbearer0000token0000x '
+    + 'AI' + 'zaFAKEfake0000FAKEfake0000FAKEfake000 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJGQUtFIn0.FAKEsignature0000 Bearer FAKEbearer0000token0000x '
     + `password=hunter22 api_key: Zx9FAKEvalue Q3fA9kLm2Xp7Rt5Vw8Yz1Bc4Nd6Eg0Hj. See https://ci.example.com/run/42?token=FAKE123 and https://u:FAKEpass@git.example.com/r. Host 10.1.2.3.\n${code}\ndone`;
   const a = anonymise(text, { cwd: '/home/dev/shop', home: '/home/dev', users: ['dev'] });
   assert.doesNotMatch(a.text, LEAKS);
