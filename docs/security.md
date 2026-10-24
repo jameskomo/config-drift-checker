@@ -64,6 +64,14 @@
   only the official runner's load check on them, under `env -i` with an empty HOME, so no token can
   leak into it, with `--max-cost-usd 0`, no `--scaffold` and no `npm install`. Repo names are
   validated before cloning. The workflow needs no secrets and has `contents: write` only.
+- **`mutate`** writes sabotaged copies of your setup to temp dirs only and never edits the original;
+  each mutant runs through the same runner, isolation and safety net as a normal run, within `--budget`.
+- **`trigger-map`** runs one-turn sessions with the Skill tool as the only tool, so the agent cannot
+  run commands or edit files while it is measured.
+- **`harness-diff`** downloads published Claude Code packages with `npm pack` and reads one type file;
+  it never installs or runs them.
+- **`pr-impact`** reads git objects and files only; the Action posts its comment with the
+  `github-token` input and needs `pull-requests: write` for that.
 - `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`; Pro/Max/Team/Enterprise) is accepted as an
   alternative to an API key and passed straight to the official CLI, the same mechanism Anthropic
   documents for its own GitHub Action. It is a long-lived credential tied to one person's

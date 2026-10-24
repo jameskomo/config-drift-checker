@@ -53,7 +53,7 @@ flowchart LR
 | `release-watch.mjs` | did Claude Code (npm) or the model list (`/v1/models`) move since last time; is the pin still listed | `.release-watch.json` on results branch |
 | `cdc-gate.mjs` | refuse a run past the monthly budget or sooner than the canary interval; record spend after a run | `spend.json`, `canary/streak.json` on results branch |
 | `action.yml` | config → coverage → results → gate → install pinned Claude Code → detect runner → run → diff → report → store → PR → repair → notify → exit | none (stateless per run) |
-| `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance. `--agent codex` (AGENTS.md bridge, exec events parsed) and `--agent gemini` (GEMINI.md bridge, headless text) run the same cases on other CLIs, experimental | temp dirs only |
+| `eval-shim.mjs` | execute a suite: isolated `CLAUDE_CONFIG_DIR`, throwaway workspace, `--plugin-dir`, per-case tools, N runs × arms with sequential expansion and a per-run budget; grade; emit JSON 1.1 with provenance. `--agent codex` (AGENTS.md bridge, exec events parsed) and `--agent gemini` (GEMINI.md bridge, headless text) run the same cases on other CLIs | temp dirs only |
 | `eval-diff.mjs` | baseline vs current → score drift and efficiency drift → markdown + JSON + exit code by `fail_on` | none |
 | `eval-classify.mjs` | the shared per-case verdict (noise band, escalations) used by diff, report and dashboard; `normalizeResult()` maps official-runner JSON (v1) to the 1.1 shape at load, so all three read either | none |
 | `canary-promote.mjs` | green streak on the same model+version → bump decision; unpinned green pinned run → pin decision; PR title/body | `canary/streak.json` |
@@ -73,6 +73,13 @@ flowchart LR
 | `evals-convert.mjs` | skill-creator `evals.json` ⇄ plugin-eval case folders | writes case folders only on `import` |
 | `eval-mocks.mjs`, `eval-mock-server.mjs` | the shim's MCP mocks: loads `evals/mocks/` in the official format and serves it over stdio under the plugin's server names | temp dirs only |
 | `release-report.mjs` | every public eval suite we can find, loaded on the newest and the previous Claude Code with `--max-cost-usd 0`, `env -i` and an empty HOME | `docs/release-report/` |
+| `mutate.mjs` | mutation testing: sabotaged temp copies of the setup (delete or invert a rule, blur a trigger, drop a skill, disable a hook), the relevant cases run against each, killed vs survived vs uncovered | results under `--out-dir` only; the original is never touched |
+| `trigger-map.mjs` | fire and false-fire rates per skill with Wilson 95% ranges, and a skill-by-skill collision matrix, from one-turn sessions where Skill is the only tool | `.cdc-trigger-prompts.json` (the reviewable prompt cache) |
+| `harness-diff.mjs` | two releases' `sdk-tools.d.ts` (via `npm pack`, nothing installed or run) → tools and parameters added or removed, description wording changed | a version cache in a temp dir |
+| `pr-impact.mjs` | base vs head of a PR: context-cost delta, rules changed, the cases that cover them as a `--case` glob, changed rules nothing tests | none |
+| `eval-stats.mjs`, `runs-needed.mjs` | 95% ranges on scores and pass rates; runs each case needs to detect a threshold drop at 80% power | `runs:` in prompt.md only with `--write` |
+| `floor-record.mjs` | when the gate skips a run: the free checks on the new release, stored so the release shows as untested, not green | `history/floor/` on the results branch |
+| `report-style.mjs` | shared CSS for the release report pages | none |
 | `drift-digest.mjs` | published verdicts → weekly digest + the pre-written release post | docs/drift/digest.md, post.txt |
 | `ci/` templates | the per-repo two-track workflow, the fleet workflow, and the org pair (reusable workflow + three-line caller) | none |
 | results branch | history, baseline, ledger, streak, dashboards, all without a database | git |

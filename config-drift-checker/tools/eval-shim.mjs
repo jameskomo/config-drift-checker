@@ -304,7 +304,7 @@ async function runAgent(c, arm) {
   const before = await snapshot(ws);
   const cfg = await makeConfigDir();
   if (agent === 'codex') {
-    // EXPERIMENTAL: fixture-tested; field shapes calibrated defensively against codex exec --json
+    // Codex: fixture-tested and live-run (54-run comparison, 2026-10-24); field shapes calibrated defensively against codex exec --json
     const cargs = ['exec', '--json', '--skip-git-repo-check', '--sandbox', 'workspace-write', c.prompt];
     const cenv = { ...process.env };
     if (existsSync(path.join(ws, '.eval-bin'))) cenv.PATH = path.join(ws, '.eval-bin') + path.delimiter + (cenv.PATH ?? '');
@@ -334,7 +334,7 @@ async function runAgent(c, arm) {
     return { workspaceFiles, lastMessage: texts.join('\n\n'), finalMessage: texts.at(-1) ?? '', texts, toolUses, toolResults, files: files0, fileContents: fileContents0, trace: events, costUsd: null, inputTokens: inTok, outputTokens: outTok, numTurns: texts.length || null, isError: isErr, truncated: false, resultSubtype: null, exitCode: code, timedOut, durationMs: Date.now() - t0, stderr: stderr.slice(-2000), rawTail: isErr ? stdout.slice(-1500) : '', model: model ?? 'codex' };
   }
   if (agent === 'gemini') {
-    // EXPERIMENTAL: gemini -p is headless but emits plain text, so tool-call evidence is not
+    // Gemini: gemini -p is headless but emits plain text, so tool-call evidence is not
     // machine-readable; graders that need it are skipped, content graders score the reply.
     const genv = { ...process.env };
     if (existsSync(path.join(ws, '.eval-bin'))) genv.PATH = path.join(ws, '.eval-bin') + path.delimiter + (genv.PATH ?? '');

@@ -3,7 +3,7 @@
 
 Everything from install to reading a red report. What the tool is and how it relates to
 `claude plugin eval` is in the [README](../README.md); this page assumes you want it running.
-Claude Code is the first-class agent throughout; the experimental Codex path is in the FAQ.
+Claude Code is the first-class agent throughout; Codex and Gemini are in the FAQ.
 
 Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
 plugin's own suite on every Claude Code release) · [a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [the repair that fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo)
@@ -29,6 +29,14 @@ didn't ship it.
 | Bring skill-creator `evals.json` suites, or export to them (`evals-convert`) | §2 |
 | Plugins with MCP servers: mocks and `mock_calls` graders under both runners | §2 |
 | Parallel agent runs (`concurrency` input) | §4 |
+| Pull request impact comment and case selection (`pr-impact`, `pr-select`) | §4 |
+| Turn real sessions into suggested test cases (`case-miner`) | §2 |
+| Free floor when the budget skips a run; untested releases shown as untested | §6 |
+| Mutation testing: are my evals any good? (`mutate`) | §7 |
+| Trigger map: how reliably each skill fires, and collisions (`trigger-map`) | §7 |
+| Confidence ranges and runs needed per case (`runs-needed`) | §7 |
+| What changed inside Claude Code between releases (`harness-diff`) | §9 |
+| Badges for public suite authors | §9 |
 | The public Claude Code release report | §9 |
 | Autonomous repair: when it runs, its hard limits, a live example | §7 |
 | Fleet dashboard and pin policy across repos | §8 |
@@ -38,7 +46,7 @@ didn't ship it.
 | Local commands for every tool, including `trace-keeper` | §10 |
 | Measured costs and the levers that cap them | §11 |
 | Safety: workspaces, the safety-net hook, third-party suites | §12 |
-| Codex and Gemini (experimental): same cases, other agents | §14 (FAQ) |
+| Codex and Gemini: same cases, other agents, and a published comparison | §14 (FAQ) |
 
 ## 1. Install (once per machine)
 
@@ -117,6 +125,26 @@ mock (the judge model playing the server) is marked "needs the official runner" 
 failing. `suite-doctor` checks mock files before any run, which matters because the official $0
 load check does not validate them.
 
+### Turn real sessions into test cases
+
+A suite written from guesses tests prompts nobody types. `case-miner` reads your local Claude Code
+sessions and suggests cases from how you actually work:
+
+```bash
+node <plugin-root>/tools/case-miner.mjs <plugin> --since 90d --dry-run     # what it would pick, counts only
+node <plugin-root>/tools/case-miner.mjs <plugin> --since 90d               # stage candidates for review
+node <plugin-root>/tools/case-miner.mjs accept <id> [<id>...]              # move the ones you approve into evals/
+```
+
+For each skill it looks for three kinds of prompt: ones that fired the skill, ones that should have
+fired it (you then typed the slash command, named the skill, or corrected the agent within a few
+turns), and ones where it fired and you said it was wrong (negative-trigger candidates). Every
+prompt is anonymised on your machine first: paths, your user name, emails, tokens and keys, names
+and long pasted code are replaced, and each candidate says what was removed. Candidates are staged
+in `<plugin>/.eval-candidates/` with a `candidates.md` explaining why each was picked; nothing
+enters `evals/` until you `accept` it, and accepting never overwrites a case. The heuristics are
+plain keyword and phrase matching in English, so read each candidate before accepting it.
+
 ## 3. Wire CI (the parts only you can do)
 
 **One auth secret**, either kind:
@@ -193,6 +221,9 @@ the `watch` job from the full template at `ci/config-drift-checker.yml` in the p
 | `coverage-min: 80` | fail when under 80% of your rules have a case (empty = report only) |
 | `report-base-url: https://<you>.github.io/<repo>/history` | case names in the PR comment deep-link into that run's HTML report (needs Pages serving the results branch) |
 | `preflight: fail` | stop before any model run when the skill linter or suite doctor finds an error (default `warn` reports only) |
+| `pr-impact: true` | on pull requests, one comment (kept up to date) with what the PR changes in the agent setup: tokens added to every session, rules changed, the cases that test them, and changed rules no case tests. On by default; no model calls |
+| `pr-select: true` | on pull requests, run only the cases that cover the rules the PR changed. A selected run never becomes the baseline; the full suite runs when nothing is selected |
+| `disallow-tools: Agent TaskStop` | tools Claude may not use in any case (Claude Code 2.1.299 and later); cases can also set `disallowed_tools:` themselves |
 | `concurrency: 3` | run up to three agent runs at once (1 to 8). They share one rate limit, so this saves wall-clock time, not money; results keep case order |
 
 **Which path is for me?**
@@ -282,6 +313,19 @@ the diff learns each case's noise band instead of guessing:
 
 Results, spend ledger, canary streak and release-watch state all live on the `eval-results`
 branch: history without a database.
+
+### When the budget skips a run: the free floor
+
+When the monthly budget or the canary interval skips a run, the Action still runs the free checks
+on the new Claude Code release: the skill linter, a suite load check with zero agent runs, and the
+context cost. It stores them as `history/floor/<stamp>-cc<version>.json` and the job summary says
+plainly what was not tested and why, for example "Behaviour not tested on 2.1.310 (monthly budget
+reached). Free checks ran: suite loads 6 of 6, context cost 123 tokens." Until a behaviour run
+covers that release, the dashboard, `verdicts.json`, the feed and the badge show it as
+**untested**, never as green. The Action's `floor` and `untested-version` outputs say the same.
+With `preflight: fail`, a skipped run goes red if the suite no longer loads on the new release.
+We added this after our own canary sat behind the budget for eleven releases while the check
+stayed green.
 
 ## 7. Reading a report
 
@@ -432,6 +476,62 @@ skill. Output is text, `--json`, `--md` or a self-contained `--html` page. Only 
 and dates are read out of the transcripts; no prompt or reply text is ever copied. This one runs
 on your machine, not in CI, because that's where the real usage lives.
 
+### Mutation testing: are my evals any good?
+
+A green suite only means something if it would go red when the setup breaks. `mutate` checks that
+by sabotaging copies of your setup on purpose and running the cases that should notice:
+
+```bash
+node <plugin-root>/tools/mutate.mjs <plugin> --dry-run                 # the sabotages and a cost estimate, $0
+node <plugin-root>/tools/mutate.mjs <plugin> --budget 3 --html mutate.html
+```
+
+It deletes or inverts a rule in CLAUDE.md or a skill, blurs a skill's trigger description, removes
+a skill, or disables a hook, one change per copy. A sabotage is **caught** when a case drops more
+than your `.cdc.yml` score threshold below a run of the unchanged setup. You get a score and one
+sentence, such as "Your suite catches 7 of 10 sabotages. Nothing tests: rule X, rule Y." **Nothing
+tests** means no case claims that rule in `covers.yaml`, which is a coverage gap; **tested but not
+caught** means a case claims the rule but its graders are too loose. Inverted rules come from a
+simple word swap and are marked heuristic. `--max-mutants N --seed s` takes a repeatable sample,
+`--budget` caps the whole session, and your original files are never touched.
+
+How to read a missed sabotage: either the graders are too loose to see the change, or the model
+behaves the same without the rule, which means the rule may not be pulling its weight. Our own
+suite [catches 6 of 15 sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html):
+deleting "use constructor injection" or "validate request bodies" changed nothing, because Sonnet
+does both by default, while deleting the response-wrapper or pagination rules was caught at once.
+
+### Trigger map: how reliably does each skill fire?
+
+One passing trigger case says a skill fired once. `trigger-map` measures it as a rate:
+
+```bash
+node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run                      # prompt counts and cost, $0
+node <plugin-root>/tools/trigger-map.mjs <plugin> --model haiku --budget 0.5 --html triggers.html
+```
+
+For every skill it builds prompts the skill should fire on and nearby prompts it should not, from
+your own `--prompts prompts.yaml`, the eval cases that have a Skill grader, and paraphrases written
+by one cheap model call per skill (cached in `.cdc-trigger-prompts.json`, so reruns are free and you
+can edit the set). Each prompt runs as a fresh one-turn session with your plugin loaded and the
+Skill tool as the only tool. You get a fire rate and a false-fire rate per skill, each with a 95%
+range, and a matrix of which skill took which prompts, so collisions between skills show up. On
+Haiku, 100 prompts cost about $0.14. Our own measurement: the Spring Boot skill fires on 79% of
+in-scope prompts and on 27% of out-of-scope ones, which is exactly what a trigger description
+rewrite should fix.
+
+### Confidence ranges and runs needed
+
+Every diff and report now says how sure each score is. "0.83 (0.55 to 0.95)" means the true score
+most likely lies in that 95% range, and more runs narrow it; "2 of 3 (0.21 to 0.94)" is the same for
+the share of passing runs. These numbers never change a verdict. **Runs needed** is how many runs a
+case takes to catch a drop of your threshold 8 times in 10, given its spread so far:
+
+```bash
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>          # per case
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin> --write  # raise runs: in prompt.md
+```
+
 ### When and how repair runs
 
 Repair never runs on its own. It runs in exactly two situations: you invoke
@@ -509,6 +609,23 @@ any agent starts, the runner gets no credentials, and nothing from the cloned re
 run. Suite authors can fix their cases with `node tools/suite-doctor.mjs <plugin> --fix`, or open an
 issue to opt out. Run it yourself with `node <plugin-root>/tools/release-report.mjs --discover`.
 
+Each release's report also says **what changed inside Claude Code**: `harness-diff` downloads both
+releases' `sdk-tools.d.ts` with `npm pack` (nothing is installed or run) and compares every built-in
+tool's input schema and the descriptions the model reads. Each change is labelled instruction
+wording (a description changed, shown word by word), capability (a tool, parameter or value added
+or removed), or type-only (not shown to the model). For example, 2.1.310 changed the instructions of
+two built-in tools (Agent and Read) and added one capability compared with 2.1.295. Every release
+has its own page under
+[release-report/diff/](https://jameskomo.github.io/config-drift-checker/release-report/), and you can
+run it for any two versions:
+
+```bash
+node <plugin-root>/tools/harness-diff.mjs --from 2.1.295 --to 2.1.310 --md -
+```
+
+**Badges for suite authors.** Every suite card on the release report offers a README badge,
+"loads on 2.1.310", "N of M cases load" or "never loaded", with the markdown to paste.
+
 ## 10. Local commands
 
 ```bash
@@ -532,6 +649,12 @@ node <plugin-root>/tools/context-cost.mjs <plugin> --md -           # tokens you
 node <plugin-root>/tools/usage-check.mjs <plugin> --since 30d       # real skill usage vs your eval cases
 node <plugin-root>/tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run   # skill-creator suites in
 node <plugin-root>/tools/release-report.mjs --discover              # every public suite on the newest release, $0
+node <plugin-root>/tools/mutate.mjs <plugin> --dry-run              # mutation testing: are my evals any good?
+node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run         # fire rates per skill with 95% ranges, collisions
+node <plugin-root>/tools/case-miner.mjs <plugin> --dry-run          # real sessions into suggested cases (review first)
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>   # runs each case needs
+node <plugin-root>/tools/harness-diff.mjs --from <v> --to <v> --md -   # what changed inside Claude Code
+node <plugin-root>/tools/pr-impact.mjs --base main --head HEAD --plugin <plugin>   # what a branch changes in the setup
 ```
 
 `<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every
@@ -601,14 +724,17 @@ Results stay in your repo's `eval-results` branch and the workflow artifact. We 
 **Can I test CLAUDE.md rules?** Yes. Cases copy your `CLAUDE.md` into the workspace via
 `scaffold_script`, so the rule is in force during the run and the grader checks the outcome.
 
-**Codex / Gemini / Cursor?** Codex is in, experimental: `--agent codex` on the shim runs the same
+**Codex / Gemini / Cursor?** Codex is in: `--agent codex` on the shim runs the same
 cases through OpenAI's Codex CLI (`codex exec`), bridges your `CLAUDE.md` to `AGENTS.md` in the
 workspace, and grades with the same graders; Claude-only indicators like `tool_used: Skill` are
 skipped, not failed, so scores stay comparable. Codex has no subscription-token equivalent here,
 so runs use your ChatGPT plan's included usage (or bill an OpenAI key). Gemini is in too:
 `--agent gemini` runs headlessly with `GEMINI.md` bridging on the free Google tier; it emits no
 machine-readable tool calls, so tool-use indicators are skipped and the content graders carry
-the score. The case format and `.cdc.yml` stay agent-agnostic.
+the score. The case format and `.cdc.yml` stay agent-agnostic. A
+[published run of the same suite on all three](https://jameskomo.github.io/config-drift-checker/agents/)
+scored Claude 1.00, Gemini 0.77 and Codex 0.63, and showed the main thing that doesn't travel:
+Claude Code hooks don't run in the other CLIs.
 
 **Licence?** FSL-1.1-Apache-2.0: free to use, modify and self-host in your own CI; not to be
 offered as a competing commercial service; each release becomes Apache-2.0 two years after

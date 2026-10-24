@@ -2,6 +2,22 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.6.0 (2026-10-24)
+Testing the tests. `mutate` sabotages copies of your setup on purpose and scores how many breaks
+your suite catches; ours caught 6 of 15, and the misses are published. `trigger-map` measures how
+often each skill fires, in and out of scope, with 95% ranges and collisions between skills.
+`case-miner` turns prompts from your own sessions into suggested cases, anonymised and staged for
+review. `harness-diff` shows what changed inside Claude Code's built-in tools between releases, and
+the release report now has a page per release plus a badge for every public suite. Every score has
+a 95% range, and `runs-needed` says how many runs each case needs. On pull requests the Action
+posts what the PR changes in the setup (`pr-impact`) and can run only the affected cases
+(`pr-select`). When the budget skips a release, the free checks still run and the release shows
+as untested, never green. Catch-up with Claude Code 2.1.299: `disallowed_tools` and
+`disallow-tools`, and runs that end on an API error count as errored. Codex and Gemini lose their
+experimental labels after a published 54-run comparison. Fixed: the Marketplace mirror now ships
+the plugin, so its tools and repair paths resolve, and the suite doctor checks hidden folders the
+runner loads.
+
 ## v1.5.0 (2026-10-09)
 Six features that answer questions `claude plugin eval` doesn't ask. `drift-matrix` runs one suite
 across models and Claude Code versions and says which ones your setup survives. `context-cost`

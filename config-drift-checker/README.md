@@ -26,7 +26,7 @@ claude "/config-drift-checker:setup"
 
 | Tool | What it does |
 |---|---|
-| `eval-shim.mjs` | the bundled runner: same case format as `claude plugin eval`, plus Codex and Gemini (experimental), MCP mocks, `--concurrency` |
+| `eval-shim.mjs` | the bundled runner: same case format as `claude plugin eval`, plus Codex and Gemini, MCP mocks, `--concurrency` |
 | `eval-diff.mjs`, `eval-report.mjs`, `eval-dashboard.mjs` | baseline diff with noise bands, the HTML report, the drift observatory |
 | `skill-lint.mjs`, `suite-doctor.mjs` | free preflight: SKILL.md checks, and eval cases vs the installed Claude Code (`--fix` migrates) |
 | `context-cost.mjs` | tokens your setup adds to every session, per release |
@@ -35,7 +35,13 @@ claude "/config-drift-checker:setup"
 | `drift-bisect.mjs` | which release broke a case, in log2(N) runs |
 | `evals-convert.mjs` | skill-creator `evals.json` into plugin-eval cases, and back |
 | `release-report.mjs` | every public eval suite loaded on the newest Claude Code, $0 |
+| `mutate.mjs` | mutation testing: sabotages copies of your setup and scores how many breaks the suite catches |
+| `trigger-map.mjs` | fire rates per skill with 95% ranges, and collisions between skills |
+| `case-miner.mjs` | real sessions into suggested cases, anonymised, staged for review |
+| `harness-diff.mjs` | what changed inside Claude Code's built-in tools between two releases |
+| `pr-impact.mjs` | what a PR changes in the setup: tokens per session, rules, the cases that test them |
+| `runs-needed.mjs` | how many runs each case needs to tell a real drop from noise |
 | `cdc-bootstrap.mjs`, `fleet.mjs`, `drift-digest.mjs`, `trace-keeper.mjs` | headless setup, many repos on one dashboard, the weekly digest, keeping official-runner transcripts |
 
 Workflow templates for single repos, fleets, org rollout and the matrix are in `ci/`. Tests:
-`npm test` (246, against a fake `claude`, no API key needed).
+`npm test` (324, against a fake `claude`, no API key needed).

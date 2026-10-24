@@ -68,7 +68,8 @@ way `.cdc.yml` caps spend per run and per month, and the Action refuses to start
 - **Reports:** red or green check, PR comment, Slack alert, an HTML report artifact, and a drift
   index with a stability streak and status badge on GitHub Pages.
 - **Across agents:** the same cases also run through OpenAI's Codex and Google's Gemini CLIs
-  (experimental), so the rules you wrote once stay testable wherever your agent goes next.
+  ([side by side](https://jameskomo.github.io/config-drift-checker/agents/)), so the rules you wrote
+  once stay testable wherever your agent goes next.
 
 ## Inputs
 
@@ -94,6 +95,9 @@ way `.cdc.yml` caps spend per run and per month, and the Action refuses to start
 | `pages` | `true` | write the drift index and reports for GitHub Pages |
 | `preflight` | `warn` | free checks before any model run (skill linter, suite format doctor, context cost per session); `fail` stops early, `off` skips |
 | `concurrency` | `1` | agent runs at once, 1 to 8; saves wall-clock time, not cost |
+| `pr-impact` | `true` | on pull requests, one comment with tokens added per session, rules changed and the cases that test them |
+| `pr-select` | `false` | on pull requests, run only the cases that cover the changed rules (never becomes the baseline) |
+| `disallow-tools` | | tools Claude may not use in any case (Claude Code 2.1.299+) |
 
 ## More
 

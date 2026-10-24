@@ -114,8 +114,14 @@ node tools/usage-check.mjs komo-stack --since 90d                               
 node tools/case-miner.mjs komo-stack --dry-run                                 # real prompts as suggested trigger and negative cases (anonymised); drop --dry-run to stage, then accept <id>
 node tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run       # skill-creator evals.json into plugin-eval cases; export goes back
 node tools/release-report.mjs --discover --out-dir docs/release-report          # every public suite on the newest Claude Code, $0, no credentials
-node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # EXPERIMENTAL: same suite through Codex CLI
-node tools/eval-shim.mjs komo-stack --agent gemini --ablation none --scaffold  # EXPERIMENTAL: through Gemini CLI (free Google tier)
+node tools/mutate.mjs komo-stack --dry-run                                      # mutation testing; drop --dry-run and add --budget 3 for the real score
+node tools/trigger-map.mjs komo-stack --model haiku --budget 0.5                # fire rates per skill with 95% ranges and collisions
+node tools/case-miner.mjs komo-stack --since 90d --dry-run                      # real sessions into suggested cases, anonymised, review first
+node tools/runs-needed.mjs komo-stack/evals/results --config komo-stack         # how many runs each case needs; --write updates prompt.md
+node tools/harness-diff.mjs --from 2.1.295 --to 2.1.310 --md -                  # what changed inside Claude Code between two releases
+node tools/pr-impact.mjs --base main --head HEAD --plugin komo-stack            # what a branch changes in the agent setup
+node tools/eval-shim.mjs komo-stack --agent codex --ablation none --scaffold   # same suite through Codex CLI
+node tools/eval-shim.mjs komo-stack --agent gemini --ablation none --scaffold  # through Gemini CLI (free Google tier)
 claude plugin eval ./komo-stack --allow-tools Bash --scaffold --json out.json  # official runner
 node tools/eval-diff.mjs baseline.json out.json --config komo-stack             # native JSON diffs directly
 node tools/trace-keeper.mjs out.json --clean   # after --keep-temp: keep transcripts inline (enables refusal labels on native runs)
@@ -129,7 +135,7 @@ cd config-drift-checker && npm test                                  # full suit
 | `claude plugin eval` not found / errors | Claude Code older than 2.1.269 | Action falls back to the bundled runner automatically; upgrade Claude Code to use the official one |
 | "pages build and deployment" shows **cancelled** | several commits landed on main within a minute (a release bump, the drift index); GitHub cancels superseded Pages builds and deploys only the newest | nothing — check that the most recent Pages run succeeded; only a **failed** newest run needs action |
 | shim run `isError: true`, `stderrTail` mentions auth or credit | no key in CI / no credentials locally / no prepaid credit | set the secret (or `CLAUDE_CODE_OAUTH_TOKEN`); locally the shim copies `~/.claude/.credentials.json`; top up at console.anthropic.com → Billing |
-| job summary says **skipped: budget** | month's ledger reached `budget.per_month_usd` | raise the cap, wait for next month, or re-run manually with `force: true` |
+| job summary says **skipped: budget** | month's ledger reached `budget.per_month_usd` | the free checks still ran on the new release and it shows as *untested* on the dashboard and badge; raise the cap, wait for next month, or re-run manually with `force: true` |
 | job summary says **skipped: interval** | scheduled canary sooner than `canary.min_interval_hours` | nothing; push/PR/manual runs are never throttled |
 | "could not open the PR" warning, branch pushed | the token cannot create PRs | Settings → Actions → General → *Allow GitHub Actions to create and approve pull requests*, or pass a PAT as `github-token`; open the PR from the branch meanwhile |
 | `pin_retired=true` / "model.pinned is no longer listed" | Anthropic retired the pinned id | merge the next bump PR, or `cdc-config set-pins --model <current id>` and promote |
