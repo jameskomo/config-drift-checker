@@ -3,10 +3,15 @@
 # Usage: scripts/build-action-mirror.sh <target-dir>
 set -euo pipefail
 SRC="$(cd "$(dirname "$0")/.." && pwd)"; DST="${1:?target dir}"
-mkdir -p "$DST/tools"
-# action.yml: tools live next to it in the mirror
-sed 's#${{ github.action_path }}/../config-drift-checker/tools/#${{ github.action_path }}/tools/#g' "$SRC/action/action.yml" > "$DST/action.yml"
-cp "$SRC"/config-drift-checker/tools/*.mjs "$DST/tools/"
+# The mirror keeps the main repo's layout under the action: action.yml at the root and the plugin
+# (tools, skills, manifest) in config-drift-checker/, so every "$ACTION_PATH/../config-drift-checker"
+# in action.yml becomes "$ACTION_PATH/config-drift-checker" and resolves. The old tools/ copy is removed.
+rm -rf "$DST/tools" "$DST/config-drift-checker"
+mkdir -p "$DST/config-drift-checker"
+sed 's#\$ACTION_PATH/\.\./config-drift-checker#$ACTION_PATH/config-drift-checker#g' "$SRC/action/action.yml" > "$DST/action.yml"
+for d in tools skills .claude-plugin; do [ -e "$SRC/config-drift-checker/$d" ] && cp -R "$SRC/config-drift-checker/$d" "$DST/config-drift-checker/"; done
+cp "$SRC/config-drift-checker/package.json" "$DST/config-drift-checker/"
+if grep -q '\.\./config-drift-checker' "$DST/action.yml"; then echo "build-action-mirror: action.yml still points outside the mirror" >&2; exit 1; fi
 cp "$SRC/LICENSE" "$DST/LICENSE"
 cat > "$DST/README.md" <<'MD'
 # config-drift-checker
