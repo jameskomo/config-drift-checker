@@ -3,6 +3,8 @@ name: release-report
 # every public plugin eval suite we know of is loaded by the official runner at $0 under the new and the
 # previous version. No model runs, no credentials, no secrets: repos are shallow-cloned and only loaded,
 # and the runner gets a bare environment (PATH and an empty HOME). See config-drift-checker/tools/release-report.mjs.
+# The same run diffs the built-in tool definitions against the previous reported release (harness-diff: npm pack
+# of the two packages' sdk-tools.d.ts, nothing installed) into docs/release-report/diff/, and writes the job summary.
 on:
   schedule:
     - cron: '41 5 * * *'
@@ -47,6 +49,14 @@ jobs:
           if [ -n "$INPUT_PREVIOUS" ]; then args+=(--previous "$INPUT_PREVIOUS"); fi
           node config-drift-checker/tools/release-report.mjs "${args[@]}" --discover \
             --suites .github/release-report/suites.yml --opt-out .github/release-report/opt-out.txt --out-dir docs/release-report
+      - if: steps.check.outputs.run == 'true'
+        # what changed inside Claude Code, as markdown in the job summary (the step above cached both sdk-tools.d.ts files)
+        run: |
+          from=$(node -p 'require("./docs/release-report/report.json").harness?.from ?? ""')
+          to=$(node -p 'require("./docs/release-report/report.json").claudeCode.version')
+          if [ -n "$from" ]; then
+            node config-drift-checker/tools/harness-diff.mjs --from "$from" --to "$to" --md >> "$GITHUB_STEP_SUMMARY" || echo "::warning::harness-diff $from to $to failed"
+          fi
       - if: steps.check.outputs.run == 'true'
         run: |
           set -e

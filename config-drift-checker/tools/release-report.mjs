@@ -3,7 +3,7 @@
 //
 //   node tools/release-report.mjs [--version <new>] [--previous <old>] [--suites suites.yml] [--discover]
 //        [--opt-out opt-out.txt] [--out-dir docs/release-report] [--runner <version>=<claude or npm prefix>]
-//        [--work-dir <dir>] [--max-suites 40] [--max-repo-mb 200]
+//        [--work-dir <dir>] [--max-suites 40] [--max-repo-mb 200] [--no-harness-diff] [--harness-cache <dir>]
 //
 // For each suite (an explicit list, plus GitHub code search with --discover, plus every suite the last
 // report covered) it makes a shallow clone and asks the official runner to LOAD the suite under both
@@ -17,6 +17,10 @@
 // | unchecked (the new version's load check did not complete).
 //
 // Writes <out-dir>/report.json, <out-dir>/index.html and <out-dir>/archive/<version>.json.
+// It also runs harness-diff against the previous reported release (what changed in the built-in tools'
+// instructions and capabilities) into <out-dir>/diff/<version>.{html,json}, and gives earlier reported
+// releases without one a diff page too. --no-harness-diff skips that; --harness-cache sets where the
+// fetched sdk-tools.d.ts files are cached (default: CDC_HARNESS_CACHE, else a dir under the OS temp dir).
 // Defaults: --version is npm latest, --previous the release before it. A --runner <version>=<path>
 // reuses an installed binary (a claude executable, or an npm prefix holding node_modules/.bin/claude);
 // otherwise each version is installed into a temp npm prefix, never globally.
@@ -28,6 +32,8 @@ import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadSuite, diagnose, parseRunnerOutput, resolveEvalDir } from './suite-doctor.mjs';
+import { CSS, esc } from './report-style.mjs';
+import { harnessDiff, renderDiffHtml } from './harness-diff.mjs';
 
 const PACKAGE = '@anthropic-ai/claude-code';
 const REPO_URL = 'https://github.com/jameskomo/config-drift-checker';
@@ -250,41 +256,8 @@ function installVersion(version, workDir) {
 }
 
 // ---------- the page ----------
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LABEL = { loads: 'loads', broke: 'broke on this release', fixed: 'fixed on this release', 'never-loaded': 'never loaded', fails: 'fails to load', unchecked: 'unchecked' };
 const TONE = { loads: 'pass', fixed: 'pass', broke: 'fail', 'never-loaded': 'warn', fails: 'warn', unchecked: 'muted' };
-
-const CSS = `
-:root{--paper:#F3F5F8;--surface:#FFFFFF;--ink:#111827;--muted:#5F6B7A;--rule:#DCE1E8;--code:#EEF1F5;--pass:#1E7A4D;--pass-bg:#E3F3EA;--fail:#C1382C;--fail-bg:#FAE6E3;--warn:#A8701A;--warn-bg:#FBF0DC;--track:#2E5BD7;--track-bg:#E4EBFB;--shadow:0 1px 2px rgba(17,24,39,.05)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0E1319;--surface:#161C25;--ink:#E8EDF3;--muted:#97A3B2;--rule:#2A3441;--code:#0B0F14;--pass:#4CC286;--pass-bg:#173124;--fail:#EE7A6C;--fail-bg:#3B1E1B;--warn:#E0B052;--warn-bg:#3A2D14;--track:#7FA0F5;--track-bg:#1B2742;--shadow:none}}
-:root[data-theme="dark"]{--paper:#0E1319;--surface:#161C25;--ink:#E8EDF3;--muted:#97A3B2;--rule:#2A3441;--code:#0B0F14;--pass:#4CC286;--pass-bg:#173124;--fail:#EE7A6C;--fail-bg:#3B1E1B;--warn:#E0B052;--warn-bg:#3A2D14;--track:#7FA0F5;--track-bg:#1B2742;--shadow:none}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-feature-settings:"tnum"}
-code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
-a{color:var(--track);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1080px;margin:0 auto;padding:28px 28px 80px}
-.pass{color:var(--pass)}.fail{color:var(--fail)}.warn{color:var(--warn)}.muted{color:var(--muted)}
-.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}.eyebrow b{color:var(--track);font-weight:600}
-h1{font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0 0 12px;font-weight:600;max-width:30ch}
-.lede{font-size:16px;color:var(--muted);margin:0;max-width:70ch}
-h2{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:30px 0 10px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:22px 0}
-.tile{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
-.tile .tl{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}.tile .tb{font-size:26px;font-weight:600;line-height:1.25}
-.hist{display:flex;gap:8px;flex-wrap:wrap}.hv{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:12.5px;min-width:120px}.hv b{display:block;font-weight:600}.hv.cur{border-color:var(--track)}
-.bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--code);margin-top:5px}.bar i{display:block;height:100%}.bar .pass{background:var(--pass)}.bar .fail{background:var(--fail)}.bar .warn{background:var(--warn)}.bar .muted{background:var(--muted)}
-.note{background:var(--track-bg);border-radius:8px;padding:12px 16px;font-size:14px;margin:18px 0}
-.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);margin:0 0 14px;overflow:hidden}
-.ch{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--rule)}
-.ch h3{margin:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}.ch .meta{font-size:12.5px;color:var(--muted)}.ch .desc{font-size:13px;color:var(--muted);margin:2px 0 0;max-width:70ch}
-.sum{font-size:13px;white-space:nowrap}.sum span{margin-left:10px}
-.cases{width:100%;border-collapse:collapse;font-size:13.5px}.cases td{padding:8px 16px;border-top:1px solid var(--rule);vertical-align:top}.cases tr:first-child td{border-top:0}
-.cases td.st{white-space:nowrap;width:1%}.cases td.nm{font-weight:500;overflow-wrap:anywhere;width:24%}
-.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:10px;background:var(--code);color:var(--muted)}.pill.pass{background:var(--pass-bg);color:var(--pass)}.pill.fail{background:var(--fail-bg);color:var(--fail)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
-.err{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow-wrap:anywhere}.fix{font-size:12.5px;color:var(--muted);margin-top:3px}
-details>summary{cursor:pointer;padding:8px 16px;font-size:13px;color:var(--muted)}details[open]>summary{border-bottom:1px solid var(--rule)}
-.skip{padding:12px 16px;font-size:13.5px;color:var(--muted)}
-.foot{color:var(--muted);font-size:12.5px;margin-top:26px;max-width:80ch}
-:focus-visible{outline:2px solid var(--track);outline-offset:2px}
-@media (max-width:700px){.wrap{padding:20px 16px 60px}h1{font-size:24px}.cases td{padding:8px 12px}.cases td.nm{width:auto}.cases tr{display:grid;grid-template-columns:auto 1fr}.cases td.detail{grid-column:1/-1;padding-top:0}.sum span{margin:0 10px 0 0}}`;
 
 function bar(t) {
   if (!t.cases) return '';
@@ -297,6 +270,23 @@ const suiteOrder = (a, b) => {
   for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
   return a.repo.localeCompare(b.repo);
 };
+
+// "What changed inside Claude Code": this release's harness diff, then every reported release's diff page
+export function harnessSection(report) {
+  const h = report.harness, cc = report.claudeCode;
+  const pages = (report.history ?? []).filter((x) => x.harness).slice(-12).reverse();
+  if (!h && !pages.length) return '';
+  const TONE_OF = { instruction: 'warn', capability: 'pass' };
+  const items = h?.items ?? [];
+  const shown = items.slice(0, 10);
+  const current = !h ? ''
+    : h.error ? `<section class="card"><div class="skip">Could not compare the built-in tool definitions of ${esc(h.from ?? 'the last reported release')} and ${esc(h.to)} this time: ${esc(h.error)}</div></section>`
+      : `<section class="card"><div class="ch"><div><h3>${esc(h.headline)}</h3><div class="meta">Built-in tool definitions, ${esc(h.from)} to ${esc(h.to)}: ${h.counts.instruction + h.counts.capability} change${h.counts.instruction + h.counts.capability === 1 ? '' : 's'} the model sees, ${h.counts.typeOnly} type-only</div></div><div class="sum"><a href="${esc(h.page)}">word-level diff</a></div></div>${shown.length ? `<ul class="chl">${shown.map((i) => `<li><span class="pill ${TONE_OF[i.class] ?? ''}">${i.class === 'instruction' ? 'instruction wording' : 'capability'}</span>${esc(i.text.replace(/`/g, ''))}</li>`).join('')}${items.length > shown.length ? `<li class="muted">and ${items.length - shown.length} more on <a href="${esc(h.page)}">the diff page</a></li>` : ''}</ul>` : ''}</section>`;
+  const list = pages.length ? `<section class="card"><ul class="chl">${pages.map((x) => `<li><a class="mono" href="${esc(x.harness.page)}">${esc(x.version)}</a>${x.version === cc.version ? ' <span class="muted">(this release)</span>' : ''} <span class="muted">vs ${esc(x.harness.from)}</span>: ${esc(x.harness.headline)}</li>`).join('')}</ul></section>` : '';
+  return `<h2>What changed inside Claude Code</h2>
+<p class="intro">The built-in tools' input schemas and parameter descriptions, the text the model reads when it calls a tool, compared with the previous reported release. From the npm package's <code>sdk-tools.d.ts</code>; the system prompt is not part of it.</p>
+${current}${list ? `\n<h2>Tool changes per release</h2>\n${list}` : ''}`;
+}
 
 export function renderHtml(report) {
   const { claudeCode: cc, totals: t } = report;
@@ -320,10 +310,11 @@ export function renderHtml(report) {
 <p class="lede">Every public <code>claude plugin eval</code> suite we know of, loaded by the official runner on Claude Code ${esc(cc.version)} and on ${esc(cc.previous ?? 'no earlier version')}. A case that loaded on ${esc(cc.previous)} and not on ${esc(cc.version)} broke on this release; one that fails on both never loaded. Updated ${esc(when)}.</p>
 <div class="tiles">${tile('suites', t.suites)}${tile('cases', t.cases)}${tile('load', t.loads, 'pass')}${tile('broke on this release', t.broke, t.broke ? 'fail' : '')}${t.fixed ? tile('fixed on this release', t.fixed, 'pass') : ''}${tile('never loaded', t.neverLoaded, t.neverLoaded ? 'warn' : '')}</div>
 ${hist ? `<h2>Per release</h2><div class="hist">${hist}</div>` : ''}
+${harnessSection(report)}
 <div class="note">Suite authors: run <code>node tools/suite-doctor.mjs &lt;plugin&gt; --fix</code> from a checkout of <a href="${REPO_URL}">config-drift-checker</a> to see and repair what the runner rejects, or <a href="${REPO_URL}/issues/new?title=${encodeURIComponent('Release report: opt out')}">open an issue to opt out</a> of this report.</div>
 <h2>Suites</h2>
 ${cards || '<p class="muted">No suites checked.</p>'}
-<p class="foot">How this is checked: each repo is cloned at depth 1 (no submodules, no LFS) and the suite is loaded by <code>claude plugin eval --max-cost-usd 0 --trust-plugin --no-publish</code> in a bare environment with an empty HOME and no credentials. The cost ceiling stops the run before any agent starts, so no model runs and nothing is spent; nothing from the repo is installed or executed. The error shown is the runner's own first message for the case; the fix line comes from suite-doctor's static rules. Suites are found through GitHub code search and an explicit list${notSuites ? `; ${notSuites} other repo${notSuites === 1 ? '' : 's'} matched the search but hold${notSuites === 1 ? 's' : ''} evals for a different harness and ${notSuites === 1 ? 'is' : 'are'} not listed` : ''}. Data: <a href="report.json">report.json</a>, history in <a href="${REPO_URL}/tree/main/docs/release-report/archive">archive/</a>. Generated by <a href="${REPO_URL}">config-drift-checker</a>.</p>
+<p class="foot">How this is checked: each repo is cloned at depth 1 (no submodules, no LFS) and the suite is loaded by <code>claude plugin eval --max-cost-usd 0 --trust-plugin --no-publish</code> in a bare environment with an empty HOME and no credentials. The cost ceiling stops the run before any agent starts, so no model runs and nothing is spent; nothing from the repo is installed or executed. The error shown is the runner's own first message for the case; the fix line comes from suite-doctor's static rules. Suites are found through GitHub code search and an explicit list${notSuites ? `; ${notSuites} other repo${notSuites === 1 ? '' : 's'} matched the search but hold${notSuites === 1 ? 's' : ''} evals for a different harness and ${notSuites === 1 ? 'is' : 'are'} not listed` : ''}. Data: <a href="report.json">report.json</a>, history in <a href="${REPO_URL}/tree/main/docs/release-report/archive">archive/</a>, tool changes in <a href="${REPO_URL}/tree/main/docs/release-report/diff">diff/</a>. Generated by <a href="${REPO_URL}">config-drift-checker</a>.</p>
 </main></body></html>
 `;
 }
@@ -334,6 +325,35 @@ export function loadHistory(archiveDir) {
   if (!existsSync(archiveDir)) return [];
   return readdirSync(archiveDir).filter((f) => /^\d+\.\d+\.\d+\.json$/.test(f)).map((f) => readJsonSafe(path.join(archiveDir, f))).filter((j) => j?.totals)
     .map((j) => ({ version: j.claudeCode.version, previous: j.claudeCode.previous, generatedAt: j.generatedAt, totals: j.totals })).sort((a, b) => cmpV(a.version, b.version));
+}
+
+// ---------- what changed inside Claude Code (harness-diff), one page per reported release ----------
+// diff/<to>.json (the full diff) and diff/<to>.html; returns the summary the report and archive keep.
+export function harnessPage(from, to, outDir, opt = {}, log = () => {}) {
+  if (!from) return { from: null, to, error: 'no earlier release to compare with' };
+  try {
+    const diff = harnessDiff({ from, to, cacheDir: opt.harnessCache });
+    const dir = path.join(outDir, 'diff');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, `${to}.json`), JSON.stringify(diff, null, 2) + '\n');
+    writeFileSync(path.join(dir, `${to}.html`), renderDiffHtml(diff, { backLink: '../', generatedAt: opt.now ?? Date.now() }));
+    log(`harness diff ${from} to ${to}: ${diff.summary.headline}`);
+    return { ...diff.summary, page: `diff/${to}.html` };
+  } catch (e) {
+    log(`harness diff ${from} to ${to} failed: ${e.message}`);
+    return { from, to, error: e.message };
+  }
+}
+// Earlier reported releases without a diff page get one (each against the release reported before it).
+export function backfillHarnessPages(history, outDir, opt = {}, log = () => {}, max = 12) {
+  history.forEach((h, i) => {
+    if (i < history.length - max || existsSync(path.join(outDir, 'diff', `${h.version}.json`))) return;
+    harnessPage(history[i - 1]?.version ?? h.previous, h.version, outDir, opt, log);
+  });
+}
+export function harnessOf(outDir, version) {
+  const s = readJsonSafe(path.join(outDir, 'diff', `${version}.json`))?.summary;
+  return s ? { from: s.from, headline: s.headline, page: `diff/${version}.html` } : null;
 }
 
 export async function buildReport(opt, log = (m) => process.stderr.write(m + '\n')) {
@@ -419,8 +439,14 @@ export async function buildReport(opt, log = (m) => process.stderr.write(m + '\n
   };
   const archiveDir = path.join(outDir, 'archive');
   mkdirSync(archiveDir, { recursive: true });
+  if (opt.harness !== false) {
+    // what changed inside Claude Code since the last reported release (so a skipped release is still covered)
+    const earlier = loadHistory(archiveDir).filter((h) => cmpV(h.version, opt.version) < 0);
+    report.harness = harnessPage(earlier.at(-1)?.version ?? opt.previous, opt.version, outDir, opt, log);
+    backfillHarnessPages(earlier, outDir, opt, log);
+  }
   writeFileSync(path.join(archiveDir, `${opt.version}.json`), JSON.stringify(report, null, 2) + '\n');
-  report.history = loadHistory(archiveDir);
+  report.history = loadHistory(archiveDir).map((h) => ({ ...h, harness: harnessOf(outDir, h.version) }));
   writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   writeFileSync(path.join(outDir, 'index.html'), renderHtml(report));
   return report;
@@ -429,7 +455,7 @@ export async function buildReport(opt, log = (m) => process.stderr.write(m + '\n
 const isMain = (() => { try { return process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } })();
 if (isMain) {
   const argv = process.argv.slice(2);
-  const usage = 'usage: release-report.mjs [--version <v>] [--previous <v>] [--suites suites.yml] [--discover] [--opt-out file] [--out-dir dir] [--runner <version>=<path>] [--work-dir dir] [--max-suites 40] [--max-repo-mb 200]';
+  const usage = 'usage: release-report.mjs [--version <v>] [--previous <v>] [--suites suites.yml] [--discover] [--opt-out file] [--out-dir dir] [--runner <version>=<path>] [--work-dir dir] [--max-suites 40] [--max-repo-mb 200] [--no-harness-diff] [--harness-cache dir]';
   const opt = { version: null, previous: null, suites: null, discover: false, optOut: null, outDir: 'docs/release-report', runners: {}, workDir: null, maxSuites: 40, maxRepoBytes: 200 * 2 ** 20, cloneBase: process.env.CDC_CLONE_BASE || 'https://github.com/' };
   const need = (i) => { if (argv[i + 1] === undefined) { console.error(usage); process.exit(2); } return argv[i + 1]; };
   for (let i = 0; i < argv.length; i++) {
@@ -444,6 +470,8 @@ if (isMain) {
     else if (a === '--max-suites') opt.maxSuites = Number(need(i)), i++;
     else if (a === '--max-repo-mb') opt.maxRepoBytes = Number(need(i)) * 2 ** 20, i++;
     else if (a === '--no-metadata') opt.metadata = false;
+    else if (a === '--no-harness-diff') opt.harness = false;
+    else if (a === '--harness-cache') opt.harnessCache = need(i), i++;
     else if (a === '--runner') { const [v, ...p] = need(i).split('='); opt.runners[v] = p.join('='); i++; }
     else if (a === '-h' || a === '--help') { console.log(usage); process.exit(0); }
     else { console.error(`unknown option ${a}\n${usage}`); process.exit(2); }

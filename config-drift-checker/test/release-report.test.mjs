@@ -5,6 +5,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
+import { fakeNpm } from './fixtures/fake-npm.mjs';
 import { previousVersion, parseSuitesFile, parseOptOut, pluginDirFromPath, normaliseSuite, mergeSuites, classifyCase, headline, totalsOf, renderHtml } from '../tools/release-report.mjs';
 
 const TOOL = new URL('../tools/release-report.mjs', import.meta.url).pathname;
@@ -139,7 +140,12 @@ test('end to end: discovers, clones, load-checks under both versions in a bare e
   await fs.writeFile(suites, '- repo: acme/stable\n- repo: acme/huge\n- repo: optout/repo\n- repo: ../evil\n');
   const optOut = path.join(work, 'opt-out.txt');
   await fs.writeFile(optOut, '# asked to be left out\noptout/repo\n');
-  const env = { CDC_GITHUB_API: gh.url, GITHUB_TOKEN: 'test-token', CDC_CLONE_BASE: `file://${base}/`, ANTHROPIC_API_KEY: 'sk-must-not-leak', CLAUDE_CODE_OAUTH_TOKEN: 'oauth-must-not-leak' };
+  // sdk-tools.d.ts per release, served by a fake `npm pack`: 2.1.295 adds a parameter, 2.1.296 rewords one
+  const FIX = new URL('./fixtures/harness/', import.meta.url).pathname;
+  const OLD = await fs.readFile(path.join(FIX, 'old.d.ts'), 'utf8'), NEW = await fs.readFile(path.join(FIX, 'new.d.ts'), 'utf8');
+  const npm = await fakeNpm({ '2.1.287': OLD, '2.1.295': NEW, '2.1.296': NEW.replace('How to decode the file', 'Which encoding to <decode> with') });
+  const env = { CDC_GITHUB_API: gh.url, GITHUB_TOKEN: 'test-token', CDC_CLONE_BASE: `file://${base}/`, ANTHROPIC_API_KEY: 'sk-must-not-leak', CLAUDE_CODE_OAUTH_TOKEN: 'oauth-must-not-leak',
+    PATH: `${npm.binDir}${path.delimiter}${process.env.PATH}`, CDC_HARNESS_CACHE: npm.cacheDir };
   try {
     const r = await run(['--version', '2.1.295', '--previous', '2.1.287', '--suites', suites, '--discover', '--opt-out', optOut, '--out-dir', out,
       '--runner', `2.1.295=${next}`, '--runner', `2.1.287=${prev}`], env);
@@ -197,6 +203,18 @@ test('end to end: discovers, clones, load-checks under both versions in a bare e
     assert.ok(existsSync(path.join(out, 'archive', '2.1.295.json')));
     assert.doesNotMatch(html + JSON.stringify(rep), /must-not-leak/);
 
+    // what changed inside Claude Code: compared with --previous (nothing reported before), kept in the archive
+    assert.equal(rep.harness.from, '2.1.287');
+    assert.equal(rep.harness.headline, 'Claude Code 2.1.295 changed the instructions of 3 built-in tools (Agent, Ask, Read), added 4 capabilities and removed 1 capability.');
+    assert.equal(rep.harness.page, 'diff/2.1.295.html');
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(out, 'archive', '2.1.295.json'), 'utf8')).harness, rep.harness);
+    assert.match(html, /<h2>What changed inside Claude Code<\/h2>/);
+    assert.match(html, /<a href="diff\/2\.1\.295\.html">word-level diff<\/a>/);
+    assert.match(html, /Read: new parameter allow_large/);
+    const page = await fs.readFile(path.join(out, 'diff', '2.1.295.html'), 'utf8');
+    assert.match(page, /<h1>Claude Code 2\.1\.295 changed the instructions/);
+    assert.equal(JSON.parse(await fs.readFile(path.join(out, 'diff', '2.1.295.json'), 'utf8')).changes.length, 11);
+
     // the next release: no list, no discovery; the last report's suites carry over, and the history strip grows
     const next2 = await fakeClaude('2.1.296', logs);
     const r2 = await run(['--version', '2.1.296', '--previous', '2.1.295', '--opt-out', optOut, '--out-dir', out, '--runner', `2.1.296=${next2}`, '--runner', `2.1.295=${next}`], { ...env, CDC_GITHUB_API: gh.url });
@@ -208,6 +226,23 @@ test('end to end: discovers, clones, load-checks under both versions in a bare e
     const html2 = await fs.readFile(path.join(out, 'index.html'), 'utf8');
     assert.match(html2, /Per release/);
     assert.match(html2, /<b class="mono">2\.1\.295<\/b>/);
+    // the next diff is against the last reported release; both releases' pages are listed
+    assert.equal(rep2.harness.from, '2.1.295');
+    assert.equal(rep2.harness.headline, 'Claude Code 2.1.296 changed the instructions of 1 built-in tool (Read).');
+    assert.match(html2, /<a class="mono" href="diff\/2\.1\.296\.html">2\.1\.296<\/a> <span class="muted">\(this release\)<\/span> <span class="muted">vs 2\.1\.295<\/span>/);
+    assert.match(html2, /<a class="mono" href="diff\/2\.1\.295\.html">2\.1\.295<\/a> <span class="muted">vs 2\.1\.287<\/span>/);
+    assert.match(await fs.readFile(path.join(out, 'diff', '2.1.296.html'), 'utf8'), /<ins>&lt;<\/ins>decode<ins>&gt; with<\/ins>/);
+    assert.equal((await npm.calls()).length, 3, 'each release is fetched once, then cached');
+
+    // an earlier reported release without a diff page gets one; a failed fetch is reported, not fatal
+    await fs.rm(path.join(out, 'diff', '2.1.295.json'));
+    const r3 = await run(['--version', '2.1.297', '--previous', '2.1.296', '--opt-out', optOut, '--out-dir', out, '--max-suites', '0', '--runner', `2.1.297=${await fakeClaude('2.1.297', logs)}`, '--runner', `2.1.296=${next2}`], env);
+    assert.equal(r3.status, 0, r3.err);
+    assert.match(r3.err, /harness diff 2\.1\.296 to 2\.1\.297 failed: npm pack .*404/);
+    const rep3 = JSON.parse(await fs.readFile(path.join(out, 'report.json'), 'utf8'));
+    assert.match(rep3.harness.error, /404/);
+    assert.ok(existsSync(path.join(out, 'diff', '2.1.295.json')), 'backfilled');
+    assert.match(await fs.readFile(path.join(out, 'index.html'), 'utf8'), /Could not compare the built-in tool definitions of 2\.1\.296 and 2\.1\.297 this time/);
   } finally { gh.srv.close(); }
 });
 
