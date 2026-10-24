@@ -365,6 +365,45 @@ scaffolds, `runs`/`model`/`allowed_tools`, weights, `covers.yaml`, mocks) is lis
 "not carried over". Imported cases pass every suite-doctor rule, and Claude Code 2.1.295 loads them
 in the doctor's run-free check.
 
+## 5g. Cases mined from real sessions (`tools/case-miner.mjs`)
+
+`usage-check` can tell you that your suite tests prompts nobody writes. `case-miner` pulls the prompts
+people did write out of your local transcripts and stages them as cases for you to review.
+
+| candidate | picked when | grader |
+|---|---|---|
+| trigger | the skill fired on the prompt | `skill-fired.md`: `tool_used: Skill`, `min: 1`, `arm: with-only` |
+| missed trigger | it did not fire, the prompt matches the skill, and within 3 turns (2 hours) the user typed `/<skill>`, named the skill, or corrected the agent | `skill-fired.md` |
+| near-miss negative | it fired, and within 2 turns the user said it was the wrong skill or irrelevant | `skill-not-fired.md`: `min: 0`, `max: 0`, `arm: both` |
+
+"Matches the skill" means a keyword from the part of its description before "Do not use", a quoted
+trigger phrase, or a file in its `paths:` scope that the prompt names or the agent touched in that turn.
+Words from the "Do not use" part count against it. A skill already loaded earlier in the session is
+never counted as missed. Only prompts a person typed count: tool results, slash commands, task
+notifications, messages from other agents, accepted suggestions, headless `claude -p` sessions and
+sub-agent transcripts are skipped. Assistant replies are never copied.
+
+Each prompt is anonymised on your machine before anything is written or printed: the repo path
+becomes `<repo>`, other home and system paths keep only the file name, and the OS user name, emails,
+IP addresses, URLs carrying tokens or credentials, known key formats (`sk-`, `ghp_`, `github_pat_`,
+`xox*`, `AKIA`, `AIza`, `glpat-`, JWTs, private keys), `key=value` secrets, other high-entropy
+strings, the name after "my name is" and long pasted code or logs are replaced with placeholders.
+Prompts are cut to 1000 characters. Every candidate says what was removed. Near-identical prompts
+(token Jaccard 0.8 or more) are merged, prompts already in the suite are left out, and `--max`
+(default 5) caps the candidates per skill, shared round robin across the three kinds.
+
+Candidates are staged in `<plugin>/.eval-candidates/` (or `--out <dir>`), with `candidates.md`
+(date, why, confidence, the anonymised prompt), `index.json` and a `.gitignore` that keeps the
+folder out of git. The staging folder is never inside the eval dir: the official runner (checked on
+2.1.310) loads case folders anywhere under it, dot folders included, so a staged case there would run
+unreviewed. `accept <id...>` moves a case into the eval dir; it refuses to overwrite an existing case
+or to move one that fails a suite-doctor rule. A rerun never overwrites a staged case you edited.
+`--dry-run` writes nothing; `--since`, `--projects` and `--json` work as in `usage-check`.
+
+The heuristics are deliberately narrow: a missed trigger needs a later signal from the user, so a
+skill that silently failed to fire with no follow-up is not found, and the correction and complaint
+phrases are English only. The anonymiser is pattern based; read every prompt before you accept it.
+
 ## 6. Results branch layout
 
 ```

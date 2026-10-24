@@ -54,6 +54,10 @@
 - **`usage-check`** reads your local Claude Code transcripts to count skill invocations. It runs
   only on your machine, keeps only skill names, counts and dates, and never copies prompt or reply
   text into its output.
+- **`case-miner`** reads the same transcripts and copies user prompt text only (never replies),
+  anonymised on your machine first, into a staging folder outside the eval dir that is kept out of
+  git. Nothing enters the suite until you run `accept`; the anonymiser is pattern based, so review
+  every prompt.
 - **`context-cost`** runs `claude plugin details` with a throwaway config dir and HOME, no API keys
   and no model calls, and deletes the temp dir afterwards; your real `~/.claude` is never touched.
 - **The public release report** clones third-party repos (shallow, size and time capped) and runs

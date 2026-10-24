@@ -69,6 +69,7 @@ flowchart LR
 | `drift-matrix.mjs` | one suite across models x Claude Code versions (throwaway installs via `cc-release.mjs`, official runner with shim fallback) → one page and a verdict per model; `--budget` caps the grid | results under `evals/results/matrix-<stamp>/` |
 | `context-cost.mjs` | always-on and on-invoke tokens per component from `claude plugin details` in a throwaway config (no credentials, no model calls), estimate fallback; `--history` trend per release | `history/context-cost/` on the results branch |
 | `usage-check.mjs` | local session transcripts (counts only) vs eval results → tested but unused, used but untested, dead weight | none (reads `~/.claude/projects`) |
+| `case-miner.mjs` | local session transcripts → real prompts (anonymised on your machine) staged as trigger, missed-trigger and negative cases; `accept` moves reviewed ones into the suite | `<plugin>/.eval-candidates/` (kept out of git) until `accept` |
 | `evals-convert.mjs` | skill-creator `evals.json` ⇄ plugin-eval case folders | writes case folders only on `import` |
 | `eval-mocks.mjs`, `eval-mock-server.mjs` | the shim's MCP mocks: loads `evals/mocks/` in the official format and serves it over stdio under the plugin's server names | temp dirs only |
 | `release-report.mjs` | every public eval suite we can find, loaded on the newest and the previous Claude Code with `--max-cost-usd 0`, `env -i` and an empty HOME | `docs/release-report/` |
@@ -84,6 +85,9 @@ flowchart LR
   branch (you choose whether that branch is in a private repo).
 - `usage-check` reads your local transcripts on your machine and reports skill names, counts and
   dates only; it never copies prompt or reply text and never runs in CI.
+- `case-miner` reads the same transcripts on your machine and copies only user prompt text, after
+  anonymising it, into a staging folder that is kept out of git, for you to review; it never copies
+  replies and never runs in CI.
 - The release report clones public repos and only loads their cases: no credentials (`env -i`, an
   empty HOME), no scaffold, no `npm install`, and a $0 cost ceiling that stops before any agent starts.
 - The action runs `case.yaml` `scaffold_script` only when `scaffold: true` (the same gate as the

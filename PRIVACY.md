@@ -14,6 +14,11 @@
 - `usage-check` reads your local Claude Code session transcripts on your own machine to count how
   often each skill was used. It outputs only skill names, counts and dates, never prompt or reply
   text, and sends nothing anywhere.
+- `case-miner` reads the same local transcripts to suggest eval cases. It copies user prompt text,
+  never replies, and only after anonymising it on your machine (paths, user name, emails, IP
+  addresses, tokens and keys, names, long pasted code). It writes to a local staging folder that is
+  kept out of git, and nothing reaches your eval suite until you review a case and accept it. It
+  sends nothing anywhere. The anonymiser is pattern based, so read each prompt before you accept it.
 - The public release report reads public GitHub repositories only and runs with no credentials.
 - A PreToolUse "safety net" hook is injected into eval sessions to block destructive commands; it
   reads the command being run and nothing else, and writes nothing.
