@@ -135,7 +135,7 @@ export function loadSuite(pluginDir) {
   const cases = [];
   const walk = (dir) => {
     for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-      if (!e.isDirectory() || SKIP_DIRS.has(e.name) || e.name.startsWith('.')) continue;
+      if (!e.isDirectory() || SKIP_DIRS.has(e.name) || e.name === '.git') continue; // the official runner loads dot dirs too (verified on 2.1.310), so they are checked
       const d = path.join(dir, e.name);
       if (existsSync(path.join(d, 'prompt.md')) || existsSync(path.join(d, 'case.yaml'))) cases.push(loadCase(evalDir, d));
       else walk(d);

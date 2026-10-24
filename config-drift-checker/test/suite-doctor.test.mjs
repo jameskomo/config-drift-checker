@@ -440,3 +440,8 @@ test('mocks: bad suite and case mock files are errors (suite ones reported once)
   assert.ok(after.includes('WARN mock-calls-needs-mocks no-mocks graders/d-mock.md focus'), after.join('\n'));
   assert.ok(!after.some((r) => r.includes('mock-calls-needs-mocks calls')), 'a case\'s own mocks/ count');
 });
+
+test('cases under a dot dir inside evals/ are checked, because the official runner loads them too', async () => {
+  const root = await suite({ '.staged': { 'prompt.md': PROMPT, 'graders/rubric.md': 'Pass when it works.\n' } });
+  assert.ok(rulesOf(root).some((r) => r.startsWith('ERROR grader-prose-rubric .staged')), rulesOf(root).join('\n'));
+});
