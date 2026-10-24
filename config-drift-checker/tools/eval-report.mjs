@@ -13,6 +13,7 @@ import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { key, median, caseMap, classifyCase, baselineWarnings, resolveThresholds, loadHistory, normalizeResult } from './eval-classify.mjs';
+import { caseStats, fmtPass, shortLine, LEGEND } from './eval-stats.mjs';
 
 export function renderReport(cur, base = null, opt = {}) {
   const th = { score: opt.threshold ?? opt.thresholds?.score ?? 0.15, turns: opt.thresholds?.turns ?? 0.5, cost: opt.thresholds?.cost ?? 0.5, duration: opt.thresholds?.duration ?? 0.5 };
@@ -41,6 +42,9 @@ export function renderReport(cur, base = null, opt = {}) {
   };
   const baseModels = base ? [...new Set((base.cases ?? []).flatMap((c) => runsOf(c, 'with').map((r) => r.model)).filter(Boolean))] : [];
   const histCases = opt.history ? opt.history.map(caseMap) : null;
+  // how sure (information only): spread evidence is each result once, history + baseline + this run
+  const sameRun = (x, y) => !!x && !!y && (x === y || (!!x.generatedAt && x.generatedAt === y.generatedAt));
+  const evidence = [...(opt.history ?? []).filter((h) => !sameRun(h, base) && !sameRun(h, cur)), ...(base && !sameRun(base, cur) ? [base] : []), cur].map(caseMap);
 
   // ---- per-case analysis (via eval-classify — the same verdicts as eval-diff) ----
   const analyse = (c) => {
@@ -62,7 +66,8 @@ export function renderReport(cur, base = null, opt = {}) {
     }
     const flags = [['turns', 'slower'], ['cost', 'pricier'], ['duration', 'longer']].filter(([n]) => eff[n].drifted).map(([, fl]) => fl);
     const issues = runsOf(c, 'with').filter((r) => r.isError || r.truncated).length;
-    return { c, b, score, before, delta, noise, effThreshold, escalated, warnings, status, eff, flags, issues, open: status === 'regressed' || status === 'noisy' || status === 'fail' || status === 'missing' || issues > 0 || flags.length > 0 };
+    const stats = caseStats(c, evidence.map((m) => m.get(key(c))), { drop: th.score, floor: opt.minBaselineRuns ?? 3 });
+    return { c, b, stats, score, before, delta, noise, effThreshold, escalated, warnings, status, eff, flags, issues, open: status === 'regressed' || status === 'noisy' || status === 'fail' || status === 'missing' || issues > 0 || flags.length > 0 };
   };
   const rows = cases.map(analyse);
   const missing = base ? [...baseMap.keys()].filter((k) => !cases.some((c) => key(c) === k)) : [];
@@ -107,18 +112,22 @@ export function renderReport(cur, base = null, opt = {}) {
     .concat(missing.map((k) => `<span class="move fail"><span class="move-case">${esc(k)}</span><span class="move-num">missing</span><span class="move-why">in baseline, not in this run</span></span>`)).join('');
 
   // ---- table ----
+  const rangeCell = (sr) => (sr && sr.low !== null ? `${f(sr.low)} to ${f(sr.high)}` : '<small>needs 3+ runs</small>');
   const effCell = (e, fmt) => e.after === null ? '—' : (e.drifted || (e.rel !== null && e.rel < -th.turns)) ? `<span class="${e.drifted ? 'warn' : 'pass'}">${fmt(e.before)} → ${fmt(e.after)}</span> <small>${pct(e.rel)}</small>` : fmt(e.after);
   const tableRows = rows.map((r) => `<tr class="st-${r.status}"><td><span class="dot ${r.status}"></span>${esc(r.status)}${r.flags.length ? ` <small class="warn">${r.flags.join(', ')}</small>` : ''}</td><td><a href="#case-${esc(key(r.c))}">${esc(key(r.c))}</a></td>
-      ${base ? `<td class="num">${f(r.before)}</td>` : ''}<td class="num"><b>${f(r.score)}</b></td>${base ? `<td class="num ${r.delta !== null && r.delta < -r.effThreshold ? 'fail' : r.delta !== null && r.delta > th.score ? 'pass' : r.status === 'noisy' ? 'warn' : ''}">${fd(r.delta)}</td><td class="num">${r.noise === null || r.noise === undefined ? '—' : `±${r.noise.toFixed(2)}`}</td>` : ''}
+      ${base ? `<td class="num">${f(r.before)}</td>` : ''}<td class="num"><b>${f(r.score)}</b></td><td class="num ci" title="${esc(LEGEND)}">${rangeCell(r.stats.score)}</td>${base ? `<td class="num ${r.delta !== null && r.delta < -r.effThreshold ? 'fail' : r.delta !== null && r.delta > th.score ? 'pass' : r.status === 'noisy' ? 'warn' : ''}">${fd(r.delta)}</td><td class="num">${r.noise === null || r.noise === undefined ? '—' : `±${r.noise.toFixed(2)}`}</td>` : ''}
       ${ablating ? `<td class="num">${f(r.c.summary?.baselineScore)}</td><td class="num">${fd(r.c.summary?.delta)}</td>` : ''}<td class="num">${effCell(r.eff.turns, (x) => String(Math.round(x)))}</td><td class="num">${effCell(r.eff.cost, (x) => '$' + Number(x).toFixed(2))}</td><td class="num">${runsOf(r.c, 'with').length}${ablating ? '+' + runsOf(r.c, 'without').length : ''}${r.issues ? ` <small class="warn" title="runs that errored or hit max_turns">${r.issues}⚠</small>` : ''}</td></tr>`)
-    .concat(missing.map((k) => `<tr class="st-missing"><td><span class="dot missing"></span>missing</td><td>${esc(k)}</td><td class="num">${f(baseMap.get(k)?.summary?.score)}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>${ablating ? '<td></td><td></td>' : ''}<td></td><td></td><td></td></tr>`)).join('');
+    .concat(missing.map((k) => `<tr class="st-missing"><td><span class="dot missing"></span>missing</td><td>${esc(k)}</td><td class="num">${f(baseMap.get(k)?.summary?.score)}</td><td class="num">—</td><td class="num"></td><td class="num">—</td><td class="num">—</td>${ablating ? '<td></td><td></td>' : ''}<td></td><td></td><td></td></tr>`)).join('');
 
   // ---- noise / baseline-quality notes (mirror the PR-comment markdown) ----
   const noisyRows = rows.filter((r) => r.status === 'noisy');
   const warnedRows = rows.filter((r) => r.warnings?.length);
+  const shortRows = rows.filter((r) => r.stats.runsNeeded?.short);
   const notes = [
     noisyRows.length ? `<p class="note"><b class="warn">⚠ ${noisyRows.length} noisy:</b> dropped past ${th.score} but within historical noise (±${Math.max(...noisyRows.map((r) => r.noise ?? 0)).toFixed(2)} over the last ${(opt.history ?? []).length} run${(opt.history ?? []).length === 1 ? '' : 's'}), warning, not a regression.</p>` : '',
     rows.filter((r) => r.escalated).map((r) => `<p class="note"><b class="fail">▼ ${esc(key(r.c))}:</b> within its ±${(r.noise ?? 0).toFixed(2)} noise band but red anyway, ${esc(r.escalated)}.</p>`).join(''),
+    `<p class="note"><b>95% range</b> (hover the column): ${esc(LEGEND.replace(/^95% range: /, ''))} Information only: no verdict here uses it.</p>`,
+    shortRows.length ? `<p class="note"><b class="warn">⚠ too few runs to trust a green:</b> ${shortRows.map((r) => esc(shortLine(key(r.c), r.stats.runsNeeded, th.score))).join(' · ')}. Set <code>runs:</code> in those cases' prompt.md, or run <code>tools/runs-needed.mjs &lt;history-dir&gt; --config &lt;plugin&gt; --write</code>.</p>` : '',
     warnedRows.length ? `<p class="note"><b class="warn">⚠ baseline quality (never red):</b> ${warnedRows.map((r) => `<code>${esc(key(r.c))}</code>, ${esc(r.warnings.join(', '))}`).join(' · ')}. More runs per case fix this; never loosen the threshold.</p>` : '',
   ].filter(Boolean).join('');
 
@@ -168,7 +177,7 @@ export function renderReport(cur, base = null, opt = {}) {
   };
   const sections = rows.map((r) => { const c = r.c; return `<section class="case st-${r.status}" id="case-${esc(key(c))}">
     <header class="case-h"><div><h2>${esc(key(c))}</h2>${c.name && c.name !== key(c) ? `<p class="case-name">${esc(c.name)}</p>` : ''}</div>
-      <div class="case-num">${spark(c)}<span class="dot ${r.status}"></span>${esc(r.status)} · <b>${f(r.score)}</b>${base && r.before !== null ? ` <span class="from">from ${f(r.before)}</span>` : ''}${r.noise !== null && r.noise !== undefined ? ` <span class="from">· noise ±${r.noise.toFixed(2)}</span>` : ''}${ablating && typeof c.summary?.delta === 'number' ? ` <span class="from">· plugin ${fd(c.summary.delta)}</span>` : ''}</div></header>
+      <div class="case-num">${spark(c)}<span class="dot ${r.status}"></span>${esc(r.status)} · <b>${f(r.score)}</b>${base && r.before !== null ? ` <span class="from">from ${f(r.before)}</span>` : ''}${r.noise !== null && r.noise !== undefined ? ` <span class="from">· noise ±${r.noise.toFixed(2)}</span>` : ''}${r.stats.pass.runs ? ` <span class="from" title="${esc(LEGEND)}">· passed ${esc(fmtPass(r.stats.pass))}</span>` : ''}${ablating && typeof c.summary?.delta === 'number' ? ` <span class="from">· plugin ${fd(c.summary.delta)}</span>` : ''}</div></header>
     <p class="tags">${(c.tags ?? []).map((t) => `<span>${esc(t)}</span>`).join('')}${(c.covers ?? []).map((t) => `<span class="covers" title="rule this case covers">${esc(t)}</span>`).join('')}</p>
     <details class="about"${r.open ? '' : ''}><summary>What this case evaluates${c.description ? `, <span class="desc">${esc(c.description)}</span>` : ''}</summary>
       ${c.prompt ? `<div class="about-b"><div class="about-h">The request given to the agent</div><pre class="prompt">${esc(c.prompt)}</pre></div>` : ''}
@@ -307,7 +316,7 @@ ${health ? `${health}\n` : ''}${discovered && discovered.length ? `<div class="x
 <li><b>A run shows <em>max_turns</em>:</b> it was cut short and scored as-is (amber) → raise that case's <code>max_turns</code>.</li>
 <li><b>You changed the setup on purpose:</b> re-run with <code>promote-baseline: true</code> so this becomes the new baseline.</li>
 </ol></details>
-<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th>${base ? '<th>Δ</th><th>noise</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>status</th><th>case</th>${base ? '<th>baseline</th>' : ''}<th>score</th><th title="${esc(LEGEND)}">95% range</th>${base ? '<th>Δ</th><th>noise</th>' : ''}${ablating ? '<th>without plugin</th><th>Δ plugin</th>' : ''}<th>turns</th><th>cost</th><th>runs</th></tr></thead><tbody>${tableRows}</tbody></table></div>
 ${notRun.length ? `<p class="notrun">Not evaluated in this run (${notRun.length} of the suite): ${notRun.map((d) => `<code>${esc(d)}</code>`).join(' ')}, a case filter, a budget stop, or cases added since. They still count in the suite column of the stamp.</p>` : ''}
 ${notes}
 <input type="checkbox" id="failing-only" hidden><label for="failing-only" class="filter"><i></i>show failing and flagged runs only</label>

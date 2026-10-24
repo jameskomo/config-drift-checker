@@ -18,7 +18,7 @@ import { loadConfig, resolveTrack } from './cdc-config.mjs';
 export function normalizeResult(j) {
   if (!j || j.schemaVersion !== 1 || !j.suite || !Array.isArray(j.cases)) return j;
   const run = (r) => ({
-    score: r.score ?? null, isError: !!r.error, numTurns: r.numTurns ?? r.turns ?? null,
+    score: r.score ?? null, passed: typeof r.passed === 'boolean' ? r.passed : null, isError: !!r.error, numTurns: r.numTurns ?? r.turns ?? null,
     // trace-keeper.mjs writes these inline after a --keep-temp run; otherwise unknown, not zero
     toolUses: r.toolUses ?? null, response: r.response ?? null, model: r.model ?? null,
     costUsd: r.costUsd ?? null,
