@@ -445,3 +445,36 @@ test('cases under a dot dir inside evals/ are checked, because the official runn
   const root = await suite({ '.staged': { 'prompt.md': PROMPT, 'graders/rubric.md': 'Pass when it works.\n' } });
   assert.ok(rulesOf(root).some((r) => r.startsWith('ERROR grader-prose-rubric .staged')), rulesOf(root).join('\n'));
 });
+
+// disallowed_tools (Claude Code 2.1.299): the runner messages below are what 2.1.310 printed for these cases
+// in a free --max-cost-usd 0 load check
+test('disallowed_tools: a known key with bare built-in names; patterns, MCP tools and a single string are errors the runner agrees with', async () => {
+  const root = await suite({
+    ok: { 'prompt.md': fm({ description: 'x', disallowed_tools: '[Agent, TaskStop]' }, 'Do it.') },
+    'yaml-ok': { 'prompt.md': PROMPT, 'case.yaml': 'schema_version: "1.1"\nname: yaml-ok\nexecution:\n  disallowed_tools:\n    - Agent\n' },
+    bad: { 'prompt.md': fm({ description: 'x', disallowed_tools: '[Agent, "Bash(rm:*)"]' }, 'Do it.') },
+    single: { 'prompt.md': fm({ description: 'x', disallowed_tools: 'Agent' }, 'Do it.') },
+    'yaml-bad': { 'prompt.md': PROMPT, 'case.yaml': 'schema_version: "1.1"\nname: yaml-bad\nexecution:\n  disallowed_tools: [mcp__x__y]\n' },
+  });
+  assert.deepEqual(rulesOf(root), [
+    'ERROR disallowed-tools-built-in bad prompt.md disallowed_tools',
+    'ERROR disallowed-tools-built-in single prompt.md disallowed_tools',
+    'ERROR disallowed-tools-built-in yaml-bad case.yaml disallowed_tools',
+  ]);
+  const s = loadSuite(root);
+  const f = diagnose(s);
+  assert.match(f[0].message, /lists Bash\(rm:\*\), which the runner cannot remove/);
+  assert.match(f[1].fix, /disallowed_tools: \[Agent\]/);
+  const out = [
+    `✗ ${s.evalDir}/bad/prompt.md: disallowed_tools: "Bash(rm:*)" cannot be disallowed: it is not a built-in tool that this version of Claude Code can remove. Use bare names such as Agent or TaskStop; patterns such as Bash(rm:*) and MCP tools are not accepted.`,
+    `✗ ${s.evalDir}/single/prompt.md: execution.disallowed_tools: Expected array, received string`,
+    `✗ ${s.evalDir}/yaml-bad/case.yaml: disallowed_tools: "mcp__x__y" cannot be disallowed: it is not a built-in tool that this version of Claude Code can remove.`,
+    '3 case file(s) failed to load',
+  ].join('\n');
+  const p = parseRunnerOutput(out, s);
+  assert.deepEqual(p.loadErrors.map((e) => `${e.case} ${e.file} ${e.key}`), ['bad prompt.md disallowed_tools', 'single prompt.md disallowed_tools', 'yaml-bad case.yaml disallowed_tools']);
+  const { mergeLive } = await import('../tools/suite-doctor.mjs');
+  const merged = mergeLive(f, p.loadErrors);
+  assert.equal(merged.length, 3, 'no unknown runner errors left over');
+  assert.ok(merged.every((x) => x.confirmedByRunner), 'the runner agrees with every finding');
+});

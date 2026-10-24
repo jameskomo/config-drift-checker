@@ -345,3 +345,43 @@ test('arm: with-only (official) is scored in the with arm only, like the older a
   assert.equal(w.scored, true);
   assert.equal(wo.scored, false, 'not scored in the without arm');
 });
+
+// disallowed_tools / --disallow-tools (Claude Code 2.1.299): the official runner removes these built-in tools
+// from Claude in a case even when granted; the shim does the same through claude's --disallowedTools
+const argList = (call, flag) => { const i = call.args.indexOf(flag); if (i < 0) return null; const out = []; for (let k = i + 1; k < call.args.length && !call.args[k].startsWith('--'); k++) out.push(call.args[k]); return out; };
+
+test('disallowed_tools: prompt.md and case.yaml lists merge with --disallow-tools and reach claude as --disallowedTools', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  const p = path.join(plugin, 'evals/case-a/prompt.md');
+  await fs.writeFile(p, (await fs.readFile(p, 'utf8')).replace('max_turns: 4\n', 'max_turns: 4\nallowed_tools: [Bash]\ndisallowed_tools: [Agent]\n'));
+  await fs.writeFile(path.join(plugin, 'evals/case-a/case.yaml'), 'schema_version: "1.1"\nname: case-a\nexecution:\n  disallowed_tools:\n    - TaskStop\n    - Agent\n');
+  const { report, calls } = await runShim(plugin, ['--disallow-tools', 'WebFetch', 'Agent']);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(argList(calls[0], '--disallowedTools'), ['Agent', 'TaskStop', 'WebFetch'], 'case lists first, then the flag, no repeats');
+  assert.deepEqual(argList(calls[0], '--allowedTools'), ['Bash'], 'grants are untouched; the deny list wins inside claude');
+  assert.deepEqual(report.cases[0].disallowedTools, ['Agent', 'TaskStop', 'WebFetch']);
+  assert.equal(report.cases[0].arms.with[0].score, 1);
+  // without the flag only the case's own lists apply
+  const after = await runShim(plugin, []);
+  assert.deepEqual(argList(after.calls[0], '--disallowedTools'), ['Agent', 'TaskStop']);
+});
+
+test('disallowed_tools: no declaration and no flag adds nothing to the claude call or the report', async () => {
+  const { report, calls } = await runShim(await makePlugin({ runs: 1 }));
+  assert.equal(argList(calls[0], '--disallowedTools'), null);
+  assert.ok(!('disallowedTools' in report.cases[0]));
+});
+
+test('disallowed_tools: a pattern or MCP tool stops that case loading, as in the official runner; a bad flag stops everything', async () => {
+  const plugin = await makePlugin({ runs: 1 });
+  const p = path.join(plugin, 'evals/case-a/prompt.md');
+  await fs.writeFile(p, (await fs.readFile(p, 'utf8')).replace('max_turns: 4\n', 'max_turns: 4\ndisallowed_tools: [Agent, "Bash(rm:*)"]\n'));
+  const { report, calls } = await runShim(plugin);
+  assert.equal(calls.length, 0, 'no agent run');
+  assert.match(report.cases[0].loadError, /^disallowed_tools: Bash\(rm:\*\) cannot be disallowed: it is not a built-in tool\./);
+  assert.equal(report.cases[0].summary.score, 0, 'scored like any case the runner cannot load');
+  const bad = await runShim(await makePlugin({ runs: 1 }), ['--disallow-tools', 'mcp__x__y']);
+  assert.equal(bad.status, 1);
+  assert.equal(bad.calls.length, 0);
+  assert.match(bad.stderr, /--disallow-tools: mcp__x__y cannot be disallowed: .*No case was run\./);
+});

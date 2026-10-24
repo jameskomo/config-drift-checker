@@ -15,10 +15,18 @@ import { loadConfig, resolveTrack } from './cdc-config.mjs';
 // shim's 1.1 shape so diff/report/dashboard read either. The native runner keeps tool calls and
 // the response in a temp trace that is gone by the time we read the JSON, so toolUses/response
 // stay null here: unknown, not zero — refusal detection needs inline evidence and skips these runs.
+//
+// A run that errored with a 0 score and no grader results was never graded: since Claude Code 2.1.299 that is
+// how the runner records a run that ended on an API error (rate or usage limit, refused request), and older
+// releases record a run they refused to start the same way. Its 0 is not a measurement, so it scores null
+// here and counts as errored, and the case and overall scores are re-taken over the graded runs only;
+// otherwise one rate-limited run would read as a regression.
+export const ungraded = (r) => !!r?.error && (r.endedOnApiError === true || (r.score === 0 && !(r.graders ?? []).length && !r.aborted));
 export function normalizeResult(j) {
   if (!j || j.schemaVersion !== 1 || !j.suite || !Array.isArray(j.cases)) return j;
+  const mean = (xs) => { const a = xs.filter((x) => typeof x === 'number'); return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; };
   const run = (r) => ({
-    score: r.score ?? null, passed: typeof r.passed === 'boolean' ? r.passed : null, isError: !!r.error, numTurns: r.numTurns ?? r.turns ?? null,
+    score: ungraded(r) ? null : r.score ?? null, passed: ungraded(r) ? null : typeof r.passed === 'boolean' ? r.passed : null, isError: !!r.error, ...(ungraded(r) && { ungraded: true }), numTurns: r.numTurns ?? r.turns ?? null,
     // trace-keeper.mjs writes these inline after a --keep-temp run; otherwise unknown, not zero
     toolUses: r.toolUses ?? null, response: r.response ?? null, model: r.model ?? null,
     costUsd: r.costUsd ?? null,
@@ -29,17 +37,24 @@ export function normalizeResult(j) {
     schemaVersion: '1.1', source: 'claude-plugin-eval', generatedAt: j.startedAt ?? null, preflight: j.preflight ?? null,
     track: j.track ?? null, harness: j.claudeVersion ? { name: 'claude-code', version: j.claudeVersion } : null,
     suite: { name: j.suite.root ? path.basename(j.suite.root) : 'claude-plugin-eval', ablation: j.suite.ablation ?? null },
-    cases: j.cases.map((c) => ({
-      dir: String(c.dir ?? c.name ?? '').split('/').pop(), name: c.name ?? c.dir,
-      tags: c.tags ?? [], covers: c.covers ?? [], graders: c.graders ?? [],
-      arms: Object.fromEntries(Object.entries(c.arms ?? {}).map(([a, rs]) => [a, (rs ?? []).map(run)])),
-      summary: { score: c.aggregates?.score ?? null },
-    })),
+    cases: j.cases.map((c) => {
+      const arms = Object.fromEntries(Object.entries(c.arms ?? {}).map(([a, rs]) => [a, (rs ?? []).map(run)]));
+      const rescored = (c.arms?.with ?? []).some(ungraded);
+      return {
+        dir: String(c.dir ?? c.name ?? '').split('/').pop(), name: c.name ?? c.dir,
+        tags: c.tags ?? [], covers: c.covers ?? [], graders: c.graders ?? [], arms,
+        summary: { score: rescored ? mean((arms.with ?? []).map((r) => r.score)) : c.aggregates?.score ?? null },
+        ...(rescored && { rescored: true }),
+      };
+    }),
     aggregates: (() => {
       const all = j.cases.flatMap((c) => Object.values(c.arms ?? {}).flat()).filter(Boolean);
-      const errored = all.filter((r) => r.error);
+      const errored = all.filter((r) => r.error), skippedGrading = all.filter(ungraded).length;
       const first = errored[0]?.error ? String(errored[0].error).replace(/\s+/g, ' ').slice(0, 220) : null;
-      return { overallScore: j.aggregates?.overallScore ?? null, totalRuns: all.length, erroredRuns: errored.length,
+      const rescored = j.cases.some((c) => (c.arms?.with ?? []).some(ungraded));
+      const caseScores = () => j.cases.map((c) => (c.arms?.with ?? []).some(ungraded) ? mean((c.arms.with ?? []).map((r) => (ungraded(r) ? null : r.score))) : c.aggregates?.score ?? null);
+      return { overallScore: rescored ? mean(caseScores()) : j.aggregates?.overallScore ?? null, totalRuns: all.length, erroredRuns: errored.length,
+        ...(skippedGrading && { ungradedRuns: skippedGrading }),
         partialReason: errored.length ? `${errored.length} of ${all.length} agent runs errored: ${first}` : null, costUsd: j.costUsd ?? null };
     })(),
   };

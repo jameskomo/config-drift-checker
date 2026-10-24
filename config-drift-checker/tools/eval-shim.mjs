@@ -9,6 +9,8 @@
 //        [--budget <usd>]               stop starting new agent runs once this much has been spent in this invocation
 //        [--concurrency n | -j n]       run up to n agent runs at once (1-8, default 1); results keep case and run order
 //        [--mocks record|off] [--allow-real-servers]   MCP mocks from <eval dir>/mocks/ (official format, default record)
+//        [--disallow-tools <tools...>]  built-in tools kept from Claude in every case, added to each case's own
+//                                       disallowed_tools (prompt.md, or execution: in case.yaml), as in the official runner
 //        [--output-dir <dir>] [--eval-dir <dir>] [--scaffold] [--no-isolate] [--no-safety-net] [--verbose]
 //        [--regrade <aggregate-result.json>] [--regrade-llm]   re-score saved runs with the current graders (no agent calls;
 //                                                          llm graders keep their saved verdict unless --regrade-llm)
@@ -35,10 +37,11 @@ import { renderReport } from './eval-report.mjs';
 import { loadConfig, resolveTrack } from './cdc-config.mjs';
 import { globToRe } from './cc-release.mjs';
 import { ABORT_PREFIX, declaredServers, loadMocks, planMocks } from './eval-mocks.mjs';
+import { executionEntries, BARE_TOOL } from './suite-doctor.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
-const opt = { case: null, runs: null, model: null, judgeModel: null, ablation: 'with-without', json: null, outputDir: null, isolate: true, verbose: false, scaffold: false, evalDir: null, safetyNet: true, regrade: null, regradeLlm: false, track: null, expand: null, budget: null, agent: null, concurrency: 1, mocks: 'record', allowRealServers: false };
+const opt = { case: null, runs: null, model: null, judgeModel: null, ablation: 'with-without', json: null, outputDir: null, isolate: true, verbose: false, scaffold: false, evalDir: null, safetyNet: true, regrade: null, regradeLlm: false, track: null, expand: null, budget: null, agent: null, concurrency: 1, mocks: 'record', allowRealServers: false, disallowTools: [] };
 let pluginDir = null;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i], next = () => argv[++i];
@@ -54,6 +57,8 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--concurrency' || a === '-j') opt.concurrency = Number(next());
   else if (a === '--mocks') opt.mocks = next();
   else if (a === '--allow-real-servers') opt.allowRealServers = true;
+  // variadic like the official flag; a path (it has a / or a .) ends the list, so the plugin dir may follow it
+  else if (a === '--disallow-tools') { while (argv[i + 1] !== undefined && !/^-|[/.]/.test(argv[i + 1])) opt.disallowTools.push(...next().split(',').filter(Boolean)); }
   else if (a === '--json') opt.json = argv[i + 1] && !argv[i + 1].startsWith('--') ? next() : '-';
   else if (a === '--output-dir') opt.outputDir = next();
   else if (a === '--no-isolate') opt.isolate = false;
@@ -69,6 +74,9 @@ for (let i = 0; i < argv.length; i++) {
 if (!pluginDir) die('usage: eval-shim.mjs <plugin-dir> [options]');
 if (!Number.isInteger(opt.concurrency) || opt.concurrency < 1 || opt.concurrency > 8) die('--concurrency must be a whole number from 1 to 8');
 if (!['record', 'off'].includes(opt.mocks)) die(`--mocks must be record or off, not ${opt.mocks}`);
+// disallowed_tools takes bare built-in tool names only; the official runner refuses anything else with this message
+const notDisallowable = (bad) => `${bad.join(', ')} cannot be disallowed: ${bad.length === 1 ? 'it is not a built-in tool' : 'they are not built-in tools'}. Use bare names such as Agent or TaskStop; patterns such as Bash(rm:*) and MCP tools are not accepted.`;
+{ const bad = opt.disallowTools.filter((t) => !BARE_TOOL.test(t)); if (bad.length) die(`--disallow-tools: ${notDisallowable(bad)} No case was run.`); }
 function die(m) { console.error(m); process.exit(1); }
 const log = (...m) => { if (opt.json !== '-') console.error(...m); };
 
@@ -174,10 +182,12 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
     const { meta: gm, body: gb } = parseFrontmatter(await fs.readFile(path.join(gdir, g), 'utf8'));
     graders.push({ name: g.replace(/\.md$/, ''), rubric: gb, ...gm });
   }
-  let scaffoldScript = null, scaffoldPath = null;
+  let scaffoldScript = null, scaffoldPath = null, yamlDisallowed;
   const casePath = path.join(evalDir, d.name, 'case.yaml');
   if (existsSync(casePath)) {
     const cy = await fs.readFile(casePath, 'utf8');
+    const dx = executionEntries(cy.split(/\r?\n/)).find((e) => e.key === 'disallowed_tools');
+    if (dx) yamlDisallowed = dx.value;
     const file = cy.match(/scaffold_script:[ \t]*["']?([^\s"'|>]+\.(?:sh|bash))["']?[ \t]*$/m);
     const inline = cy.match(/scaffold_script:\s*\|\s*\n((?:[ \t]+.*\n?)+)/);
     if (file) {
@@ -189,7 +199,14 @@ for (const d of (await fs.readdir(evalDir, { withFileTypes: true })).filter((e) 
       log(`  ${d.name}: inline scaffold_script is the old form; claude plugin eval now wants a script file (context.scaffold_script: scaffold.sh)`);
     }
   }
-  cases.push({ scaffoldScript, scaffoldPath, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
+  // disallowed_tools from prompt.md and case.yaml's execution: (merged, as the official runner does), plus
+  // --disallow-tools; a declaration the official runner would refuse stops the case loading here too
+  const declaredOff = [meta.disallowed_tools, yamlDisallowed].filter((v) => v !== undefined);
+  const caseOff = declaredOff.filter(Array.isArray).flat().map(String);
+  const badOff = caseOff.filter((t) => !BARE_TOOL.test(t));
+  const offError = declaredOff.some((v) => !Array.isArray(v)) ? 'disallowed_tools: expected a list of tool names, got a single value'
+    : badOff.length ? `disallowed_tools: ${notDisallowable(badOff)}` : null;
+  cases.push({ ...(offError && { loadError: offError }), disallowedTools: [...new Set([...caseOff, ...opt.disallowTools])], scaffoldScript, scaffoldPath, description: meta.description ?? null, dir: d.name, name: meta.name ?? d.name, tags: meta.tags ?? [], covers: (await readCovers(path.join(evalDir, d.name))) ?? meta.covers ?? [], runs: opt.runs ?? track.runs ?? meta.runs ?? 3, maxTurns: meta.max_turns ?? 10, timeout: (meta.timeout_seconds ?? 300) * 1000, allowedTools: meta.allowed_tools ?? [], model: opt.model ?? meta.model ?? track.model, prompt: body, graders });
 }
 if (!cases.length) die('No eval cases found');
 
@@ -341,6 +358,7 @@ async function runAgent(c, arm) {
   if (arm === 'with') args.push('--plugin-dir', await pluginFor(c));
   const allowed = [...c.allowedTools, ...mocked.flatMap((p) => p.fullNames)]; // mocked tools need no grant, as in the official runner
   if (allowed.length) args.push('--allowedTools', ...allowed);
+  if (c.disallowedTools.length) args.push('--disallowedTools', ...c.disallowedTools); // removed even when granted, as in the official runner
   const env = { ...process.env, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' };
   delete env.ANTHROPIC_MODEL;
   if (existsSync(path.join(ws, '.eval-bin'))) env.PATH = path.join(ws, '.eval-bin') + path.delimiter + (env.PATH ?? '');
@@ -584,7 +602,7 @@ async function runGroup(gi, c, arm, saved) {
 
 const groups = [];
 const entries = cases.map((c) => {
-  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, focus: g.focus ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), arms: {}, summary: {} };
+  const entry = { name: c.name, dir: c.dir, tags: c.tags, covers: c.covers, description: c.description, prompt: c.prompt, scaffold: c.scaffoldScript, graders: c.graders.map((g) => ({ name: g.name, type: g.type, rubric: g.rubric, target: g.target ?? null, focus: g.focus ?? null, pattern: g.pattern ?? null, match: g.match ?? null, tool: g.tool ?? null, input_match: g.input_match ?? null, min: g.min ?? null, max: g.max ?? null, path: g.path ?? null, criteria: g.criteria ?? null, arm: g.arm ?? null })), ...(c.disallowedTools.length && { disallowedTools: c.disallowedTools }), arms: {}, summary: {} };
   if (c.unsupported || c.loadError) { // never run: unknown (unsupported here) or 0 (the official runner cannot load it either)
     if (c.unsupported) entry.unsupported = c.unsupported; else entry.loadError = c.loadError;
     log(`  ▸ ${c.dir}: ${c.unsupported ? 'UNSUPPORTED, ' + c.unsupported : 'LOAD ERROR, ' + c.loadError}`);

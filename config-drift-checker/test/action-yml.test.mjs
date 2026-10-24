@@ -38,6 +38,15 @@ test('action.yml: every steps.<id> reference names a step that exists', { skip }
   for (const m of text.matchAll(/steps\.([\w-]+)\.(outputs|outcome)/g)) assert.ok(ids.has(m[1]), `unknown step ${m[1]}`);
 });
 
+test('action.yml: disallow-tools reaches the official runner only when its help lists the flag, and the bundled runner always', { skip }, () => {
+  assert.match(text, /^  disallow-tools: +\{ description: '[^\n]*', default: '' \}$/m);
+  const run = text.split(/\n(?=\s*- (?:id|uses):)/).find((s) => s.includes('- id: run\n')) ?? '';
+  assert.match(run, /DISALLOW: \$\{\{ inputs\.disallow-tools \}\}/);
+  assert.match(run, /if grep -q -- '--disallow-tools' <<< "\$runner_help"; then off_args=\(--disallow-tools "\$\{off\[@\]\}"\)/);
+  assert.match(run, /"\$\{conc_args\[@\]\}" "\$\{off_args\[@\]\}" --allow-tools Bash Write Edit/);
+  assert.equal(run.match(/"\$\{shim_off_args\[@\]\}" --output-dir/g)?.length, 2, 'both bundled-runner calls (fallback and shim track)');
+});
+
 test('action.yml: the free floor runs only on a skip, once per version, and stores a floor record', { skip }, () => {
   const step = (id) => text.split(/\n(?=\s*- (?:id|uses):)/).find((s) => s.includes(`- id: ${id}\n`)) ?? '';
   assert.match(step('floor-plan'), /if: steps\.gate\.outputs\.skipped == 'true' && inputs\.preflight != 'off'/);

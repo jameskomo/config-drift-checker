@@ -29,7 +29,8 @@ import { fileURLToPath } from 'node:url';
 import { loadMockRoots, loadMocks, declaredServers, planMocks } from './eval-mocks.mjs';
 
 // ---------- the official format (Claude Code 2.1.287) ----------
-export const PROMPT_KEYS = ['schema_version', 'name', 'description', 'tags', 'plugins', 'runs', 'expected_outcome', 'model', 'max_turns', 'timeout_seconds', 'allowed_tools', 'artifact_publish', 'growthbook_overrides', 'append_system_prompt', 'env'];
+// disallowed_tools arrived in 2.1.299 (runners before it reject the key; the live load check says so)
+export const PROMPT_KEYS = ['schema_version', 'name', 'description', 'tags', 'plugins', 'runs', 'expected_outcome', 'model', 'max_turns', 'timeout_seconds', 'allowed_tools', 'disallowed_tools', 'artifact_publish', 'growthbook_overrides', 'append_system_prompt', 'env'];
 export const GRADER_KEYS = {
   regex: ['pattern', 'flags', 'match', 'target'],
   tool_used: ['tool', 'input_match', 'min', 'max'],
@@ -196,6 +197,23 @@ function readCoversFile(p) {
   return items.map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
 }
 const asList = (v) => (Array.isArray(v) ? v : v === '' || v === null || v === undefined ? [] : [v]).map(String);
+
+// The keys under case.yaml's execution: block (prompt, max_turns, allowed_tools, disallowed_tools, ...).
+export function executionEntries(lines) {
+  const ex = scanKeys(lines).find((e) => e.key === 'execution' && e.raw === '');
+  return ex ? scanKeys(dedent(lines.slice(ex.start + 1, ex.end))) : [];
+}
+
+// disallowed_tools (2.1.299+): a list of bare built-in tool names. The runner refuses the whole case for a
+// pattern such as Bash(rm:*), an MCP tool, or a name it does not know. Where each declaration sits:
+export function disallowedDeclarations(c) {
+  const out = [];
+  if (c.prompt && 'disallowed_tools' in c.prompt.meta) out.push({ file: 'prompt.md', path: c.prompt.path, value: c.prompt.meta.disallowed_tools });
+  const e = c.caseYaml && executionEntries(c.caseYaml.lines).find((x) => x.key === 'disallowed_tools');
+  if (e) out.push({ file: 'case.yaml', path: c.caseYaml.path, value: e.value });
+  return out;
+}
+export const BARE_TOOL = /^[A-Z][A-Za-z0-9]*$/;
 
 // ---------- the rules: one entry per known breaking change ----------
 // detect(c) returns findings { file, path, key, message, fix, fixable, ...data };
@@ -365,6 +383,20 @@ export const RULES = [
     },
   },
   {
+    id: 'disallowed-tools-built-in',
+    level: 'ERROR',
+    description: 'disallowed_tools is a list of bare built-in tool names such as Agent or TaskStop; a pattern, an MCP tool or a single string stops the case loading',
+    detect: (c) => disallowedDeclarations(c).flatMap((d) => {
+      if (!Array.isArray(d.value)) return [{ file: d.file, path: d.path, key: 'disallowed_tools',
+        message: `disallowed_tools is ${d.value === null || d.value === '' ? 'empty' : `the single value ${d.value}`}, not a list`,
+        fix: `write it as a list: disallowed_tools: [${d.value === null || d.value === '' ? 'Agent' : d.value}]`, fixable: false }];
+      const bad = d.value.map(String).filter((t) => !BARE_TOOL.test(t));
+      return bad.length ? [{ file: d.file, path: d.path, key: 'disallowed_tools',
+        message: `disallowed_tools lists ${bad.join(', ')}, which the runner cannot remove (only bare built-in tool names; patterns such as Bash(rm:*) and MCP tools are refused)`,
+        fix: 'use bare names such as Agent or TaskStop; to keep an MCP tool or a command pattern away, leave it out of allowed_tools instead', fixable: false }] : [];
+    }),
+  },
+  {
     id: 'mock-files',
     level: 'ERROR',
     description: 'MCP mock files (mocks/<server>/<tool>.md, _server.md, _tools.json) must use the keys, types and /regex/ dialect the runner accepts; a bad one stops the case loading',
@@ -443,6 +475,8 @@ const KEY_PATTERNS = [
   [/missing required field (\w+)/, 1],
   [/graders\.\d+\.(\w+):/, 1],
   [/^\s*(\w+): Required/, 1],
+  [/^(disallowed_tools): /, 1],
+  [/^execution\.(\w+): /, 1],
 ];
 
 // Turn the runner's "✗ <path>: <why>" and "⚠ case ..." lines into structured findings.
