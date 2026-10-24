@@ -221,8 +221,21 @@ export function loadHistory(dir) {
 }
 
 const pctOf = (before, after) => (before ? ((after - before) / before) * 100 : null);
-const change = (before, after) => ({ before, after, delta: after - before, pct: pctOf(before, after) });
+export const change = (before, after) => ({ before, after, delta: after - before, pct: pctOf(before, after) });
 const ckey = (c) => `${c.kind}:${c.name}`;
+
+// Components that moved between two measurements (added, removed, or a different token count), biggest first.
+export function diffComponents(before, after) {
+  const ca = new Map(before.map((c) => [ckey(c), c])), cb = new Map(after.map((c) => [ckey(c), c]));
+  const moved = [];
+  for (const k of new Set([...ca.keys(), ...cb.keys()])) {
+    const x = ca.get(k), y = cb.get(k), c = y ?? x;
+    const dA = (y?.alwaysOn ?? 0) - (x?.alwaysOn ?? 0), dI = (y?.onInvoke ?? 0) - (x?.onInvoke ?? 0);
+    if (!dA && !dI && x && y) continue;
+    moved.push({ kind: c.kind, name: c.name, status: !x ? 'added' : !y ? 'removed' : 'changed', alwaysOn: change(x?.alwaysOn ?? 0, y?.alwaysOn ?? 0), onInvoke: change(x?.onInvoke ?? 0, y?.onInvoke ?? 0) });
+  }
+  return moved.sort((p, q) => Math.abs(q.alwaysOn.delta) - Math.abs(p.alwaysOn.delta) || Math.abs(q.onInvoke.delta) - Math.abs(p.onInvoke.delta) || p.name.localeCompare(q.name));
+}
 
 export function trend(runs, { movers = 5 } = {}) {
   const byVersion = new Map();
@@ -231,15 +244,7 @@ export function trend(runs, { movers = 5 } = {}) {
   const steps = [];
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1], b = points[i];
-    const ca = new Map(a.run.components.map((c) => [ckey(c), c])), cb = new Map(b.run.components.map((c) => [ckey(c), c]));
-    const moved = [];
-    for (const k of new Set([...ca.keys(), ...cb.keys()])) {
-      const x = ca.get(k), y = cb.get(k), c = y ?? x;
-      const dA = (y?.alwaysOn ?? 0) - (x?.alwaysOn ?? 0), dI = (y?.onInvoke ?? 0) - (x?.onInvoke ?? 0);
-      if (!dA && !dI && x && y) continue;
-      moved.push({ kind: c.kind, name: c.name, status: !x ? 'added' : !y ? 'removed' : 'changed', alwaysOn: change(x?.alwaysOn ?? 0, y?.alwaysOn ?? 0), onInvoke: change(x?.onInvoke ?? 0, y?.onInvoke ?? 0) });
-    }
-    moved.sort((p, q) => Math.abs(q.alwaysOn.delta) - Math.abs(p.alwaysOn.delta) || Math.abs(q.onInvoke.delta) - Math.abs(p.onInvoke.delta) || p.name.localeCompare(q.name));
+    const moved = diffComponents(a.run.components, b.run.components);
     steps.push({ from: a.claudeVersion, to: b.claudeVersion, alwaysOn: change(a.alwaysOn, b.alwaysOn), onInvoke: change(a.onInvoke, b.onInvoke),
       comparable: a.source === b.source, sameFiles: !!a.fingerprint && a.fingerprint === b.fingerprint, movers: moved.slice(0, movers), moversTotal: moved.length });
   }

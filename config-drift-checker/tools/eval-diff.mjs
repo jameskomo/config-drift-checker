@@ -7,6 +7,8 @@
 //        [--fail-on score,turns,cost,duration]   which drifts turn the exit code red (default: score)
 //        [--history <dir>]   newest N (noise.history_runs, default 10) timestamped *.json results → per-case noise band
 //        [--report-url <url>]   case names in the markdown table link to <url>#case-<dir> (the run's HTML report)
+//        [--case <glob>]   the run evaluated only these cases (a PR selection from pr-impact.mjs): baseline cases
+//                          outside the glob are not compared and not "missing"; a matching one that is absent still is
 //
 // Score drift: a case dropped by more than --threshold, or a baseline case is missing → "regressed".
 // A drop past the threshold but inside the case's noise band (max−min of with-arm run scores across
@@ -27,10 +29,11 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { caseScore, withRuns, median, caseMap, resolveThresholds, loadHistory, classifyCase, baselineWarnings, normalizeResult } from './eval-classify.mjs';
 import { caseStats, fmtRange, fmtPass, shortLine, LEGEND } from './eval-stats.mjs';
+import { globToRe } from './cc-release.mjs';
 
 const argv = process.argv.slice(2);
 const files = [];
-const opt = { threshold: null, turns: null, cost: null, duration: null, failOn: null, md: null, json: null, config: null, history: null, reportUrl: null };
+const opt = { threshold: null, turns: null, cost: null, duration: null, failOn: null, md: null, json: null, config: null, history: null, reportUrl: null, case: null };
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--threshold') opt.threshold = Number(argv[++i]);
@@ -43,11 +46,16 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--json') opt.json = argv[++i];
   else if (a === '--history') opt.history = path.resolve(argv[++i]);
   else if (a === '--report-url') opt.reportUrl = argv[++i];
+  else if (a === '--case') opt.case = argv[++i];
   else if (!a.startsWith('--')) files.push(a);
   else { console.error(`unknown option ${a}`); process.exit(2); }
 }
 if (files.length !== 2) { console.error('usage: eval-diff.mjs <baseline.json> <current.json> [--threshold 0.15] [--config <plugin-dir>] [--fail-on score,turns] [--history dir] [--md out.md] [--json out.json]'); process.exit(2); }
 const [base, cur] = await Promise.all(files.map(async (f) => normalizeResult(JSON.parse(await fs.readFile(f, 'utf8')))));
+// a case selection: only what the run was asked to evaluate is compared
+const inSelection = opt.case ? ((re) => (c) => re.test(c.dir ?? c.name ?? ''))(globToRe(opt.case)) : () => true;
+const outside = (base.cases ?? []).filter((c) => !inSelection(c)).length;
+if (opt.case) { base.cases = (base.cases ?? []).filter(inSelection); cur.cases = (cur.cases ?? []).filter(inSelection); }
 
 // thresholds: flag > .cdc.yml > default; history: newest N same-track results, the current file excluded
 const { th, failOn, minBaselineRuns, historyRuns } = resolveThresholds(opt.config, cur.track, opt);
@@ -175,7 +183,7 @@ const md = [
     ...(short.length ? ['', short.map((r) => `_${shortLine(`\`${r.case}\``, r.stats.runsNeeded, th.score)}_`).join('\n'), '', `_Set \`runs:\` in those cases' prompt.md, or write the suggestions with \`tools/runs-needed.mjs <history-dir> --config <plugin> --write\`._`] : [])] : []),
   ...(warned.length ? ['', `**⚠ baseline quality (never red):** ${warned.map((r) => `\`${r.case}\`, ${r.warnings.join(', ')}`).join(' · ')}. More runs per case fix this; never loosen the threshold.`] : []),
   '',
-  `<sub>baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]} · fail on: ${[...failOn].join(', ')} · efficiency thresholds: turns ${th.turns}, cost ${th.cost}, duration ${th.duration}</sub>`,
+  `<sub>${opt.case ? `case selection \`${opt.case}\`: ${outside} baseline case${outside === 1 ? '' : 's'} outside it not compared · ` : ''}baseline: ${base.generatedAt ?? files[0]} · current: ${cur.generatedAt ?? files[1]} · fail on: ${[...failOn].join(', ')} · efficiency thresholds: turns ${th.turns}, cost ${th.cost}, duration ${th.duration}</sub>`,
 ].join('\n');
 
 console.log(md);
