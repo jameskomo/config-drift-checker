@@ -28,9 +28,10 @@ export function rulesFromMarkdown(text, scope, source) {
     const h = l.match(/^#{1,6}\s+(.*)$/); if (h) { heading = h[1].trim(); continue; }
     const b = l.match(/^\s*(?:[-*+]|\d+[.)])\s+(.+)$/); if (!b) continue;
     let textLine = b[1].trim();
+    const start = i + 1; // the bullet's first line; `line` is its last when it wraps
     while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1]) && !/^\s*(?:[-*+]|\d+[.)])\s+/.test(lines[i + 1]) && !/^\s*(```|~~~)/.test(lines[i + 1])) textLine += ' ' + lines[++i].trim(); // wrapped bullet
     if (textLine.split(/\s+/).length < 3) continue; // a bare link or a one-word list item is not a rule
-    out.push({ scope, source, line: i + 1, heading, text: textLine });
+    out.push({ scope, source, line: i + 1, start, heading, text: textLine });
   }
   return out;
 }

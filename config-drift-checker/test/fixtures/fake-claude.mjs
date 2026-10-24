@@ -12,11 +12,14 @@
 //   FAKE_CLAUDE_EARLY_ACCESS   when set, `claude plugin eval` answers like a release without the official runner
 //   FAKE_CLAUDE_SLOW     "<text>:<ms>": an agent call whose prompt contains <text> waits <ms> before answering
 //   FAKE_CLAUDE_ECHO     when set, the reply quotes the prompt's first line, so a test can tell runs apart
+//   FAKE_CLAUDE_REQUIRE  comma-separated "<marker>" or "<prompt text>:<marker>": an agent call whose prompt contains
+//                        <prompt text> (every call when omitted) answers without "DONE" unless <marker> appears in a
+//                        file of its --plugin-dir (evals/ excluded), so a sabotaged setup copy can be caught
 //   FAKE_CLAUDE_MCP      JSON list of { tool, input }: MCP calls to make, for real, against the servers in
 //                        --mcp-config (spawned and spoken to over stdio); a tool with no server is "unavailable"
 // Every agent call appends a start record and a done record to calls.jsonl; call indices are claimed
 // atomically, so concurrent calls never share one.
-import { promises as fs, existsSync, readFileSync, appendFileSync } from 'node:fs';
+import { promises as fs, existsSync, readFileSync, appendFileSync, readdirSync, statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
@@ -57,7 +60,20 @@ if (list('FAKE_CLAUDE_ERROR').includes(n)) {
   process.exit(1);
 }
 const failModel = (process.env.FAKE_CLAUDE_FAIL_MODEL ?? '').split(',').filter(Boolean).includes(args[args.indexOf('--model') + 1]);
-let text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel ? 'I could not finish this.' : 'DONE — the task is complete.';
+const pluginText = (dir) => { // every file of the loaded plugin except its eval suite, as one string
+  if (!dir) return '';
+  let acc = '';
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (!['evals', '.git', 'node_modules'].includes(e.name)) acc += pluginText(p); }
+    else if (e.isFile() && statSync(p).size < 1_000_000) acc += readFileSync(p, 'utf8') + '\n';
+  }
+  return acc;
+};
+const required = (process.env.FAKE_CLAUDE_REQUIRE ?? '').split(',').filter(Boolean).map((r) => { const i = r.indexOf(':'); return i < 0 ? { when: '', marker: r } : { when: r.slice(0, i), marker: r.slice(i + 1) }; }).filter((r) => prompt.includes(r.when));
+const loaded = required.length ? pluginText(args.includes('--plugin-dir') ? args[args.indexOf('--plugin-dir') + 1] : null) : '';
+const missingMarker = required.some((r) => !loaded.includes(r.marker));
+let text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel || missingMarker ? 'I could not finish this.' : 'DONE — the task is complete.';
 if (process.env.FAKE_CLAUDE_ECHO) text += ` [${prompt.split('\n')[0]}]`;
 out({ type: 'system', subtype: 'init', model });
 // MCP calls: initialize, tools/list (the tool must be listed), tools/call, exactly as a client would
