@@ -192,6 +192,16 @@ runs:
         if [ "$(uname -s)" = "Linux" ] && ! command -v bwrap >/dev/null 2>&1; then
           sudo apt-get install -y -qq bubblewrap socat >/dev/null 2>&1 || echo "::notice::could not install bubblewrap; the official runner may fall back to the bundled one"
         fi
+        # Ubuntu 24.04 (GitHub's ubuntu-latest) restricts unprivileged user namespaces through AppArmor, so
+        # bubblewrap cannot start and Claude Code 2.1.310+ refuses every shell-granting run. Lift it for this
+        # job only (the runner is throwaway), the fix Claude Code's own error message names, then prove it.
+        if [ "$(uname -s)" = "Linux" ] && command -v bwrap >/dev/null 2>&1; then
+          if [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" = "1" ]; then
+            sudo sysctl -q -w kernel.apparmor_restrict_unprivileged_userns=0 >/dev/null 2>&1 || true
+          fi
+          if bwrap --unshare-user --unshare-net --dev-bind / / /bin/true 2>/dev/null; then echo "sandbox=ok" >> "$GITHUB_OUTPUT"
+          else echo "sandbox=unavailable" >> "$GITHUB_OUTPUT"; echo "::warning::bubblewrap cannot create a sandbox on this runner, so the official runner will refuse shell-granting cases and the bundled runner will run them instead"; fi
+        fi
         echo "version=$(claude --version | awk '{print $1}')" >> "$GITHUB_OUTPUT"
         echo "requested=$v" >> "$GITHUB_OUTPUT"
 
@@ -349,12 +359,12 @@ runs:
             reason=$(grep '^reason=' <<< "$health" | cut -d= -f2-)
             echo "::warning::the official runner on Claude Code $CC_VERSION gave no usable result ($reason); falling back to the bundled runner for this run"
             rm -f "$out/aggregate-result.json"
-            RUNNER=shim
+            RUNNER=shim; export RUNNER_FALLBACK="$reason"
             node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" "${case_args[@]}" --ablation "$ABLATION" --track "$TRACK" \
               --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" "${shim_conc_args[@]}" "${shim_off_args[@]}" --output-dir "$out" || true
           fi
           # the official runner does not know tracks yet: stamp provenance so diff/store/promote can reason about it
-          OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
+          OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};if(process.env.RUNNER_FALLBACK)j.runnerFallback={from:"official",claudeCode:process.env.CC_VERSION,reason:process.env.RUNNER_FALLBACK};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
         else
           model_args=(); [ -n "$MODEL_INPUT" ] && model_args=(--model "$MODEL_INPUT")
           node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" "${case_args[@]}" --ablation "$ABLATION" --track "$TRACK" \

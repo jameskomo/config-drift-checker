@@ -178,3 +178,11 @@ test('setup health: finding text is HTML-escaped', () => {
   assert.match(html, /Fix: &lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(html, /not confirmed: &lt;svg onload=alert\(1\)&gt;/);
 });
+
+test('a run the official runner refused says so in the headline, naming the release and the reason', async () => {
+  const { renderReport } = await import('../tools/eval-report.mjs');
+  const j = { schemaVersion: '1.1', shim: true, harness: { name: 'claude-code', version: '2.1.310' }, runnerFallback: { from: 'official', claudeCode: '2.1.310', reason: 'every run errored: no sandbox <backend>' },
+    cases: [{ dir: 'a', name: 'a', arms: { with: [{ score: 1, graders: [] }] }, summary: { score: 1 } }], aggregates: { overallScore: 1, totalRuns: 1, erroredRuns: 0 } };
+  const html = renderReport(j, null, {});
+  assert.match(html, /official runner on Claude Code 2\.1\.310 refused this run \(every run errored: no sandbox &lt;backend&gt;\)/);
+});

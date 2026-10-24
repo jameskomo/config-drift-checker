@@ -186,7 +186,8 @@ const behaviourAsc = [...byVersion.entries()].map(([cc, r]) => {
   return { claudeCode: cc, at: r.at ?? null, track: r.track ?? null, runner: r.json.shim ? 'shim' : 'official',
     verdict: st === 'errored' ? 'errored' : st === 'regressed' ? 'drift' : 'held',
     wobble: ['noisy', 'below', 'warn'].includes(st),
-    overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null };
+    overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null,
+    ...(r.json.runnerFallback && { runnerFallback: String(r.json.runnerFallback.reason ?? 'the official runner gave no usable result').slice(0, 200) }) };
 });
 // releases seen but never behaviour-tested (see the header), merged into the per-release verdicts in version order
 const floors = loadFloors(opt.floor ?? path.join(opt.dir, 'floor'));
