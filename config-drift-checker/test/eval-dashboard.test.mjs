@@ -225,3 +225,98 @@ test('setup health: finding text, fixes and versions are HTML-escaped', async ()
   assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt; &amp; co/);
   assert.match(html, /on Claude Code 2\.1\.250&lt;b&gt;/);
 });
+
+// ---- untested releases: seen (free-floor record or release-watch state) but never behaviour-tested ----
+const floorDoc = (cc, reason, at, { loaded = 6, cases = 6, alwaysOn = 123 } = {}) => ({
+  schemaVersion: 1, tool: 'floor', generatedAt: at, claudeCode: cc, track: 'canary',
+  skip: { reason, spentMonth: 25, capMonth: 25, nextAllowed: null },
+  preflight: { skills: skillsDoc(), suite: suiteDoc({ version: cc, cases, failed: cases - loaded }) },
+  contextCost: { alwaysOn, onInvoke: 440, source: 'official', claudeVersion: cc },
+  checks: { suite: { cases, loaded, confirmed: true, errors: 0, warnings: 0 }, skills: { checked: 3, errors: 0, warnings: 0 } },
+});
+// a canary on 2.1.296 and one on 2.1.298, both green unless red; floors and releaseWatch are optional extras
+async function untestedFixture({ floors = null, releaseWatch = null, red = false, pinnedOnly = false } = {}) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'untested-'));
+  const hist = path.join(dir, 'history');
+  await fs.mkdir(hist);
+  for (const [i, cc] of [[1, '2.1.296'], [2, '2.1.298']]) {
+    const track = pinnedOnly ? 'pinned' : 'canary';
+    const r = result({ a: red && cc === '2.1.298' ? [0.2, 0.2, 0.2] : [1, 1, 1] }, { at: `2026-10-0${i}T10:00:00Z`, cc, track });
+    await fs.writeFile(path.join(hist, `2026100${i}T100000Z-cc${cc}-official-${track}.json`), JSON.stringify(r));
+  }
+  const base = path.join(dir, 'baseline.json');
+  await fs.writeFile(base, JSON.stringify(result({ a: [1, 1, 1] }, { at: '2026-09-30T10:00:00Z', cc: '2.1.290' })));
+  const args = [hist, '--baseline', base, '--out', path.join(dir, 'index.html'), '--title', 'gaps', '--page-url', 'https://x.example/drift'];
+  if (floors) {
+    const fd = path.join(hist, 'floor'); await fs.mkdir(fd);
+    for (const f of floors) await fs.writeFile(path.join(fd, `${f.generatedAt.replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}-cc${f.claudeCode}.json`), JSON.stringify(f));
+  }
+  if (releaseWatch) { await fs.writeFile(path.join(dir, 'rw.json'), JSON.stringify(releaseWatch)); args.push('--release-watch', path.join(dir, 'rw.json')); }
+  const r = spawnSync('node', [TOOL, ...args], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const read = (f) => fs.readFile(path.join(dir, f), 'utf8');
+  return { html: await read('index.html'), verdicts: JSON.parse(await read('verdicts.json')), feed: await read('feed.xml'), badge: await read('status.svg') };
+}
+const stable = (o) => ({ ...o, verdicts: { ...o.verdicts, generatedAt: null }, feed: o.feed.replace(/(<\/title>\n  <updated>)[^<]*/, '$1') });
+
+test('untested: no floor records and no untested release render byte-identically to before', async () => {
+  const plain = stable(await untestedFixture());
+  // an empty floor dir and a release-watch state naming a release that was tested change nothing
+  const same = stable(await untestedFixture({ floors: [], releaseWatch: { harness: '2.1.298', models: ['m1'] } }));
+  assert.equal(same.html, plain.html);
+  assert.equal(same.badge, plain.badge);
+  assert.equal(same.feed, plain.feed);
+  assert.deepEqual(same.verdicts, plain.verdicts);
+  assert.doesNotMatch(plain.html, /untested|class="ut"/);
+  assert.ok(!('untested' in plain.verdicts));
+  assert.match(plain.badge, /✓ cc2\.1\.298/);
+});
+
+test('untested: a budget-skipped release is its own state in verdicts.json, the timeline, the badge, the feed and the hero', async () => {
+  const { html, verdicts, feed, badge } = await untestedFixture({ floors: [floorDoc('2.1.310', 'budget', '2026-10-20T06:17:00.000Z'), floorDoc('2.1.299', 'interval', '2026-10-16T06:17:00.000Z')] });
+  assert.deepEqual(verdicts.verdicts.map((v) => [v.claudeCode, v.verdict]), [['2.1.310', 'untested'], ['2.1.299', 'untested'], ['2.1.298', 'held'], ['2.1.296', 'held']], 'version order, newest first');
+  const [v] = verdicts.verdicts;
+  assert.equal(v.reason, 'budget');
+  assert.deepEqual(v.freeChecks, { suiteCases: 6, suiteLoaded: 6, contextCostTokens: 123, summary: 'Free checks ran: suite loads 6 of 6, context cost 123 tokens.' });
+  assert.equal(verdicts.verdicts[1].reason, 'interval');
+  assert.deepEqual(verdicts.untested, { newest: '2.1.310', versions: ['2.1.310', '2.1.299'] });
+  // timeline: a dashed neutral segment, never a status colour, and the key names the state
+  const ut = [...html.matchAll(/<rect class="ut" [^>]*fill="var\(--code\)" stroke="var\(--muted\)"[^>]*><title>([^<]*)<\/title>/g)].map((m) => m[1]);
+  assert.deepEqual(ut, ['cc2.1.299 · untested (too soon after the last scheduled canary) · Free checks ran: suite loads 6 of 6, context cost 123 tokens.', 'cc2.1.310 · untested (monthly budget reached) · Free checks ran: suite loads 6 of 6, context cost 123 tokens.']);
+  assert.match(html, /<i class="muted">○<\/i> untested, behaviour not run/);
+  // badge: amber, names the version and the reason
+  assert.match(badge, /aria-label="agent setup: cc2\.1\.310 · untested \(budget\)"/);
+  assert.match(badge, /fill="#d29922"/);
+  assert.doesNotMatch(badge, /#3fb950/);
+  // feed: an entry for the untested release too
+  assert.match(feed, /<title>Claude Code 2\.1\.310: behaviour not tested, monthly budget reached \(gaps\)<\/title>\n    <updated>2026-10-20T06:17:00\.000Z<\/updated>/);
+  assert.match(feed, /<summary>Free checks ran: suite loads 6 of 6, context cost 123 tokens\. No behaviour verdict until a run covers this release\.<\/summary>/);
+  assert.match(feed, /Claude Code 2\.1\.298: behaviour held/);
+  // hero and tile: not green
+  assert.match(html, /<h1 class="warn"><span class="mark">◆<\/span><span>Not tested on Claude Code 2\.1\.310<\/span><\/h1>/);
+  assert.match(html, /Behaviour has not been tested on 2\.1\.310 \(monthly budget reached\), nor on 1 other release\. The newest tested release, 2\.1\.298, held\. Free checks ran on 2\.1\.310: suite loads 6 of 6, context cost 123 tokens\./);
+  assert.match(html, /latest verdict<\/div><div class="tb warn">untested<\/div><div class="ts">cc2\.1\.310/);
+  // the floor's preflight fills the Setup health strip for the skipped release
+  assert.match(html, /<rect class="fd" [^>]*fill="var\(--pass\)"><title>cc2\.1\.310 · loaded 6 of 6/);
+});
+
+test('untested: the release-watch state counts for a suite that follows releases, not for a pinned-only one', async () => {
+  const rw = { harness: '2.1.310', models: ['m1'] };
+  const { verdicts, badge } = await untestedFixture({ releaseWatch: rw });
+  assert.equal(verdicts.verdicts[0].claudeCode, '2.1.310');
+  assert.equal(verdicts.verdicts[0].verdict, 'untested');
+  assert.equal(verdicts.verdicts[0].reason, null);
+  assert.equal(verdicts.verdicts[0].freeChecks, null);
+  assert.match(badge, /cc2\.1\.310 · untested</);
+  const pinned = await untestedFixture({ releaseWatch: rw, pinnedOnly: true });
+  assert.ok(!('untested' in pinned.verdicts));
+  assert.match(pinned.badge, /✓ cc2\.1\.298/);
+});
+
+test('untested: a red run still wins the badge and the hero', async () => {
+  const { html, badge, verdicts } = await untestedFixture({ red: true, floors: [floorDoc('2.1.310', 'budget', '2026-10-20T06:17:00.000Z')] });
+  assert.match(badge, /drift on cc2\.1\.298/);
+  assert.match(badge, /#f85149/);
+  assert.match(html, /<h1 class="fail">/);
+  assert.equal(verdicts.verdicts[0].verdict, 'untested', 'the gap is still on the wire');
+});

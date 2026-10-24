@@ -231,6 +231,10 @@ runs:
         SPENT: ${{ steps.gate.outputs.spent_month }}
         CAP: ${{ steps.gate.outputs.cap_month }}
         NEXT_ALLOWED: ${{ steps.gate.outputs.next_allowed }}
+        PAGES: ${{ inputs.pages }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        REPORT_BASE_URL: ${{ inputs.report-base-url }}
+        REPO: ${{ github.repository }}
       run: |
         set -euo pipefail
         node "$TOOLS/floor-record.mjs" --version "$CC_VERSION" --reason "$SKIP_REASON" --track "$TRACK" --spent "${SPENT:-0}" --cap "${CAP:-0}" --next-allowed "${NEXT_ALLOWED:-none}" \
@@ -245,6 +249,12 @@ runs:
         cd "$wt"; mkdir -p history/floor history/context-cost
         cp "$RUNNER_TEMP/floor.json" "history/floor/$name"
         cp "$RUNNER_TEMP"/context-cost/*.json history/context-cost/ 2>/dev/null || true
+        # the published dashboard, badge and feed show the gap now, not at the next behaviour run
+        if [ "$PAGES" = "true" ] && [ -s docs/index.html ]; then
+          page_args=(); [ -n "$REPORT_BASE_URL" ] && page_args=(--page-url "${REPORT_BASE_URL%/history*}")
+          node "$TOOLS/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "$REPO" \
+            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" --release-watch .release-watch.json "${page_args[@]}" >/dev/null || echo "::notice::could not refresh the dashboard"
+        fi
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com add -A
         git -c user.name=config-drift-checker -c user.email=config-drift-checker@users.noreply.github.com commit -qm "floor ${name%.json} ${TRACK} ($SKIP_REASON)" || true
         git push -q origin "HEAD:$BRANCH"
@@ -451,7 +461,7 @@ runs:
           [ -s canary/streak.json ] && cp canary/streak.json docs/streak.json || true
           page_args=(); [ -n "$REPORT_BASE_URL" ] && page_args=(--page-url "${REPORT_BASE_URL%/history*}")
           node "$TOOLS/eval-dashboard.mjs" history --baseline baseline.json --reports docs/history --out docs/index.html --title "$REPO" \
-            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" "${page_args[@]}" >/dev/null
+            --spend spend.json --streak canary/streak.json --coverage coverage.json --config "$GITHUB_WORKSPACE/$PLUGIN_DIR" --repo-url "https://github.com/$REPO" --release-watch .release-watch.json "${page_args[@]}" >/dev/null
           touch docs/.nojekyll
           echo "dashboard: docs/index.html (enable GitHub Pages: source = branch $BRANCH, folder /docs)" >> "$GITHUB_STEP_SUMMARY"
         fi

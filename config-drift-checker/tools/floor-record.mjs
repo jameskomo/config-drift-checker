@@ -50,7 +50,10 @@ export function checksOf(skills, suite) {
 }
 
 // One plain sentence: what was not tested and why, then what the free checks found.
-export function summarize(rec) {
+export const summarize = (rec) => `Behaviour not tested on ${rec.claudeCode} (${reasonText(rec.skip?.reason)}). ${freeChecksText(rec)}`;
+
+// What the free checks found, as one sentence (the second half of the summary; the dashboard reuses it).
+export function freeChecksText(rec) {
   const parts = [];
   const s = rec.checks?.suite, sk = rec.checks?.skills, cc = rec.contextCost;
   if (s) {
@@ -60,8 +63,7 @@ export function summarize(rec) {
   }
   if (sk && (sk.errors || sk.warnings)) parts.push(`skills have ${sk.errors ? plural(sk.errors, 'error') : plural(sk.warnings, 'warning')}`);
   if (cc?.alwaysOn !== null && cc?.alwaysOn !== undefined) parts.push(`context cost ${cc.alwaysOn} tokens`);
-  const head = `Behaviour not tested on ${rec.claudeCode} (${reasonText(rec.skip?.reason)}).`;
-  return parts.length ? `${head} Free checks ran: ${parts.join(', ')}.` : `${head} The free checks produced no result.`;
+  return parts.length ? `Free checks ran: ${parts.join(', ')}.` : 'The free checks produced no result.';
 }
 
 export function buildFloor({ version, reason, track = null, spent = null, cap = null, nextAllowed = null, skills = null, suite = null, contextCost = null, now = new Date().toISOString() }) {

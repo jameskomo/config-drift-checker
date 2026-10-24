@@ -47,6 +47,9 @@ test('action.yml: the free floor runs only on a skip, once per version, and stor
   for (const id of ['runner', 'run', 'diff', 'report', 'store']) assert.doesNotMatch(step(id), /floor-plan/, `${id} never runs on a skip`);
   assert.match(step('floor'), /floor-record\.mjs/);
   assert.match(step('floor'), /history\/floor\/\$name/);
+  // the gap reaches the published page at once: the floor refreshes the dashboard, and both renders read the release-watch state
+  assert.match(step('floor'), /eval-dashboard\.mjs" history [^\n]*\n[^\n]*--release-watch \.release-watch\.json/);
+  assert.match(step('store'), /eval-dashboard\.mjs" history [^\n]*\n[^\n]*--release-watch \.release-watch\.json/);
   assert.match(text, /floor:\s+\{ description: .*value: '\$\{\{ steps\.floor\.outputs\.ran \}\}' \}/);
   assert.match(text, /untested-version:\s*\{ description: .*value: '\$\{\{ steps\.floor\.outputs\.untested_version \}\}' \}/);
 });

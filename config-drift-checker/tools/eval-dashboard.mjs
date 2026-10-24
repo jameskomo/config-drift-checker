@@ -4,18 +4,27 @@
 //
 //   node tools/eval-dashboard.mjs <history-dir> [--baseline baseline.json] [--reports <dir>] [--out dashboard.html]
 //        [--title <name>] [--spend spend.json] [--streak streak.json] [--coverage coverage.json] [--config <plugin-dir>]
-//        [--context-cost <dir>]
+//        [--context-cost <dir>] [--floor <dir>] [--release-watch <.release-watch.json>]
 //
 // <history-dir> holds aggregate-result.json files (the Action names them <stamp>-cc<version>-<runner>[-<track>].json)
 // or subdirectories each containing aggregate-result.json (local evals/results/). If --reports is given, a run's
 // report is linked as <reports>/<basename>.html when that file exists. Cases are classified by eval-classify.mjs
 // (noise band from the baseline + preceding same-track runs) — the same verdicts as eval-diff.
+//
+// Untested releases: a Claude Code version that was seen but never behaviour-tested is listed as untested, with
+// the reason the gate gave (budget or interval). Seen means a free-floor record in <history-dir>/floor/ (or
+// --floor <dir>, written by floor-record.mjs when the gate skipped the agent runs), or the release-watch state's
+// newest version for a suite that follows releases (it has a canary run or a floor record). With neither, the
+// page and the wire files are byte-for-byte what they were before.
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 import { key, caseMap, classifyCase, normalizeResult } from './eval-classify.mjs';
+import { loadFloors, reasonText, freeChecksText } from './floor-record.mjs';
+import { readState } from './release-watch.mjs';
+import { cmpV, SEMVER } from './cc-release.mjs';
 
-const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null, repoUrl: null, pageUrl: null, contextCost: null };
-for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (a === '--repo-url') opt.repoUrl = argv[++i]; else if (a === '--page-url') opt.pageUrl = argv[++i]; else if (a === '--context-cost') opt.contextCost = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
+const argv = process.argv.slice(2); const opt = { dir: null, baseline: null, reports: null, out: null, title: null, spend: null, streak: null, coverage: null, config: null, repoUrl: null, pageUrl: null, contextCost: null, floor: null, releaseWatch: null };
+for (let i = 0; i < argv.length; i++) { const a = argv[i]; if (a === '--baseline') opt.baseline = argv[++i]; else if (a === '--reports') opt.reports = argv[++i]; else if (a === '--out') opt.out = argv[++i]; else if (a === '--title') opt.title = argv[++i]; else if (a === '--spend') opt.spend = argv[++i]; else if (a === '--streak') opt.streak = argv[++i]; else if (a === '--coverage') opt.coverage = argv[++i]; else if (a === '--config') opt.config = argv[++i]; else if (a === '--repo-url') opt.repoUrl = argv[++i]; else if (a === '--page-url') opt.pageUrl = argv[++i]; else if (a === '--context-cost') opt.contextCost = argv[++i]; else if (a === '--floor') opt.floor = argv[++i]; else if (a === '--release-watch') opt.releaseWatch = argv[++i]; else if (!a.startsWith('--')) opt.dir = a; }
 if (!opt.dir) { console.error('usage: eval-dashboard.mjs <history-dir> [--baseline b.json] [--reports dir] [--out dashboard.html] [--spend s.json] [--streak s.json] [--coverage c.json] [--config <plugin-dir>]'); process.exit(2); }
 const readJson = async (p) => (p && existsSync(p) ? normalizeResult(JSON.parse(await fs.readFile(p, 'utf8'))) : null);
 
@@ -171,7 +180,7 @@ th.case{writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;vertic
 // hero tiles, the verdict timeline, and the drift-wire files below
 const byVersion = new Map();
 for (const r of runs) if (r.cc) byVersion.set(r.cc, r); // runs are oldest→newest; last wins
-const verdictsAsc = [...byVersion.entries()].map(([cc, r]) => {
+const behaviourAsc = [...byVersion.entries()].map(([cc, r]) => {
   const st = runStatus(r);
   const moved = r.json.cases.filter((c) => ['regressed', 'noisy'].includes(caseStatus(c, r))).map(key);
   return { claudeCode: cc, at: r.at ?? null, track: r.track ?? null, runner: r.json.shim ? 'shim' : 'official',
@@ -179,6 +188,22 @@ const verdictsAsc = [...byVersion.entries()].map(([cc, r]) => {
     wobble: ['noisy', 'below', 'warn'].includes(st),
     overall: r.json.aggregates?.overallScore ?? null, casesMoved: moved, report: r.report ?? null };
 });
+// releases seen but never behaviour-tested (see the header), merged into the per-release verdicts in version order
+const floors = loadFloors(opt.floor ?? path.join(opt.dir, 'floor'));
+const floorByVersion = new Map(floors.map((f) => [f.claudeCode, f])); // oldest first, so the newest record per version wins
+const watched = opt.releaseWatch && existsSync(opt.releaseWatch) ? readState(await fs.readFile(opt.releaseWatch, 'utf8')).harness : null;
+const followsReleases = floors.length > 0 || runs.some((r) => r.track === 'canary');
+const untested = [...new Set([...floorByVersion.keys(), ...(watched && followsReleases ? [watched] : [])])].filter((cc) => !byVersion.has(cc)).map((cc) => {
+  const f = floorByVersion.get(cc) ?? null;
+  return { claudeCode: cc, at: f?.generatedAt ?? null, track: f?.track ?? null, runner: null, verdict: 'untested', reason: f?.skip?.reason ?? null,
+    wobble: false, overall: null, casesMoved: [], report: null,
+    freeChecks: f ? { suiteCases: f.checks?.suite?.cases ?? null, suiteLoaded: f.checks?.suite?.loaded ?? null, contextCostTokens: f.contextCost?.alwaysOn ?? null, summary: freeChecksText(f) } : null };
+});
+const byRelease = (a, b) => (SEMVER.test(a.claudeCode) && SEMVER.test(b.claudeCode) ? cmpV(a.claudeCode, b.claudeCode) : 0);
+const verdictsAsc = untested.length ? [...behaviourAsc, ...untested].sort(byRelease) : behaviourAsc;
+const newestUntested = verdictsAsc.at(-1)?.verdict === 'untested' ? verdictsAsc.at(-1) : null;
+const untestedWhy = (v) => `untested (${v.reason ? reasonText(v.reason) : 'no behaviour run'})`;
+const untestedTip = (v) => `cc${v.claudeCode} · ${untestedWhy(v)}${v.freeChecks ? ' · ' + v.freeChecks.summary : ''}`;
 let streakRuns = 0; const cleanCc = new Set();
 for (let i = runs.length - 1; i >= 0; i--) { const st = runStatus(runs[i]); if (['pass', 'warn', 'noisy', 'below'].includes(st)) { streakRuns++; if (runs[i].cc) cleanCc.add(runs[i].cc); } else break; }
 const firstClean = runs[runs.length - streakRuns];
@@ -190,12 +215,12 @@ const tiles = [
   ['versions covered', String(versions.length), 'Claude Code releases tested', ''],
   ['coverage', coverage?.pct != null ? coverage.pct + '%' : '—', 'setup rules with a case', ''],
   ['spend this month', spentMonth != null ? '$' + spentMonth.toFixed(2) : '—', cap ? `of $${cap} cap` : 'ledger on the results branch', ''],
-  ['latest verdict', verdictsAsc.at(-1) ? (verdictsAsc.at(-1).verdict === 'held' ? 'held' : verdictsAsc.at(-1).verdict) : '—', verdictsAsc.at(-1) ? `cc${verdictsAsc.at(-1).claudeCode}` : '', verdictsAsc.at(-1)?.verdict === 'held' ? 'pass' : verdictsAsc.at(-1) ? 'fail' : ''],
+  ['latest verdict', verdictsAsc.at(-1) ? (verdictsAsc.at(-1).verdict === 'held' ? 'held' : verdictsAsc.at(-1).verdict) : '—', verdictsAsc.at(-1) ? `cc${verdictsAsc.at(-1).claudeCode}` : '', verdictsAsc.at(-1)?.verdict === 'held' ? 'pass' : verdictsAsc.at(-1)?.verdict === 'untested' ? 'warn' : verdictsAsc.at(-1) ? 'fail' : ''],
 ];
 const tilesHtml = `<div class="tiles">${tiles.map(([label, big, sub, tone2]) => `<div class="tile"><div class="tl">${esc(label)}</div><div class="tb ${tone2}">${esc(big)}</div><div class="ts">${esc(sub)}</div></div>`).join('')}</div>`;
 const TLW = 1000, TLH = 26, seg = verdictsAsc.length ? TLW / verdictsAsc.length : TLW;
-const timelineHtml = verdictsAsc.length < 2 ? '' : `<div class="panel tlp"><div class="tlh">Verdict per Claude Code release <span class="tlk"><i class="pass">●</i> held <i class="warn">●</i> wobble, within noise <i class="fail">●</i> drift / errored</span></div>
-<svg viewBox="0 0 ${TLW} ${TLH + 18}" width="100%" role="img" aria-label="one verdict per Claude Code release">${verdictsAsc.map((v, i) => `<rect x="${(i * seg + 1).toFixed(1)}" y="0" width="${Math.max(seg - 2, 2).toFixed(1)}" height="${TLH}" rx="4" fill="${v.verdict === 'held' && !v.wobble ? 'var(--pass)' : v.verdict === 'held' ? 'var(--warn)' : 'var(--fail)'}"><title>cc${esc(v.claudeCode)} · ${v.verdict}${v.casesMoved.length ? ' · ' + esc(v.casesMoved.join(', ')) : ''} · overall ${v.overall === null ? 'n/a' : Number(v.overall).toFixed(2)}</title></rect>`).join('')}<text x="1" y="${TLH + 14}" class="tlt">cc${esc(verdictsAsc[0].claudeCode)}</text><text x="${TLW - 1}" y="${TLH + 14}" class="tlt" text-anchor="end">cc${esc(verdictsAsc.at(-1).claudeCode)}</text></svg></div>`;
+const timelineHtml = verdictsAsc.length < 2 ? '' : `<div class="panel tlp"><div class="tlh">Verdict per Claude Code release <span class="tlk"><i class="pass">●</i> held <i class="warn">●</i> wobble, within noise <i class="fail">●</i> drift / errored${untested.length ? ' <i class="muted">○</i> untested, behaviour not run' : ''}</span></div>
+<svg viewBox="0 0 ${TLW} ${TLH + 18}" width="100%" role="img" aria-label="one verdict per Claude Code release">${verdictsAsc.map((v, i) => v.verdict === 'untested' ? `<rect class="ut" x="${(i * seg + 2).toFixed(1)}" y="1" width="${Math.max(seg - 4, 2).toFixed(1)}" height="${TLH - 2}" rx="4" fill="var(--code)" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"><title>${esc(untestedTip(v))}</title></rect>` : `<rect x="${(i * seg + 1).toFixed(1)}" y="0" width="${Math.max(seg - 2, 2).toFixed(1)}" height="${TLH}" rx="4" fill="${v.verdict === 'held' && !v.wobble ? 'var(--pass)' : v.verdict === 'held' ? 'var(--warn)' : 'var(--fail)'}"><title>cc${esc(v.claudeCode)} · ${v.verdict}${v.casesMoved.length ? ' · ' + esc(v.casesMoved.join(', ')) : ''} · overall ${v.overall === null ? 'n/a' : Number(v.overall).toFixed(2)}</title></rect>`).join('')}<text x="1" y="${TLH + 14}" class="tlt">cc${esc(verdictsAsc[0].claudeCode)}</text><text x="${TLW - 1}" y="${TLH + 14}" class="tlt" text-anchor="end">cc${esc(verdictsAsc.at(-1).claudeCode)}</text></svg></div>`;
 
 // ---- setup health: format drift. The rows above show behaviour drift; this shows whether the setup
 // itself (skills + eval suite) still loads. A run may carry json.preflight = { skills: <skill-lint --json>,
@@ -230,12 +255,14 @@ function healthOf(p) {
   return { skills, suite: suiteH, errors, warnings, format, findings };
 }
 for (const r of runs) r.health = healthOf(r.preflight);
-const healthRuns = runs.filter((r) => r.health);
+// free-floor records carry the same preflight, so a release the gate skipped still gets its format verdict
+const floorChecks = floors.map((f) => ({ cc: f.claudeCode, at: f.generatedAt, health: healthOf(f.preflight) })).filter((f) => f.health);
+const healthRuns = floorChecks.length ? [...runs.filter((r) => r.health), ...floorChecks].sort((a, b) => String(a.at).localeCompare(String(b.at))) : runs.filter((r) => r.health);
 const healthLatest = healthRuns.at(-1) ?? null;
 // one format verdict per Claude Code version (newest checked run on it), in the verdict timeline's version order
 const healthByVersion = new Map();
 for (const r of healthRuns) if (r.cc) healthByVersion.set(r.cc, r);
-const healthAsc = [...byVersion.keys()].filter((cc) => healthByVersion.has(cc)).map((cc) => { const r = healthByVersion.get(cc); return { claudeCode: cc, at: r.at ?? null, ...r.health }; });
+const healthAsc = (untested.length ? verdictsAsc.map((v) => v.claudeCode) : [...byVersion.keys()]).filter((cc) => healthByVersion.has(cc)).map((cc) => { const r = healthByVersion.get(cc); return { claudeCode: cc, at: r.at ?? null, ...r.health }; });
 const loadPhrase = (s) => (!s ? 'skills only' : s.loaded !== null && s.cases !== null ? `loaded ${s.loaded} of ${s.cases}` : `not confirmed, ${plural(s.cases ?? 0, 'case')}`);
 const healthTip = (v) => `cc${v.claudeCode} · ${loadPhrase(v.suite)} · ${plural(v.errors, 'error')}${v.findings[0]?.message ? ' · ' + v.findings[0].message : ''}`;
 
@@ -320,8 +347,22 @@ if (existsSync(costDir)) {
   }
 }
 
+// ---- untested: a green page must not hide that the newest release was never behaviour-tested
+let untestedCss = '';
+if (untested.length) {
+  untestedCss = `
+.tile .tb.warn{color:var(--warn)}`;
+  if (newestUntested && tone === 'pass') {
+    const others = untested.length - 1, lastTested = [...verdictsAsc].reverse().find((v) => v.verdict !== 'untested');
+    tone = 'warn'; mark = '◆'; headline = `Not tested on Claude Code ${newestUntested.claudeCode}`;
+    lede = `Behaviour has not been tested on ${newestUntested.claudeCode} (${newestUntested.reason ? reasonText(newestUntested.reason) : 'no behaviour run yet'})${others ? `, nor on ${plural(others, 'other release')}` : ''}.`
+      + (lastTested ? ` The newest tested release, ${lastTested.claudeCode}, ${lastTested.verdict === 'held' ? 'held' : lastTested.verdict === 'drift' ? 'drifted' : 'errored'}.` : '')
+      + (newestUntested.freeChecks ? ` ${newestUntested.freeChecks.summary.replace(/^Free checks ran:/, `Free checks ran on ${newestUntested.claudeCode}:`)}` : '');
+  }
+}
+
 const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(suite)} · drift index</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}${healthCss}${costCss}</style></head><body><div class="wrap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"><style>${css}${healthCss}${costCss}${untestedCss}</style></head><body><div class="wrap">
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>${esc(suite)}</b> · drift index</p>
     <h1 class="${tone}"><span class="mark">${mark}</span><span>${esc(headline)}</span></h1>
@@ -344,7 +385,12 @@ await fs.writeFile(outPath, html); console.log(outPath);
 const verdicts = [...verdictsAsc].reverse(); // newest first
 const outDir = path.dirname(outPath);
 const pageUrl = opt.pageUrl ? opt.pageUrl.replace(/\/$/, '') : null;
-const entries = verdicts.slice(0, 25).map((v) => `  <entry>
+const entries = verdicts.slice(0, 25).map((v) => v.verdict === 'untested' ? `  <entry>
+    <id>urn:config-drift-checker:${esc(suite)}:cc${esc(v.claudeCode)}</id>
+    <title>Claude Code ${esc(v.claudeCode)}: behaviour not tested, ${esc(v.reason ? reasonText(v.reason) : 'no behaviour run yet')} (${esc(suite)})</title>
+    <updated>${esc(new Date(v.at ?? Date.now()).toISOString())}</updated>${pageUrl ? `\n    <link href="${esc(pageUrl)}/"/>` : ''}
+    <summary>${esc(v.freeChecks ? v.freeChecks.summary : 'No free checks were recorded for this release.')} No behaviour verdict until a run covers this release.</summary>
+  </entry>` : `  <entry>
     <id>urn:config-drift-checker:${esc(suite)}:cc${esc(v.claudeCode)}</id>
     <title>Claude Code ${esc(v.claudeCode)}: ${v.verdict === 'held' ? 'behaviour held' : v.verdict === 'drift' ? 'drift on ' + esc(v.casesMoved.join(', ')) : 'runs errored'} (${esc(suite)})</title>
     <updated>${esc(new Date(v.at ?? Date.now()).toISOString())}</updated>${pageUrl ? `\n    <link href="${esc(pageUrl)}/"/>` : ''}
@@ -360,13 +406,15 @@ ${entries}
 
 // ---- the adopter badge (streak computed above)
 const badgeLabel = 'agent setup';
-const badgeValue = !latest ? 'no runs' : latestStatus === 'errored' ? 'runs errored' : latestStatus === 'regressed' ? `drift on cc${latest.cc ?? '?'}` : `\u2713 cc${latest.cc ?? '?'} \u00b7 ${cleanCc.size} release${cleanCc.size === 1 ? '' : 's'} clean`;
-const badgeColor = !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestStatus === 'errored' ? '#f85149' : '#3fb950';
+// red still wins; otherwise a newest release without a behaviour verdict is amber, never a green tick
+const badgeUntested = !!newestUntested && latestStatus !== 'regressed' && latestStatus !== 'errored';
+const badgeValue = badgeUntested ? `cc${newestUntested.claudeCode} \u00b7 untested${newestUntested.reason ? ` (${newestUntested.reason})` : ''}` : !latest ? 'no runs' : latestStatus === 'errored' ? 'runs errored' : latestStatus === 'regressed' ? `drift on cc${latest.cc ?? '?'}` : `\u2713 cc${latest.cc ?? '?'} \u00b7 ${cleanCc.size} release${cleanCc.size === 1 ? '' : 's'} clean`;
+const badgeColor = badgeUntested ? '#d29922' : !latest ? '#9f9f9f' : latestStatus === 'regressed' || latestStatus === 'errored' ? '#f85149' : '#3fb950';
 const lw = 8 + badgeLabel.length * 6.3, vw = 12 + badgeValue.length * 6.5, bw = Math.round(lw + vw);
 await fs.writeFile(path.join(outDir, 'status.svg'), `<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="20" role="img" aria-label="${esc(badgeLabel)}: ${esc(badgeValue)}"><title>${esc(badgeLabel)}: ${esc(badgeValue)}</title><rect rx="3" width="${bw}" height="20" fill="#555"/><rect rx="3" x="${lw.toFixed(1)}" width="${vw.toFixed(1)}" height="20" fill="${badgeColor}"/><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,sans-serif" font-size="11"><text x="${(lw / 2).toFixed(1)}" y="14">${esc(badgeLabel)}</text><text x="${(lw + vw / 2).toFixed(1)}" y="14">${esc(badgeValue)}</text></g></svg>\n`);
 // setup health per Claude Code version, newest first; the key is absent when no run carried preflight data
 const health = healthAsc.length ? { latest: healthAsc.at(-1).claudeCode, versions: [...healthAsc].reverse().map((v) => ({ claudeCode: v.claudeCode, at: v.at, format: v.format,
   cases: v.suite?.cases ?? null, loaded: v.suite?.loaded ?? null, failedToLoad: v.suite?.failedToLoad ?? null, confirmed: v.suite ? v.suite.confirmed : null,
   errors: v.errors, warnings: v.warnings, fixable: v.suite?.fixable ?? 0, skills: v.skills })) } : null;
-await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts, ...(healthAsc.length ? { health } : {}), ...(costTrend ? { contextCost } : {}) }, null, 2) + '\n');
+await fs.writeFile(path.join(outDir, 'verdicts.json'), JSON.stringify({ suite, generatedAt: new Date().toISOString(), pageUrl, streak: { runs: streakRuns, versions: cleanCc.size, days: streakDays }, verdicts, ...(untested.length ? { untested: { newest: newestUntested?.claudeCode ?? null, versions: untested.map((v) => v.claudeCode).sort((a, b) => byRelease({ claudeCode: b }, { claudeCode: a })) } } : {}), ...(healthAsc.length ? { health } : {}), ...(costTrend ? { contextCost } : {}) }, null, 2) + '\n');
 console.log(`${path.join(outDir, 'verdicts.json')} · feed.xml · status.svg${streakRuns ? ` (streak: ${streakRuns} runs, ${cleanCc.size} versions, about ${streakDays} days clean)` : ''}`);
