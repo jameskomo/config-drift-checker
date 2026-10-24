@@ -17,6 +17,12 @@
 //                        file of its --plugin-dir (evals/ excluded), so a sabotaged setup copy can be caught
 //   FAKE_CLAUDE_MCP      JSON list of { tool, input }: MCP calls to make, for real, against the servers in
 //                        --mcp-config (spawned and spoken to over stdio); a tool with no server is "unavailable"
+//   FAKE_CLAUDE_SKILLS   JSON object { "<marker>": "<skill>" }: an agent call whose prompt contains <marker>
+//                        first emits a Skill tool_use with input { skill: "<skill>" } (the first marker found wins)
+//   FAKE_CLAUDE_INIT_SKILLS    comma-separated skill names reported in the init event's skills list
+//   FAKE_CLAUDE_JSON_REPLY     JSON object { "<substring>": "<result text>" }: a --output-format json call whose
+//                        prompt contains <substring> answers with that text (and FAKE_CLAUDE_COST as its cost),
+//                        and is logged to json-calls.jsonl in FAKE_CLAUDE_STATE when that is set
 // Every agent call appends a start record and a done record to calls.jsonl; call indices are claimed
 // atomically, so concurrent calls never share one.
 import { promises as fs, existsSync, readFileSync, appendFileSync, readdirSync, statSync } from 'node:fs';
@@ -32,6 +38,13 @@ if (args[0] === 'plugin' && args[1] === 'eval' && process.env.FAKE_CLAUDE_EARLY_
 
 const fmt = args[args.indexOf('--output-format') + 1];
 if (fmt === 'json') { // an LLM-judge call
+  const jp = args[args.indexOf('-p') + 1] ?? '';
+  const reply = Object.entries(JSON.parse(process.env.FAKE_CLAUDE_JSON_REPLY ?? '{}')).find(([k]) => jp.includes(k));
+  if (reply) {
+    if (process.env.FAKE_CLAUDE_STATE) appendFileSync(path.join(process.env.FAKE_CLAUDE_STATE, 'json-calls.jsonl'), JSON.stringify({ args, configDir: process.env.CLAUDE_CONFIG_DIR ?? null }) + '\n');
+    out({ type: 'result', subtype: 'success', is_error: false, result: reply[1], total_cost_usd: Number(process.env.FAKE_CLAUDE_COST ?? 0.1) });
+    process.exit(0);
+  }
   out({ type: 'result', result: JSON.stringify({ pass: true, reason: 'fake judge' }) });
   process.exit(0);
 }
@@ -75,7 +88,10 @@ const loaded = required.length ? pluginText(args.includes('--plugin-dir') ? args
 const missingMarker = required.some((r) => !loaded.includes(r.marker));
 let text = list('FAKE_CLAUDE_FAIL').includes(n) || failModel || missingMarker ? 'I could not finish this.' : 'DONE — the task is complete.';
 if (process.env.FAKE_CLAUDE_ECHO) text += ` [${prompt.split('\n')[0]}]`;
-out({ type: 'system', subtype: 'init', model });
+out({ type: 'system', subtype: 'init', model, ...(process.env.FAKE_CLAUDE_INIT_SKILLS !== undefined && { skills: process.env.FAKE_CLAUDE_INIT_SKILLS.split(',').filter(Boolean) }) });
+// FAKE_CLAUDE_SKILLS: the first marker the prompt contains decides which skill the run invokes
+const skillHit = Object.entries(JSON.parse(process.env.FAKE_CLAUDE_SKILLS ?? '{}')).find(([marker]) => prompt.includes(marker));
+if (skillHit) out({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'toolu_skill_0', name: 'Skill', input: { skill: skillHit[1] } }] } });
 // MCP calls: initialize, tools/list (the tool must be listed), tools/call, exactly as a client would
 for (const [k, call] of JSON.parse(process.env.FAKE_CLAUDE_MCP ?? '[]').entries()) {
   const id = `toolu_mcp_${k}`;
