@@ -29,6 +29,8 @@ inputs:
   github-token:          { description: 'Token for pushing results, opening PRs and commenting', default: '${{ github.token }}' }
   pages:                 { description: 'Also write docs/ (dashboard, report, latest.json) to the results branch for GitHub Pages (source: results branch, /docs)', default: 'true' }
   preflight:             { description: 'Static checks before any model run: the skill linter and the suite format doctor (including a free load check on the installed Claude Code). warn = report in the job summary; fail = stop before spending model runs; off', default: 'warn' }
+  pr-impact:             { description: 'On pull requests, post (and keep updated) one comment with what the PR changes in the agent setup: tokens added to every session, rules changed, the cases that test them, and changed rules no case tests. No model calls. true or false', default: 'true' }
+  pr-select:             { description: 'On pull requests, run only the cases that cover the rules the PR changed (falls back to the full suite when no case is selected). A selected run never becomes the baseline. true or false', default: 'false' }
 
 outputs:
   regressed:       { description: 'Number of regressed/missing cases', value: '${{ steps.diff.outputs.regressed }}' }
@@ -62,6 +64,33 @@ runs:
         set -euo pipefail
         tools="$ACTION_PATH/../config-drift-checker/tools"; echo "tools=$tools" >> "$GITHUB_OUTPUT"
         node "$tools/cdc-config.mjs" "$PLUGIN_DIR" resolve ${TRACK_INPUT:+"$TRACK_INPUT"} --github-output | tee -a "$GITHUB_OUTPUT"
+
+    - id: pr-impact
+      # free: git and file reads only. What this PR changes in the agent setup, as one PR comment
+      if: github.event_name == 'pull_request' && inputs.pr-impact == 'true'
+      shell: bash
+      env:
+        TOOLS: ${{ steps.config.outputs.tools }}
+        PLUGIN_DIR: ${{ inputs.plugin-dir }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        SELECT: ${{ inputs.pr-select }}
+      run: |
+        set -uo pipefail
+        git fetch --no-tags -q --depth=200 origin "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || true
+        if ! node "$TOOLS/pr-impact.mjs" --base "$BASE_SHA" --head "$HEAD_SHA" --plugin "$PLUGIN_DIR" --md "$RUNNER_TEMP/pr-impact.md" --json "$RUNNER_TEMP/pr-impact.json" >/dev/null; then
+          echo "::notice::pr-impact could not compare this PR's setup; the full suite runs as usual"; echo "glob=" >> "$GITHUB_OUTPUT"; exit 0
+        fi
+        cat "$RUNNER_TEMP/pr-impact.md" >> "$GITHUB_STEP_SUMMARY"
+        glob=$(node -e 'const j=require(process.env.RUNNER_TEMP+"/pr-impact.json");console.log(/^[\w.*?-]+$/.test(j.glob??"")?j.glob:"")')
+        if [ "$SELECT" = "true" ] && [ -n "$glob" ]; then echo "glob=$glob" >> "$GITHUB_OUTPUT"; else echo "glob=" >> "$GITHUB_OUTPUT"; fi
+        body=$(node -e 'console.log(JSON.stringify({body:require("fs").readFileSync(process.env.RUNNER_TEMP+"/pr-impact.md","utf8")}))')
+        id=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate --jq '.[]|select(.body|startswith("<!-- cdc-pr-impact -->"))|.id' 2>/dev/null | head -n1)
+        if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" --input - <<< "$body" >/dev/null || echo "::warning::could not update the PR impact comment"
+        else gh api -X POST "repos/$REPO/issues/$PR_NUMBER/comments" --input - <<< "$body" >/dev/null || echo "::warning::could not post the PR impact comment (the token needs pull-requests: write)"; fi
 
     - id: coverage
       shell: bash
@@ -265,6 +294,7 @@ runs:
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
       env:
+        CASE_GLOB: ${{ steps.pr-impact.outputs.glob }}
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
         CLAUDE_CODE_OAUTH_TOKEN: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
         TOOLS: ${{ steps.config.outputs.tools }}
@@ -283,6 +313,7 @@ runs:
         DISALLOW: ${{ inputs.disallow-tools }}
         BUDGET_PER_RUN: ${{ steps.config.outputs.budget_per_run_usd }}
       run: |
+        case_args=(); [ -n "$CASE_GLOB" ] && case_args=(--case "$CASE_GLOB")
         set -euo pipefail
         case "$CONCURRENCY" in [1-8]) ;; *) echo "::error::concurrency must be a whole number from 1 to 8, got '$CONCURRENCY'"; exit 1;; esac
         test -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" || { echo "::error::Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set (BYOK: agent runs bill to your key or your subscription)"; exit 1; }
@@ -308,7 +339,7 @@ runs:
             else echo "::warning::Claude Code $CC_VERSION's plugin eval has no --disallow-tools (it arrived in 2.1.299), so ${off[*]} stay available to Claude in this run"; fi
           fi
           # --trust-plugin: CI cannot answer the first-run trust prompt; the suite is this repo's own checkout
-          claude plugin eval "$PLUGIN_DIR" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
+          claude plugin eval "$PLUGIN_DIR" "${case_args[@]}" --ablation "$ABLATION" --model "$model" --judge-model "$judge" \
             "${runs_args[@]}" "${scaffold_args[@]}" "${conc_args[@]}" "${off_args[@]}" --allow-tools Bash Write Edit --no-publish --trust-plugin --json "$out/aggregate-result.json" || true
           # a CLI change in the official runner must never take the whole check down: if its result
           # is not a usable measurement (nothing written, every run refused, cases rejected), fall back
@@ -319,14 +350,14 @@ runs:
             echo "::warning::the official runner on Claude Code $CC_VERSION gave no usable result ($reason); falling back to the bundled runner for this run"
             rm -f "$out/aggregate-result.json"
             RUNNER=shim
-            node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
+            node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" "${case_args[@]}" --ablation "$ABLATION" --track "$TRACK" \
               --model "$model" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" "${shim_conc_args[@]}" "${shim_off_args[@]}" --output-dir "$out" || true
           fi
           # the official runner does not know tracks yet: stamp provenance so diff/store/promote can reason about it
           OUT_DIR="$out" JUDGE="$judge" node -e 'const fs=require("fs");const p=process.env.OUT_DIR+"/aggregate-result.json";if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,"utf8"));j.track=j.track||process.env.TRACK;j.harness=j.harness||{name:"claude-code",version:process.env.CC_VERSION};j.judge=j.judge||{model:process.env.JUDGE};fs.writeFileSync(p,JSON.stringify(j,null,2));}'
         else
           model_args=(); [ -n "$MODEL_INPUT" ] && model_args=(--model "$MODEL_INPUT")
-          node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" --ablation "$ABLATION" --track "$TRACK" \
+          node "$TOOLS/eval-shim.mjs" "$PLUGIN_DIR" "${case_args[@]}" --ablation "$ABLATION" --track "$TRACK" \
             "${model_args[@]}" --judge-model "$judge" --budget "$BUDGET_PER_RUN" "${runs_args[@]}" "${scaffold_args[@]}" "${shim_conc_args[@]}" "${shim_off_args[@]}" --output-dir "$out" || true
         fi
         test -s "$out/aggregate-result.json" || { echo "::error::eval produced no aggregate-result.json"; exit 1; }
@@ -345,6 +376,7 @@ runs:
       if: steps.gate.outputs.skipped != 'true'
       shell: bash
       env:
+        CASE_GLOB: ${{ steps.pr-impact.outputs.glob }}
         TOOLS: ${{ steps.config.outputs.tools }}
         PLUGIN_DIR: ${{ inputs.plugin-dir }}
         RESULTS_DIR: ${{ steps.results.outputs.dir }}
@@ -363,10 +395,11 @@ runs:
       run: |
         set +e
         thr_args=(); [ -n "$THRESHOLD_INPUT" ] && thr_args=(--threshold "$THRESHOLD_INPUT")
+        case_args=(); [ -n "$CASE_GLOB" ] && case_args=(--case "$CASE_GLOB")
         hist_args=(); [ -n "$(ls -A "$RESULTS_DIR/history" 2>/dev/null)" ] && hist_args=(--history "$RESULTS_DIR/history")
         url_args=(); [ -n "$REPORT_BASE_URL" ] && url_args=(--report-url "${REPORT_BASE_URL%/}/$STEM.html")
         if [ "$ERRORED" != "true" ] && [ "$BASELINE_EXISTS" = "true" ] && ! { [ "$PROMOTE" = "true" ] && [ "$TRACK" = "pinned" ]; }; then
-          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${thr_args[@]}" "${hist_args[@]}" "${url_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
+          node "$TOOLS/eval-diff.mjs" "$RESULTS_DIR/baseline.json" "$RESULT" --config "$PLUGIN_DIR" "${case_args[@]}" "${thr_args[@]}" "${hist_args[@]}" "${url_args[@]}" --md "$RUNNER_TEMP/diff.md" --json "$RUNNER_TEMP/diff.json"
           node -e 'const d=require(process.env.RUNNER_TEMP+"/diff.json"); console.log("regressed="+d.regressed+"\nred="+d.red+"\nflagged="+d.flagged)' >> "$GITHUB_OUTPUT"
         else
           node "$TOOLS/eval-diff.mjs" "$RESULT" "$RESULT" --config "$PLUGIN_DIR" "${url_args[@]}" --md "$RUNNER_TEMP/diff.md" >/dev/null
@@ -415,6 +448,7 @@ runs:
       if: steps.gate.outputs.skipped != 'true' && steps.run.outputs.errored != 'true'
       shell: bash
       env:
+        CASE_GLOB: ${{ steps.pr-impact.outputs.glob }}
         GH_TOKEN: ${{ inputs.github-token }}
         ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY }}
         CDC_MODELS_API_KEY: ${{ env.CDC_MODELS_API_KEY }}   # API key for the free /v1/models listing when agent runs use a subscription token
@@ -444,7 +478,7 @@ runs:
         # context-cost measurements accumulate per release; the dashboard reads history/context-cost
         mkdir -p history/context-cost && cp "$RUNNER_TEMP"/context-cost/*.json history/context-cost/ 2>/dev/null || true
         if [ "$TRACK" = "pinned" ]; then
-          if [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; then
+          if [ -z "$CASE_GLOB" ] && { [ "$BASELINE_EXISTS" != "true" ] || [ "$PROMOTE" = "true" ]; }; then
             if node "$TOOLS/baseline-check.mjs" "$RESULT" --config "$GITHUB_WORKSPACE/$PLUGIN_DIR"; then
               cp "$RESULT" baseline.json
             else
