@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { fakeNpm } from './fixtures/fake-npm.mjs';
-import { previousVersion, parseSuitesFile, parseOptOut, pluginDirFromPath, normaliseSuite, mergeSuites, classifyCase, headline, totalsOf, renderHtml } from '../tools/release-report.mjs';
+import { previousVersion, parseSuitesFile, parseOptOut, pluginDirFromPath, normaliseSuite, mergeSuites, classifyCase, headline, totalsOf, renderHtml, badgeName, badgeFor, badgeSvg } from '../tools/release-report.mjs';
 
 const TOOL = new URL('../tools/release-report.mjs', import.meta.url).pathname;
 const tmp = (p) => fs.mkdtemp(path.join(os.tmpdir(), p));
@@ -55,6 +55,21 @@ test('renderHtml escapes everything that comes from a repo', () => {
   assert.doesNotMatch(html, /<img src=x|<script>x/);
   assert.match(html, /&lt;script&gt;x&lt;\/script&gt;/);
   assert.match(html, /&quot;bad&quot; &amp; &lt;worse&gt;/);
+});
+
+test('badges: a name per suite, a factual message in three tones, escaped SVG', () => {
+  assert.equal(badgeName({ repo: 'Acme/Tools', path: '.' }), 'acme--tools');
+  assert.equal(badgeName({ repo: 'acme/tools', path: 'plugins/My Plugin' }), 'acme--tools--plugins-my-plugin');
+  const suite = (...st) => ({ status: 'checked', cases: st.map((status) => ({ status })) });
+  assert.deepEqual(badgeFor(suite('loads', 'fixed'), '2.1.310'), { message: 'loads on 2.1.310', tone: 'pass' });
+  assert.deepEqual(badgeFor(suite('loads', 'broke', 'never-loaded'), '2.1.310'), { message: '1 of 3 cases load', tone: 'warn' });
+  assert.deepEqual(badgeFor(suite('never-loaded', 'never-loaded'), '2.1.310'), { message: 'never loaded', tone: 'fail' });
+  assert.deepEqual(badgeFor(suite('broke'), '2.1.310'), { message: '0 of 1 cases load', tone: 'fail' });
+  assert.deepEqual(badgeFor({ status: 'skipped', cases: [] }, '2.1.310'), { message: 'not checked on 2.1.310', tone: 'muted' });
+  const svg = badgeSvg('<b>&', 'pass');
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="\d+" height="20" role="img" aria-label="claude plugin eval: &lt;b&gt;&amp;">/);
+  assert.match(svg, /fill="#3fb950"/);
+  assert.doesNotMatch(svg, /<b>/);
 });
 
 // ---------- end to end: fixture repos, two fake runners, a fake GitHub API; no network ----------
@@ -203,6 +218,18 @@ test('end to end: discovers, clones, load-checks under both versions in a bare e
     assert.ok(existsSync(path.join(out, 'archive', '2.1.295.json')));
     assert.doesNotMatch(html + JSON.stringify(rep), /must-not-leak/);
 
+    // a README badge per listed suite, linking to its card; none for other harnesses or opted-out repos
+    const badge = async (n) => fs.readFile(path.join(out, 'badges', `${n}.svg`), 'utf8');
+    assert.match(await badge('acme--stable'), /aria-label="claude plugin eval: loads on 2\.1\.295".*fill="#3fb950"/);
+    assert.match(await badge('acme--breaks'), /aria-label="claude plugin eval: 2 of 3 cases load".*fill="#d29922"/);
+    assert.match(await badge('acme--prose--plugins-design'), /aria-label="claude plugin eval: never loaded".*fill="#e05d44"/);
+    assert.match(await badge('acme--missing'), /not checked on 2\.1\.295/);
+    assert.deepEqual((await fs.readdir(path.join(out, 'badges'))).sort(), ['acme--breaks.svg', 'acme--huge.svg', 'acme--missing.svg', 'acme--prose--plugins-design.svg', 'acme--stable.svg']);
+    assert.equal(by['acme/stable'].badge.markdown, '[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/acme--stable.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#acme--stable)');
+    assert.ok(html.includes('<section class="card" id="acme--stable">'));
+    assert.ok(html.includes(`<code>${by['acme/stable'].badge.markdown.replace(/&/g, '&amp;')}</code>`));
+    assert.match(html, /<img src="badges\/acme--breaks\.svg" alt="claude plugin eval: 2 of 3 cases load" height="20">/);
+
     // what changed inside Claude Code: compared with --previous (nothing reported before), kept in the archive
     assert.equal(rep.harness.from, '2.1.287');
     assert.equal(rep.harness.headline, 'Claude Code 2.1.295 changed the instructions of 3 built-in tools (Agent, Ask, Read), added 4 capabilities and removed 1 capability.');
@@ -236,12 +263,14 @@ test('end to end: discovers, clones, load-checks under both versions in a bare e
 
     // an earlier reported release without a diff page gets one; a failed fetch is reported, not fatal
     await fs.rm(path.join(out, 'diff', '2.1.295.json'));
+    await fs.appendFile(optOut, 'Acme/Stable\n');
     const r3 = await run(['--version', '2.1.297', '--previous', '2.1.296', '--opt-out', optOut, '--out-dir', out, '--max-suites', '0', '--runner', `2.1.297=${await fakeClaude('2.1.297', logs)}`, '--runner', `2.1.296=${next2}`], env);
     assert.equal(r3.status, 0, r3.err);
     assert.match(r3.err, /harness diff 2\.1\.296 to 2\.1\.297 failed: npm pack .*404/);
     const rep3 = JSON.parse(await fs.readFile(path.join(out, 'report.json'), 'utf8'));
     assert.match(rep3.harness.error, /404/);
     assert.ok(existsSync(path.join(out, 'diff', '2.1.295.json')), 'backfilled');
+    assert.ok(!existsSync(path.join(out, 'badges', 'acme--stable.svg')), 'an author who opts out loses the badge too');
     assert.match(await fs.readFile(path.join(out, 'index.html'), 'utf8'), /Could not compare the built-in tool definitions of 2\.1\.296 and 2\.1\.297 this time/);
   } finally { gh.srv.close(); }
 });

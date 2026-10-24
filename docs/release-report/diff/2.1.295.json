@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.287",
+  "to": "2.1.295",
+  "tools": {
+    "from": 43,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "Agent",
+      "decl": "AgentInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "effort",
+      "type": "\"low\" | \"medium\" | \"high\" | \"xhigh\" | \"max\"",
+      "optional": true,
+      "after": "Reasoning effort for this agent. Set this ONLY when the user, or instructions such as CLAUDE.md or a skill, explicitly ask that this agent or delegated work run at a specific effort level, never on your own judgment; otherwise omit it and the agent runs at its usual effort.",
+      "nested": 0,
+      "display": "Agent.effort"
+    },
+    {
+      "class": "capability",
+      "kind": "tool-added",
+      "tool": "OfferChromeSetup",
+      "decl": "OfferChromeSetupInput",
+      "side": "input",
+      "after": "reason",
+      "display": "OfferChromeSetup"
+    },
+    {
+      "tool": "WebFetch",
+      "decl": "WebFetchInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "offset",
+      "type": "number",
+      "optional": true,
+      "after": "Character position in the page text to start reading from. Use it to read on through a page too long for one call, with the value the previous result gave.",
+      "nested": 0,
+      "display": "WebFetch.offset"
+    },
+    {
+      "tool": "Artifact",
+      "decl": "ArtifactOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "{scope=shared|all}.total",
+      "type": "number",
+      "optional": true,
+      "after": "",
+      "nested": 0,
+      "display": "Artifact.{scope=shared|all}.total"
+    },
+    {
+      "tool": "Artifact",
+      "decl": "ArtifactOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "{scope=shared|all}.total_at_least",
+      "type": "true",
+      "optional": true,
+      "after": "",
+      "nested": 0,
+      "display": "Artifact.{scope=shared|all}.total_at_least"
+    },
+    {
+      "tool": "Bash",
+      "decl": "BashOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "description-changed",
+      "field": "backgroundEndsWithFinalResponse",
+      "before": "True when this backgrounded command is owned by a synchronous subagent and is therefore terminated when that agent gives its final response; absent when the command survives (main loop, async subagents)",
+      "after": "True when this backgrounded command is terminated at its caller's final response, so no completion notification can follow (a synchronous subagent's command, or a headless session that takes no further input and is not waiting for background commands); absent when the command survives",
+      "display": "Bash.backgroundEndsWithFinalResponse"
+    },
+    {
+      "tool": "OfferChromeSetup",
+      "decl": "OfferChromeSetupOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "type-added",
+      "display": "OfferChromeSetup"
+    },
+    {
+      "tool": "ReadNotifications",
+      "decl": "ReadNotificationsOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "notifications[].arrived_at",
+      "type": "string",
+      "optional": true,
+      "after": "RFC3339 timestamp, by this machine's clock, of when the notification reached this session's queue. Missing from results saved before this field existed.",
+      "nested": 0,
+      "display": "ReadNotifications.notifications[].arrived_at"
+    },
+    {
+      "tool": "ReadNotifications",
+      "decl": "ReadNotificationsOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "read_at",
+      "type": "string",
+      "optional": true,
+      "after": "RFC3339 timestamp, by this machine's clock, of when this call read the queue. Missing from results saved before this field existed.",
+      "nested": 0,
+      "display": "ReadNotifications.read_at"
+    },
+    {
+      "tool": "WebSearch",
+      "decl": "WebSearchOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "results[].content[].snippet",
+      "type": "string",
+      "optional": true,
+      "after": "Page text. PostToolUse hooks get it; tool_use_result does not.",
+      "nested": 0,
+      "display": "WebSearch.results[].content[].snippet"
+    }
+  ],
+  "summary": {
+    "from": "2.1.287",
+    "to": "2.1.295",
+    "headline": "Claude Code 2.1.295 changed the instructions of 2 built-in tools (Agent, WebFetch) and added 3 capabilities.",
+    "counts": {
+      "instruction": 0,
+      "capability": 3,
+      "typeOnly": 7
+    },
+    "instructionTools": [
+      "Agent",
+      "WebFetch"
+    ],
+    "capabilitiesAdded": 3,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [
+      "OfferChromeSetup"
+    ],
+    "toolsRemoved": [],
+    "items": [
+      {
+        "class": "capability",
+        "text": "Agent: new parameter `effort`"
+      },
+      {
+        "class": "capability",
+        "text": "new tool OfferChromeSetup"
+      },
+      {
+        "class": "capability",
+        "text": "WebFetch: new parameter `offset`"
+      }
+    ]
+  }
+}

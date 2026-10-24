@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.295",
+  "to": "2.1.296",
+  "tools": {
+    "from": 44,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "Read",
+      "decl": "FileReadInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "allow_large",
+      "type": "boolean",
+      "optional": true,
+      "after": "Set to true to read a text file, or a line range of one, that is over the usual size limits, up to what still fits in your context. Only use this when you genuinely need all of it or the user asked for the whole file; otherwise read it in parts with offset and limit, or search it.",
+      "nested": 0,
+      "display": "Read.allow_large"
+    }
+  ],
+  "summary": {
+    "from": "2.1.295",
+    "to": "2.1.296",
+    "headline": "Claude Code 2.1.296 changed the instructions of 1 built-in tool (Read) and added 1 capability.",
+    "counts": {
+      "instruction": 0,
+      "capability": 1,
+      "typeOnly": 0
+    },
+    "instructionTools": [
+      "Read"
+    ],
+    "capabilitiesAdded": 1,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [],
+    "toolsRemoved": [],
+    "items": [
+      {
+        "class": "capability",
+        "text": "Read: new parameter `allow_large`"
+      }
+    ]
+  }
+}
