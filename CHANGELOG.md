@@ -2,7 +2,7 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
-## v1.6.2 (2026-10-24)
+## v1.6.2 and v1.6.3 (2026-10-24)
 Claude Code 2.1.310's official runner refused every shell-granting run on GitHub's Ubuntu 24.04
 runners, because AppArmor stops bubblewrap from creating its sandbox. Our canary caught it, and
 the Action fell back to the bundled runner, which kept the check green but hid the change. The
