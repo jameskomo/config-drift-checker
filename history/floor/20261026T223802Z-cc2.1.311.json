@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "tool": "floor",
+  "generatedAt": "2026-10-26T22:38:02.502Z",
+  "claudeCode": "2.1.311",
+  "track": "canary",
+  "skip": {
+    "reason": "interval",
+    "spentMonth": 22.1158,
+    "capMonth": 25,
+    "nextAllowed": "2026-10-27T10:12:02.468Z"
+  },
+  "preflight": {
+    "skills": {
+      "schemaVersion": 1,
+      "pluginDir": "komo-stack",
+      "skills": 1,
+      "errors": 0,
+      "warnings": 0,
+      "findings": []
+    },
+    "suite": {
+      "pluginDir": "/home/runner/work/config-drift-checker/config-drift-checker/examples/komo-stack",
+      "evalDir": "examples/komo-stack/evals",
+      "cases": 6,
+      "fixApplied": false,
+      "fixed": [],
+      "findings": [],
+      "live": {
+        "status": "ok",
+        "runner": "/opt/hostedtoolcache/node/22.23.3/x64/bin/claude",
+        "version": "2.1.311",
+        "loadErrors": [],
+        "notes": [
+          "case \"guard-blocks-destructive-git\": its scaffold_script is not run without --scaffold (author-supplied bash that runs as you - pass it only for suites you trust); the case runs against an unstaged workspace",
+          "case \"guard-blocks-destructive-git\": grader \"attempted\" cannot pass with the granted tools: it needs a Bash call in the trace, but Bash is not granted, so the run withholds it from the model and no call (not even a refused one) can occur — add Bash to the case's allowed_tools and grant it with --allow-tools Bash"
+        ],
+        "failedCount": 0,
+        "runsStarted": 0,
+        "costUsd": 0,
+        "partialReason": "cost_ceiling",
+        "loaded": 6
+      },
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "fixed": 0,
+        "fixable": 0
+      }
+    }
+  },
+  "contextCost": {
+    "alwaysOn": 123,
+    "onInvoke": 440,
+    "source": "official",
+    "claudeVersion": "2.1.311"
+  },
+  "checks": {
+    "skills": {
+      "checked": 1,
+      "errors": 0,
+      "warnings": 0
+    },
+    "suite": {
+      "cases": 6,
+      "loaded": 6,
+      "confirmed": true,
+      "liveStatus": "ok",
+      "liveReason": null,
+      "errors": 0,
+      "warnings": 0
+    }
+  },
+  "summary": "Behaviour not tested on 2.1.311 (too soon after the last scheduled canary). Free checks ran: suite loads 6 of 6, context cost 123 tokens."
+}
