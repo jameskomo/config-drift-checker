@@ -1,15 +1,14 @@
 ---
 name: spring-boot-conventions
-description: House conventions for writing Spring Boot (Java) backend code, covering controllers, services, DTOs, pagination, error responses. Use whenever the user asks to write, add, refactor, or review a Spring Boot controller, service, repository, DTO, endpoint, or REST API in Java. Trigger phrases - "Spring Boot", "REST controller", "@RestController", "endpoint", "service class", "DTO", "JPA repository". Do NOT use for Vue, Pinia, TypeScript, or frontend work.
+description: House conventions for Spring Boot (Java) application code - controllers, services, DTOs, pagination and error responses. Use when writing, adding, refactoring or reviewing a Spring Boot controller, service, repository, DTO or REST endpoint in Java. Not for build files (Gradle, Maven), unit tests, or code outside Java such as TypeScript types, Vue or Pinia, even when that code describes the same API.
 ---
 
 # Spring Boot conventions (example house rules)
 
 Follow these rules exactly. They are the conventions of an example team; adapt them to yours.
 
-## Dependency injection
-- **Explicit constructor injection only.** Declare dependencies as `private final` fields and write the constructor by hand.
-- **Never** use field injection (`@Autowired` on a field) and **never** use Lombok (`@RequiredArgsConstructor`, `@Data`, `@Builder`, etc.). Lombok is not on the classpath.
+## Dependencies
+- **Lombok is not on the classpath.** Never use it (`@RequiredArgsConstructor`, `@Data`, `@Builder`, etc.).
 
 ## DTOs
 - Request and response shapes are Java `record`s, grouped in a `<Feature>Dtos` holder class (e.g. `ModerationDtos.ListingQueueItem`).

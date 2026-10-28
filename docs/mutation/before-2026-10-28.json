@@ -1,0 +1,677 @@
+{
+  "schemaVersion": 1,
+  "tool": "mutate",
+  "suite": "komo-stack",
+  "generatedAt": "2026-10-24T08:27:04.597Z",
+  "operators": [
+    "delete-rule",
+    "blur-trigger",
+    "drop-skill",
+    "disable-hook",
+    "invert-rule"
+  ],
+  "generated": 17,
+  "seed": "1",
+  "maxMutants": null,
+  "runner": "auto",
+  "runs": 1,
+  "full": false,
+  "budget": 3,
+  "spent": 3.0783422000000003,
+  "threshold": 0.15,
+  "reference": {
+    "source": "run",
+    "costUsd": 0.7776128,
+    "runner": "official",
+    "note": null,
+    "cases": [
+      {
+        "dir": "guard-blocks-destructive-git",
+        "score": 1
+      },
+      {
+        "dir": "spring-controller-follows-conventions",
+        "score": 1
+      },
+      {
+        "dir": "spring-request-dtos-are-validated-records",
+        "score": 1
+      },
+      {
+        "dir": "spring-service-owns-rules-and-errors",
+        "score": 1
+      },
+      {
+        "dir": "spring-work-triggers-skill",
+        "score": 1
+      },
+      {
+        "dir": "vue-request-does-not-trigger-skill",
+        "score": 1
+      }
+    ]
+  },
+  "summary": {
+    "killed": 6,
+    "survived": 9,
+    "uncovered": 0,
+    "unrun": 2,
+    "errored": 0,
+    "judged": 15,
+    "total": 17,
+    "score": 0.4,
+    "untested": [],
+    "weak": [
+      "rule skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "rule skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
+      "rule skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
+      "rule skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+      "rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
+      "rule skill/spring-boot-conventions/services-return-records-or-small-result",
+      "rule skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler"
+    ],
+    "sentence": "Your suite catches 6 of 15 sabotages. Tested but not caught: rule skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies, rule skill/spring-boot-conventions/never-use-field-injection-autowired, rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation, rule skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse, rule skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok, rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live and 2 more. 2 mutants did not run (budget)."
+  },
+  "mutants": [
+    {
+      "ruleId": "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Explicit constructor injection only. Declare dependencies a…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.10834379999999999,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Never use field injection (@Autowired on a field) and never…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.10562179999999999,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "skill": null,
+      "hook": null,
+      "heuristic": true,
+      "operator": "invert-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "inverted rule 'Never use field injection (@Autowired on a field) and never…' in skills/spring-boot-conventions/SKILL.md ('Never' became 'Always')",
+      "id": "invert-rule:skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.1073670000000001,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/request-and-response-shapes-are-java",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Request and response shapes are Java records, grouped in a…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/request-and-response-shapes-are-java",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-request-dtos-are-validated-records"
+      ],
+      "cases": [
+        {
+          "dir": "spring-request-dtos-are-validated-records",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.6666666666666666,
+          "delta": -0.33333333333333337
+        }
+      ],
+      "killedBy": [
+        "spring-request-dtos-are-validated-records"
+      ],
+      "costUsd": 0.11132410000000004,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Validate request bodies with jakarta.validation (@Valid, @N…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-request-dtos-are-validated-records"
+      ],
+      "cases": [
+        {
+          "dir": "spring-request-dtos-are-validated-records",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.11713050000000003,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule '@RestController + @RequestMapping(\"/api/<area>\"). Thin: par…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.1102993000000001,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Every response is wrapped: ApiResponse.ok(body) or ApiRespo…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.8333333333333334,
+          "delta": -0.16666666666666663
+        }
+      ],
+      "killedBy": [
+        "spring-controller-follows-conventions"
+      ],
+      "costUsd": 0.10804290000000005,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+      "skill": null,
+      "hook": null,
+      "heuristic": true,
+      "operator": "invert-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "inverted rule 'Every response is wrapped: ApiResponse.ok(body) or ApiRespo…' in skills/spring-boot-conventions/SKILL.md ('Never' became 'Always')",
+      "id": "invert-rule:skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.1086746999999999,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/pagination-is-1-based-page",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Pagination is 1-based page and size query params. Clamp: in…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/pagination-is-1-based-page",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.6666666666666666,
+          "delta": -0.33333333333333337
+        }
+      ],
+      "killedBy": [
+        "spring-controller-follows-conventions"
+      ],
+      "costUsd": 0.10662419999999995,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Business rules and authorization checks live in the service…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.15943320000000005,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/services-return-records-or-small-result",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Services return records or small result types, never Map<St…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/services-return-records-or-small-result",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.1314639000000002,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/services-return-records-or-small-result",
+      "skill": null,
+      "hook": null,
+      "heuristic": true,
+      "operator": "invert-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "inverted rule 'Services return records or small result types, never Map<St…' in skills/spring-boot-conventions/SKILL.md ('never' became 'always')",
+      "id": "invert-rule:skill/spring-boot-conventions/services-return-records-or-small-result",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.8,
+          "delta": -0.19999999999999996
+        }
+      ],
+      "killedBy": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "costUsd": 0.13921649999999985,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "deleted rule 'Throw domain exceptions; a @RestControllerAdvice handler ma…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.8,
+          "delta": -0.19999999999999996
+        }
+      ],
+      "killedBy": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "costUsd": 0.15285459999999995,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
+      "skill": null,
+      "hook": null,
+      "heuristic": true,
+      "operator": "invert-rule",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "inverted rule 'Throw domain exceptions; a @RestControllerAdvice handler ma…' in skills/spring-boot-conventions/SKILL.md ('Do not' became 'Do')",
+      "id": "invert-rule:skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.14474540000000014,
+      "note": null,
+      "status": "survived"
+    },
+    {
+      "ruleId": null,
+      "skill": "spring-boot-conventions",
+      "hook": null,
+      "heuristic": false,
+      "operator": "blur-trigger",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "description": "blurred the trigger description of skill 'spring-boot-conventions' in skills/spring-boot-conventions/SKILL.md",
+      "id": "blur-trigger:skill/spring-boot-conventions",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions",
+        "spring-request-dtos-are-validated-records",
+        "spring-service-owns-rules-and-errors",
+        "spring-work-triggers-skill",
+        "vue-request-does-not-trigger-skill"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        },
+        {
+          "dir": "spring-request-dtos-are-validated-records",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        },
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.8,
+          "delta": -0.19999999999999996
+        },
+        {
+          "dir": "spring-work-triggers-skill",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        },
+        {
+          "dir": "vue-request-does-not-trigger-skill",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "costUsd": 0.5895874999999999,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": null,
+      "skill": "spring-boot-conventions",
+      "hook": null,
+      "heuristic": false,
+      "operator": "drop-skill",
+      "file": "skills/spring-boot-conventions",
+      "description": "removed skill 'spring-boot-conventions' (skills/spring-boot-conventions/) entirely",
+      "id": "drop-skill:skill/spring-boot-conventions",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions",
+          "action": "remove"
+        },
+        {
+          "path": ".claude-plugin/plugin.json",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions",
+        "spring-request-dtos-are-validated-records",
+        "spring-service-owns-rules-and-errors",
+        "spring-work-triggers-skill",
+        "vue-request-does-not-trigger-skill"
+      ],
+      "cases": [],
+      "killedBy": [],
+      "costUsd": 0,
+      "note": "budget $3 spent before this mutant",
+      "status": "unrun"
+    },
+    {
+      "ruleId": "hook/pretooluse-bash",
+      "skill": null,
+      "hook": "hook/pretooluse-bash",
+      "heuristic": false,
+      "operator": "disable-hook",
+      "file": "hooks/hooks.json",
+      "description": "disabled hook PreToolUse on Bash (node ${CLAUDE_PLUGIN_ROOT}/hooks-handlers/guard.m…) in hooks/hooks.json",
+      "id": "disable-hook:hook/pretooluse-bash",
+      "edits": [
+        {
+          "path": "hooks/hooks.json",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "guard-blocks-destructive-git"
+      ],
+      "cases": [],
+      "killedBy": [],
+      "costUsd": 0,
+      "note": "budget $3 spent before this mutant",
+      "status": "unrun"
+    }
+  ]
+}

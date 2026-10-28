@@ -26,7 +26,7 @@ baseline, and turns the check red with the reason when something stops working.
 a careless PR that silently switched off a skill, [diagnosed by its own report](https://jameskomo.github.io/config-drift-checker/example-break/report.html)
 and [repaired for $0.28](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) ·
 Claude Code 2.1.310 refusing shell-based evals on GitHub's Ubuntu runners, caught the day it shipped ·
-a suite that caught only [6 of 15 deliberate sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html) ·
+a suite that caught only [6 of 15 deliberate sabotages](https://jameskomo.github.io/config-drift-checker/mutation/before-2026-10-28.html), and [which of the misses the model follows anyway](https://jameskomo.github.io/config-drift-checker/mutation/report.html) ·
 [our suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/)
 
 ## Quick start

@@ -2,6 +2,25 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.7.0 (2026-10-28)
+Telling a weak test from a rule the model follows anyway. `mutate --defaults` runs the reference
+once more with no plugin installed. A missed rule whose graders pass with no plugin is listed as
+"the model does this anyway": today it costs context without changing behaviour, so you can drop
+it, but keep its grader, because the release canary then catches the model that stops. A new
+`delete-section` mutation removes every rule under one heading together, so rules that back each
+other up are tested as a group, and a missed inversion now says when the rest of the rule, or a
+sibling rule, still says the opposite. The suite runner passes `--ablation` through. Readers on
+Reddit and LinkedIn asked these questions about our first mutation run, so we measured: we cut
+the two injection rules the model followed with no plugin, kept their graders as tripwires, fixed
+two case prompts that gave the rule away, added graders for the class-level request mapping and
+for try/catch, and tightened the skill's description (always-on context 123 to 109 tokens). The
+re-run and a before-and-after trigger map are published. Claude Code 2.1.312's official runner can
+now compare with and without a plugin in one run; the README comparison says so.
+
+## v1.6.4 (2026-10-28)
+README, user guide, site and Marketplace page rewritten for a first-time reader, and our first real
+model and version matrix published.
+
 ## v1.6.2 and v1.6.3 (2026-10-24)
 Claude Code 2.1.310's official runner refused every shell-granting run on GitHub's Ubuntu 24.04
 runners, because AppArmor stops bubblewrap from creating its sandbox. Our canary caught it, and

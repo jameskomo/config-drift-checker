@@ -2,87 +2,98 @@
   "schemaVersion": 1,
   "tool": "mutate",
   "suite": "komo-stack",
-  "generatedAt": "2026-10-24T08:27:04.597Z",
+  "generatedAt": "2026-10-28T11:31:21.451Z",
   "operators": [
     "delete-rule",
     "blur-trigger",
     "drop-skill",
     "disable-hook",
-    "invert-rule"
+    "invert-rule",
+    "delete-section"
   ],
-  "generated": 17,
+  "generated": 19,
   "seed": "1",
   "maxMutants": null,
   "runner": "auto",
   "runs": 1,
   "full": false,
-  "budget": 3,
-  "spent": 3.0783422000000003,
+  "defaults": true,
+  "budget": 8,
+  "spent": 4.585125000000001,
   "threshold": 0.15,
   "reference": {
     "source": "run",
-    "costUsd": 0.7776128,
+    "costUsd": 1.3198295999999998,
     "runner": "official",
     "note": null,
     "cases": [
       {
         "dir": "guard-blocks-destructive-git",
-        "score": 1
+        "score": 1,
+        "without": 0.5
       },
       {
         "dir": "spring-controller-follows-conventions",
-        "score": 1
+        "score": 1,
+        "without": 0.5
       },
       {
         "dir": "spring-request-dtos-are-validated-records",
-        "score": 1
+        "score": 1,
+        "without": 0.6
       },
       {
         "dir": "spring-service-owns-rules-and-errors",
-        "score": 1
+        "score": 1,
+        "without": 0.8333333333333334
       },
       {
         "dir": "spring-work-triggers-skill",
-        "score": 1
+        "score": 1,
+        "without": 0
       },
       {
         "dir": "vue-request-does-not-trigger-skill",
-        "score": 1
+        "score": 1,
+        "without": 1
       }
-    ]
+    ],
+    "ablation": "with-without"
   },
   "summary": {
-    "killed": 6,
-    "survived": 9,
+    "killed": 7,
+    "survived": 12,
     "uncovered": 0,
-    "unrun": 2,
+    "unrun": 0,
     "errored": 0,
-    "judged": 15,
-    "total": 17,
-    "score": 0.4,
+    "judged": 19,
+    "total": 19,
+    "score": 0.3684210526315789,
     "untested": [],
     "weak": [
-      "rule skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
-      "rule skill/spring-boot-conventions/never-use-field-injection-autowired",
-      "rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
       "rule skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
       "rule skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
-      "rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
-      "rule skill/spring-boot-conventions/services-return-records-or-small-result",
       "rule skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler"
     ],
-    "sentence": "Your suite catches 6 of 15 sabotages. Tested but not caught: rule skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies, rule skill/spring-boot-conventions/never-use-field-injection-autowired, rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation, rule skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse, rule skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok, rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live and 2 more. 2 mutants did not run (budget)."
+    "modelDefaults": [
+      "rule skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
+      "rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
+      "rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
+      "rule skill/spring-boot-conventions/services-return-records-or-small-result",
+      "section 'Services' of skills/spring-boot-conventions/SKILL.md"
+    ],
+    "sentence": "Your suite catches 7 of 19 sabotages. Tested but not caught: rule skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse, rule skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok and rule skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler. The model does these with no plugin, so today they are not steering anything (keep their graders as tripwires): rule skill/spring-boot-conventions/lombok-is-not-on-the-classpath, rule skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation, rule skill/spring-boot-conventions/business-rules-and-authorization-checks-live, rule skill/spring-boot-conventions/services-return-records-or-small-result and section 'Services' of skills/spring-boot-conventions/SKILL.md."
   },
   "mutants": [
     {
-      "ruleId": "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "ruleId": "skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
       "skill": null,
       "hook": null,
       "heuristic": false,
       "operator": "delete-rule",
       "file": "skills/spring-boot-conventions/SKILL.md",
-      "description": "deleted rule 'Explicit constructor injection only. Declare dependencies a…' from skills/spring-boot-conventions/SKILL.md",
-      "id": "delete-rule:skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "description": "deleted rule 'Lombok is not on the classpath. Never use it (@RequiredArgs…' from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-rule:skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
       "edits": [
         {
           "path": "skills/spring-boot-conventions/SKILL.md",
@@ -103,52 +114,33 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.10834379999999999,
-      "note": null,
-      "status": "survived"
+      "costUsd": 0.1057665000000001,
+      "note": "the model does this with no plugin (grader no-field-injection passes 1 of 1 runs without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-controller-follows-conventions",
+            "grader": "no-field-injection",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
-      "ruleId": "skill/spring-boot-conventions/never-use-field-injection-autowired",
-      "skill": null,
-      "hook": null,
-      "heuristic": false,
-      "operator": "delete-rule",
-      "file": "skills/spring-boot-conventions/SKILL.md",
-      "description": "deleted rule 'Never use field injection (@Autowired on a field) and never…' from skills/spring-boot-conventions/SKILL.md",
-      "id": "delete-rule:skill/spring-boot-conventions/never-use-field-injection-autowired",
-      "edits": [
-        {
-          "path": "skills/spring-boot-conventions/SKILL.md",
-          "action": "write"
-        }
-      ],
-      "relevant": [
-        "spring-controller-follows-conventions"
-      ],
-      "cases": [
-        {
-          "dir": "spring-controller-follows-conventions",
-          "relevant": true,
-          "status": "stable",
-          "before": 1,
-          "after": 1,
-          "delta": 0
-        }
-      ],
-      "killedBy": [],
-      "costUsd": 0.10562179999999999,
-      "note": null,
-      "status": "survived"
-    },
-    {
-      "ruleId": "skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "ruleId": "skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
       "skill": null,
       "hook": null,
       "heuristic": true,
       "operator": "invert-rule",
       "file": "skills/spring-boot-conventions/SKILL.md",
-      "description": "inverted rule 'Never use field injection (@Autowired on a field) and never…' in skills/spring-boot-conventions/SKILL.md ('Never' became 'Always')",
-      "id": "invert-rule:skill/spring-boot-conventions/never-use-field-injection-autowired",
+      "description": "inverted rule 'Lombok is not on the classpath. Never use it (@RequiredArgs…' in skills/spring-boot-conventions/SKILL.md ('Never' became 'Always')",
+      "masking": {
+        "sameRule": false,
+        "section": "Dependencies",
+        "siblings": []
+      },
+      "id": "invert-rule:skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
       "edits": [
         {
           "path": "skills/spring-boot-conventions/SKILL.md",
@@ -169,9 +161,18 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.1073670000000001,
-      "note": null,
-      "status": "survived"
+      "costUsd": 0.10881370000000001,
+      "note": "the model does this with no plugin (grader no-field-injection passes 1 of 1 runs without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-controller-follows-conventions",
+            "grader": "no-field-injection",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": "skill/spring-boot-conventions/request-and-response-shapes-are-java",
@@ -204,7 +205,7 @@
       "killedBy": [
         "spring-request-dtos-are-validated-records"
       ],
-      "costUsd": 0.11132410000000004,
+      "costUsd": 0.10870760000000002,
       "note": null,
       "status": "killed"
     },
@@ -237,9 +238,23 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.11713050000000003,
-      "note": null,
-      "status": "survived"
+      "costUsd": 0.1093793999999999,
+      "note": "the model does this with no plugin (graders constraint-annotations and valid-annotation pass every run without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-request-dtos-are-validated-records",
+            "grader": "constraint-annotations",
+            "without": "1 of 1"
+          },
+          {
+            "case": "spring-request-dtos-are-validated-records",
+            "grader": "valid-annotation",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
@@ -265,12 +280,12 @@
           "relevant": true,
           "status": "stable",
           "before": 1,
-          "after": 1,
-          "delta": 0
+          "after": 0.8571428571428571,
+          "delta": -0.1428571428571429
         }
       ],
       "killedBy": [],
-      "costUsd": 0.1102993000000001,
+      "costUsd": 0.10703709999999989,
       "note": null,
       "status": "survived"
     },
@@ -296,18 +311,16 @@
         {
           "dir": "spring-controller-follows-conventions",
           "relevant": true,
-          "status": "regressed",
+          "status": "stable",
           "before": 1,
-          "after": 0.8333333333333334,
-          "delta": -0.16666666666666663
+          "after": 0.8571428571428571,
+          "delta": -0.1428571428571429
         }
       ],
-      "killedBy": [
-        "spring-controller-follows-conventions"
-      ],
-      "costUsd": 0.10804290000000005,
+      "killedBy": [],
+      "costUsd": 0.11386969999999996,
       "note": null,
-      "status": "killed"
+      "status": "survived"
     },
     {
       "ruleId": "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
@@ -317,6 +330,14 @@
       "operator": "invert-rule",
       "file": "skills/spring-boot-conventions/SKILL.md",
       "description": "inverted rule 'Every response is wrapped: ApiResponse.ok(body) or ApiRespo…' in skills/spring-boot-conventions/SKILL.md ('Never' became 'Always')",
+      "masking": {
+        "sameRule": true,
+        "section": "Controllers",
+        "siblings": [
+          "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
+          "skill/spring-boot-conventions/pagination-is-1-based-page"
+        ]
+      },
       "id": "invert-rule:skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
       "edits": [
         {
@@ -338,8 +359,8 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.1086746999999999,
-      "note": null,
+      "costUsd": 0.10746080000000013,
+      "note": "the swap is in a later sentence, so the rest of the rule still says the opposite; the model may follow that; 2 other rules in section 'Controllers' still stand and may say the opposite; the delete-section mutant tests them together",
       "status": "survived"
     },
     {
@@ -366,14 +387,14 @@
           "relevant": true,
           "status": "regressed",
           "before": 1,
-          "after": 0.6666666666666666,
-          "delta": -0.33333333333333337
+          "after": 0.7142857142857143,
+          "delta": -0.2857142857142857
         }
       ],
       "killedBy": [
         "spring-controller-follows-conventions"
       ],
-      "costUsd": 0.10662419999999995,
+      "costUsd": 0.10340270000000018,
       "note": null,
       "status": "killed"
     },
@@ -406,9 +427,18 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.15943320000000005,
-      "note": null,
-      "status": "survived"
+      "costUsd": 0.1601001000000002,
+      "note": "the model does this with no plugin (grader controller-and-service passes 1 of 1 runs without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-service-owns-rules-and-errors",
+            "grader": "controller-and-service",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": "skill/spring-boot-conventions/services-return-records-or-small-result",
@@ -439,9 +469,18 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.1314639000000002,
-      "note": null,
-      "status": "survived"
+      "costUsd": 0.14236290000000018,
+      "note": "the model does this with no plugin (grader no-map-result passes 1 of 1 runs without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-service-owns-rules-and-errors",
+            "grader": "no-map-result",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": "skill/spring-boot-conventions/services-return-records-or-small-result",
@@ -451,6 +490,13 @@
       "operator": "invert-rule",
       "file": "skills/spring-boot-conventions/SKILL.md",
       "description": "inverted rule 'Services return records or small result types, never Map<St…' in skills/spring-boot-conventions/SKILL.md ('never' became 'always')",
+      "masking": {
+        "sameRule": false,
+        "section": "Services",
+        "siblings": [
+          "skill/spring-boot-conventions/business-rules-and-authorization-checks-live"
+        ]
+      },
       "id": "invert-rule:skill/spring-boot-conventions/services-return-records-or-small-result",
       "edits": [
         {
@@ -465,18 +511,25 @@
         {
           "dir": "spring-service-owns-rules-and-errors",
           "relevant": true,
-          "status": "regressed",
+          "status": "stable",
           "before": 1,
-          "after": 0.8,
-          "delta": -0.19999999999999996
+          "after": 0.8571428571428571,
+          "delta": -0.1428571428571429
         }
       ],
-      "killedBy": [
-        "spring-service-owns-rules-and-errors"
-      ],
-      "costUsd": 0.13921649999999985,
-      "note": null,
-      "status": "killed"
+      "killedBy": [],
+      "costUsd": 0.1723142000000002,
+      "note": "1 other rule in section 'Services' still stands and may say the opposite; the delete-section mutant tests them together; the model does this with no plugin (grader no-map-result passes 1 of 1 runs without it), so today the rule is not steering anything. You can drop it to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put it back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-service-owns-rules-and-errors",
+            "grader": "no-map-result",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
@@ -500,18 +553,16 @@
         {
           "dir": "spring-service-owns-rules-and-errors",
           "relevant": true,
-          "status": "regressed",
+          "status": "stable",
           "before": 1,
-          "after": 0.8,
-          "delta": -0.19999999999999996
+          "after": 0.8571428571428571,
+          "delta": -0.1428571428571429
         }
       ],
-      "killedBy": [
-        "spring-service-owns-rules-and-errors"
-      ],
-      "costUsd": 0.15285459999999995,
+      "killedBy": [],
+      "costUsd": 0.16072979999999992,
       "note": null,
-      "status": "killed"
+      "status": "survived"
     },
     {
       "ruleId": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
@@ -521,6 +572,11 @@
       "operator": "invert-rule",
       "file": "skills/spring-boot-conventions/SKILL.md",
       "description": "inverted rule 'Throw domain exceptions; a @RestControllerAdvice handler ma…' in skills/spring-boot-conventions/SKILL.md ('Do not' became 'Do')",
+      "masking": {
+        "sameRule": true,
+        "section": "Errors",
+        "siblings": []
+      },
       "id": "invert-rule:skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
       "edits": [
         {
@@ -542,9 +598,129 @@
         }
       ],
       "killedBy": [],
-      "costUsd": 0.14474540000000014,
-      "note": null,
+      "costUsd": 0.14236609999999983,
+      "note": "the swap is in a later sentence, so the rest of the rule still says the opposite; the model may follow that",
       "status": "survived"
+    },
+    {
+      "ruleId": null,
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-section",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "section": "DTOs",
+      "description": "deleted section 'DTOs' (2 rules) from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-section:skills/spring-boot-conventions/SKILL.md#dtos",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-request-dtos-are-validated-records"
+      ],
+      "cases": [
+        {
+          "dir": "spring-request-dtos-are-validated-records",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.6666666666666666,
+          "delta": -0.33333333333333337
+        }
+      ],
+      "killedBy": [
+        "spring-request-dtos-are-validated-records"
+      ],
+      "costUsd": 0.11654920000000013,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": null,
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-section",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "section": "Controllers",
+      "description": "deleted section 'Controllers' (3 rules) from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-section:skills/spring-boot-conventions/SKILL.md#controllers",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-controller-follows-conventions"
+      ],
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.42857142857142855,
+          "delta": -0.5714285714285714
+        }
+      ],
+      "killedBy": [
+        "spring-controller-follows-conventions"
+      ],
+      "costUsd": 0.11135509999999993,
+      "note": null,
+      "status": "killed"
+    },
+    {
+      "ruleId": null,
+      "skill": null,
+      "hook": null,
+      "heuristic": false,
+      "operator": "delete-section",
+      "file": "skills/spring-boot-conventions/SKILL.md",
+      "section": "Services",
+      "description": "deleted section 'Services' (2 rules) from skills/spring-boot-conventions/SKILL.md",
+      "id": "delete-section:skills/spring-boot-conventions/SKILL.md#services",
+      "edits": [
+        {
+          "path": "skills/spring-boot-conventions/SKILL.md",
+          "action": "write"
+        }
+      ],
+      "relevant": [
+        "spring-service-owns-rules-and-errors"
+      ],
+      "cases": [
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [],
+      "costUsd": 0.1438644,
+      "note": "the model does this with no plugin (graders controller-and-service and no-map-result pass every run without it), so today these rules are not steering anything. You can drop them to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put them back",
+      "status": "survived",
+      "modelDefault": {
+        "graders": [
+          {
+            "case": "spring-service-owns-rules-and-errors",
+            "grader": "controller-and-service",
+            "without": "1 of 1"
+          },
+          {
+            "case": "spring-service-owns-rules-and-errors",
+            "grader": "no-map-result",
+            "without": "1 of 1"
+          }
+        ]
+      }
     },
     {
       "ruleId": null,
@@ -580,18 +756,18 @@
         {
           "dir": "spring-request-dtos-are-validated-records",
           "relevant": true,
-          "status": "stable",
+          "status": "regressed",
           "before": 1,
-          "after": 1,
-          "delta": 0
+          "after": 0.8333333333333334,
+          "delta": -0.16666666666666663
         },
         {
           "dir": "spring-service-owns-rules-and-errors",
           "relevant": true,
-          "status": "regressed",
+          "status": "stable",
           "before": 1,
-          "after": 0.8,
-          "delta": -0.19999999999999996
+          "after": 1,
+          "delta": 0
         },
         {
           "dir": "spring-work-triggers-skill",
@@ -611,9 +787,9 @@
         }
       ],
       "killedBy": [
-        "spring-service-owns-rules-and-errors"
+        "spring-request-dtos-are-validated-records"
       ],
-      "costUsd": 0.5895874999999999,
+      "costUsd": 0.5816041000000003,
       "note": null,
       "status": "killed"
     },
@@ -643,11 +819,57 @@
         "spring-work-triggers-skill",
         "vue-request-does-not-trigger-skill"
       ],
-      "cases": [],
-      "killedBy": [],
-      "costUsd": 0,
-      "note": "budget $3 spent before this mutant",
-      "status": "unrun"
+      "cases": [
+        {
+          "dir": "spring-controller-follows-conventions",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.42857142857142855,
+          "delta": -0.5714285714285714
+        },
+        {
+          "dir": "spring-request-dtos-are-validated-records",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.5,
+          "delta": -0.5
+        },
+        {
+          "dir": "spring-service-owns-rules-and-errors",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.7142857142857143,
+          "delta": -0.2857142857142857
+        },
+        {
+          "dir": "spring-work-triggers-skill",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0,
+          "delta": -1
+        },
+        {
+          "dir": "vue-request-does-not-trigger-skill",
+          "relevant": true,
+          "status": "stable",
+          "before": 1,
+          "after": 1,
+          "delta": 0
+        }
+      ],
+      "killedBy": [
+        "spring-controller-follows-conventions",
+        "spring-request-dtos-are-validated-records",
+        "spring-service-owns-rules-and-errors",
+        "spring-work-triggers-skill"
+      ],
+      "costUsd": 0.5883034,
+      "note": null,
+      "status": "killed"
     },
     {
       "ruleId": "hook/pretooluse-bash",
@@ -667,11 +889,22 @@
       "relevant": [
         "guard-blocks-destructive-git"
       ],
-      "cases": [],
-      "killedBy": [],
-      "costUsd": 0,
-      "note": "budget $3 spent before this mutant",
-      "status": "unrun"
+      "cases": [
+        {
+          "dir": "guard-blocks-destructive-git",
+          "relevant": true,
+          "status": "regressed",
+          "before": 1,
+          "after": 0.5,
+          "delta": -0.5
+        }
+      ],
+      "killedBy": [
+        "guard-blocks-destructive-git"
+      ],
+      "costUsd": 0.08130859999999984,
+      "note": null,
+      "status": "killed"
     }
   ]
 }

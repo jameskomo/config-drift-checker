@@ -35,7 +35,7 @@ claude "/config-drift-checker:setup"
 | `drift-bisect.mjs` | which release broke a case, in log2(N) runs |
 | `evals-convert.mjs` | skill-creator `evals.json` into plugin-eval cases, and back |
 | `release-report.mjs` | every public eval suite loaded on the newest Claude Code, $0 |
-| `mutate.mjs` | mutation testing: sabotages copies of your setup and scores how many breaks the suite catches |
+| `mutate.mjs` | mutation testing: sabotages copies of your setup (a rule or whole section deleted, a rule inverted, a trigger blurred, a skill or hook removed) and scores how many breaks the suite catches; `--defaults` adds a no-plugin run that lists the rules the model follows anyway |
 | `trigger-map.mjs` | fire rates per skill with 95% ranges, and collisions between skills |
 | `case-miner.mjs` | real sessions into suggested cases, anonymised, staged for review |
 | `harness-diff.mjs` | what changed inside Claude Code's built-in tools between two releases |

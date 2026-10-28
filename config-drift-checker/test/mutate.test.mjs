@@ -4,7 +4,8 @@ import { promises as fs, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { loadSuite, generateMutants, relevantCases, sampleMutants, materialize, blurDescription, invertLines, summarize, renderMutateHtml, renderMutateMd, mutateJson, OPERATORS, BLURRED } from '../tools/mutate.mjs';
+import { loadSuite, generateMutants, relevantCases, sampleMutants, materialize, blurDescription, invertLines, swapAfterFirstSentence, relatedGrader, graderRates, modelDefaultGraders, runMutations, summarize, renderMutateHtml, renderMutateMd, mutateJson, OPERATORS, BLURRED } from '../tools/mutate.mjs';
+import { runSuite } from '../tools/cc-release.mjs';
 
 const TOOL = new URL('../tools/mutate.mjs', import.meta.url).pathname;
 const FAKE = new URL('./fixtures/fake-claude.mjs', import.meta.url).pathname;
@@ -65,6 +66,7 @@ test('generateMutants: every operator, mapped to config-coverage rule ids, with 
     'invert-rule:skill/widgets/controllers-return-dtos-never-entities-dtomark',
     'delete-rule:skill/widgets/never-log-secrets-in-widget-code',
     'invert-rule:skill/widgets/never-log-secrets-in-widget-code',
+    'delete-section:skills/widgets/SKILL.md#widgets',
     'blur-trigger:skill/widgets',
     'drop-skill:skill/widgets',
     'disable-hook:hook/pretooluse-bash',
@@ -78,6 +80,13 @@ test('generateMutants: every operator, mapped to config-coverage rule ids, with 
   assert.equal(inv.heuristic, true);
   assert.match(inv.ops[0].content, /Controllers return DTOs, always entities/);
   assert.match(by['invert-rule:claude-md/always-run-the-linter-before-you'].ops[0].content, /- Never run the linter/);
+  assert.deepEqual(inv.masking, { sameRule: false, section: 'Widgets', siblings: ['skill/widgets/never-log-secrets-in-widget-code'] });
+  assert.deepEqual(by['invert-rule:claude-md/always-run-the-linter-before-you'].masking, { sameRule: false, section: 'Team rules', siblings: [] });
+  const sec = by['delete-section:skills/widgets/SKILL.md#widgets'];
+  assert.equal(sec.description, "deleted section 'Widgets' (2 rules) from skills/widgets/SKILL.md");
+  assert.deepEqual(sec.targets.rules, ['skill/widgets/controllers-return-dtos-never-entities-dtomark', 'skill/widgets/never-log-secrets-in-widget-code']);
+  assert.match(sec.ops[0].content, /# Widgets\n\n\nDone\.\n$/, 'both bullets go, wrapped lines included; the heading and the rest stay');
+  assert.equal(ms.filter((m) => m.operator === 'delete-section').length, 1, 'a heading with one rule gets no section mutant');
   const blur = by['blur-trigger:skill/widgets'].ops[0].content;
   assert.match(blur, new RegExp(`^---\\nname: widgets\\ndescription: ${BLURRED.replace(/\./g, '\\.')}\\n---\\n`));
   assert.doesNotMatch(blur, /WIDGETMARK/);
@@ -111,7 +120,7 @@ test('blurDescription and invertLines: block scalars collapse to one line, case 
 
 test('sampleMutants: reproducible for a seed, round-robin across operators, generation order kept', () => {
   const ms = OPERATORS.flatMap((op) => Array.from({ length: 4 }, (_, i) => ({ id: `${op}-${i}`, operator: op })));
-  const a = sampleMutants(ms, 5, 'x'), b = sampleMutants(ms, 5, 'x');
+  const a = sampleMutants(ms, 6, 'x'), b = sampleMutants(ms, 6, 'x');
   assert.deepEqual(a.map((m) => m.id), b.map((m) => m.id));
   assert.deepEqual(a.map((m) => m.operator), OPERATORS, 'one per operator');
   assert.deepEqual(a, [...a].sort((p, q) => ms.indexOf(p) - ms.indexOf(q)));
@@ -170,6 +179,7 @@ test('CLI end to end with the fake claude: caught, missed and untested mutants; 
     'invert-rule:skill/widgets/controllers-return-dtos-never-entities-dtomark': 'survived',
     'delete-rule:skill/widgets/never-log-secrets-in-widget-code': 'survived',
     'invert-rule:skill/widgets/never-log-secrets-in-widget-code': 'survived',
+    'delete-section:skills/widgets/SKILL.md#widgets': 'killed',
     'blur-trigger:skill/widgets': 'killed',
     'drop-skill:skill/widgets': 'killed',
     'disable-hook:hook/pretooluse-bash': 'survived',
@@ -178,13 +188,15 @@ test('CLI end to end with the fake claude: caught, missed and untested mutants; 
   assert.deepEqual(blur.killedBy, ['trigger']);
   assert.deepEqual(j.mutants.find((m) => m.operator === 'drop-skill').killedBy, ['controller', 'trigger']);
   assert.deepEqual(j.reference.cases.map((c) => [c.dir, c.score]), [['controller', 1], ['guard', 1], ['secrets', 1], ['trigger', 1]]);
-  assert.equal(j.summary.score, 3 / 9);
-  assert.match(j.summary.sentence, /^Your suite catches 3 of 9 sabotages\. Nothing tests: rule claude-md\/always-run-the-linter-before-you\. Tested but not caught: /);
-  // reference 4 cases, then 1 + 1 + 1 + 1 + 3 + 3 + 1 for the mutants that have a relevant case
-  assert.equal(r.calls.length, 15);
-  assert.equal(j.spent.toFixed(2), '1.50');
+  assert.equal(j.summary.score, 4 / 10);
+  assert.match(j.summary.sentence, /^Your suite catches 4 of 10 sabotages\. Nothing tests: rule claude-md\/always-run-the-linter-before-you\. Tested but not caught: /);
+  assert.match(j.mutants.find((m) => m.id === 'invert-rule:skill/widgets/controllers-return-dtos-never-entities-dtomark').note, /1 other rule in section 'Widgets' still stands and may say the opposite; the delete-section mutant tests them together/);
+  assert.equal(j.defaults, false);
+  // reference 4 cases, then 1 + 1 + 1 + 1 + 2 + 3 + 3 + 1 for the mutants that have a relevant case
+  assert.equal(r.calls.length, 17);
+  assert.equal(j.spent.toFixed(2), '1.70');
   assert.match(r.stdout, /^### Mutation test: widget-kit/);
-  assert.match(await fs.readFile(path.join(out, 'm.html'), 'utf8'), /Catches 3 of 9 sabotages/);
+  assert.match(await fs.readFile(path.join(out, 'm.html'), 'utf8'), /Catches 4 of 10 sabotages/);
   assert.equal(existsSync(path.join(out, 'runs', 'reference.json')), true, '--out-dir keeps the reference for a later --baseline');
   assert.deepEqual(await snapshot(plugin), before, 'the original plugin is never touched');
   // every agent run loaded a temp copy, never the plugin itself
@@ -207,9 +219,9 @@ test('CLI --baseline skips the reference run; --budget stops starting mutants an
   const b = await runTool(plugin, ['--runner', 'shim', '--budget', '0.55', '--json', '-']);
   assert.equal(b.status, 0, b.stderr);
   const jb = JSON.parse(b.stdout);
-  assert.deepEqual(jb.mutants.map((m) => m.status), ['uncovered', 'uncovered', 'killed', 'survived', 'unrun', 'unrun', 'unrun', 'unrun', 'unrun']);
+  assert.deepEqual(jb.mutants.map((m) => m.status), ['uncovered', 'uncovered', 'killed', 'survived', 'unrun', 'unrun', 'unrun', 'unrun', 'unrun', 'unrun']);
   assert.match(jb.mutants[4].note, /budget \$0\.55 spent before this mutant/);
-  assert.match(jb.summary.sentence, /5 mutants did not run \(budget\)\./);
+  assert.match(jb.summary.sentence, /6 mutants did not run \(budget\)\./);
   assert.equal(b.calls.length, 6);
 });
 
@@ -224,19 +236,141 @@ test('CLI --full runs the rest of the suite on what the relevant cases missed; a
 
 test('CLI --dry-run and --max-mutants: lists a reproducible sample with a cost estimate from history, runs nothing', async () => {
   const plugin = await makePlugin();
-  const r = await runTool(plugin, ['--dry-run', '--max-mutants', '5', '--seed', '7', '--json', '-']);
+  const r = await runTool(plugin, ['--dry-run', '--max-mutants', '6', '--seed', '7', '--json', '-']);
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.calls.length, 0);
   const j = JSON.parse(r.stdout);
   assert.equal(j.dryRun, true);
-  assert.equal(j.mutants.length, 5);
+  assert.equal(j.mutants.length, 6);
   assert.deepEqual([...new Set(j.mutants.map((m) => m.operator))].sort(), [...OPERATORS].sort());
-  assert.match(r.stderr, /Mutants: 5 of 9 \(seed 7\)/);
+  assert.match(r.stderr, /Mutants: 6 of 10 \(seed 7\)/);
   assert.match(r.stderr, /Estimated cost: about \$\d+\.\d\d/);
   assert.match(r.stderr, /Dry run: nothing run, \$0 spent\./);
-  const again = await runTool(plugin, ['--dry-run', '--max-mutants', '5', '--seed', '7', '--json', '-']);
+  const again = await runTool(plugin, ['--dry-run', '--max-mutants', '6', '--seed', '7', '--json', '-']);
   assert.deepEqual(JSON.parse(again.stdout).mutants.map((m) => m.id), j.mutants.map((m) => m.id));
   const bad = await runTool(plugin, ['--operators', 'nope', '--dry-run']);
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /--operators takes a comma list/);
+});
+
+test('invert-rule masking: a swap after the first sentence leaves the rest of the rule saying the opposite', () => {
+  const at = (line) => { const inv = invertLines([line], 0, 0); return swapAfterFirstSentence([line], 0, 0, inv); };
+  assert.equal(at('- Every response is wrapped: `ApiResponse.ok(body)` for lists. Never return raw entities.'), true);
+  assert.equal(at('- Throw domain exceptions; a handler maps them. Do not try/catch in controllers.'), true);
+  assert.equal(at('- **Never** use field injection and never use Lombok. Lombok is not on the classpath.'), false);
+  assert.equal(at('- Services return records (e.g. Foo), never `Map<String, Object>`.'), false, 'e.g. and code spans are not sentence ends');
+  const wrapped = ['- Keep handlers small.', '  Never call the database from them.'];
+  assert.equal(swapAfterFirstSentence(wrapped, 0, 1, invertLines(wrapped, 0, 1)), true, 'a wrapped rule counts its earlier lines');
+});
+
+test('relatedGrader and graderRates: shared words tie a grader to a rule; indicators and errored runs do not count', () => {
+  const rule = 'Never use field injection (`@Autowired` on a field) and never use Lombok (`@RequiredArgsConstructor`). Lombok is not on the classpath.';
+  assert.equal(relatedGrader(rule, { name: 'no-field-injection', text: '' }), true, 'every word of the name is in the rule');
+  assert.equal(relatedGrader(rule, { name: 'constructor-injection', text: 'The controller declares an explicit hand-written constructor taking the service.' }), false);
+  assert.equal(relatedGrader(rule, { name: 'reviewer-judgment', text: 'criteria: contains no Lombok or field injection' }), true, 'two shared words');
+  assert.equal(relatedGrader('Always run the linter before you commit.', { name: 'done', text: 'Says DONE.' }), false);
+  const rates = graderRates({ arms: {
+    with: [{ graders: [{ name: 'a', passed: true }, { name: 'skill-fired', passed: true, withOnly: true }] }, { isError: true, graders: [{ name: 'a', passed: false }] }],
+    without: [{ graders: [{ name: 'a', verdict: 'pass', score: 1 }, { name: 'b', verdict: 'skipped', score: null }] }, { graders: [{ name: 'a', score: 0 }] }],
+  } });
+  assert.deepEqual(rates.get('a'), { with: { k: 1, n: 1 }, without: { k: 1, n: 2 } });
+  assert.equal(rates.has('skill-fired'), false);
+  assert.equal(rates.has('b'), false);
+});
+
+// a suite runner that reads which cases the copy holds: every case scores 1 with the plugin; with no plugin the
+// controller case fails and every other case passes, grader by grader
+const fakeSuiteRunner = (calls) => async ({ plugin, ablation }) => {
+  const dirs = (await fs.readdir(path.join(plugin, 'evals'))).filter((d) => d !== 'results').sort();
+  calls.push({ dirs, ablation });
+  const gr = (d, passed) => [{ name: d === 'secrets' ? 'no-secrets-logged' : 'done', passed }];
+  const cases = dirs.map((d) => ({ dir: d, summary: { score: 1 }, arms: { with: [{ score: 1, graders: gr(d, true) }],
+    ...(ablation === 'with-without' && { without: [0, 1].map(() => ({ score: d === 'controller' ? 0 : 1, graders: gr(d, d !== 'controller') })) }) } }));
+  const json = { cases, aggregates: { totalRuns: cases.length, erroredRuns: 0, costUsd: 0.1 * cases.length } };
+  return { raw: json, json, runner: 'fake', note: null };
+};
+
+test('runMutations --defaults: a no-plugin reference arm marks missed rules the model follows anyway, and look-alike cases', async () => {
+  const plugin = await makePlugin();
+  await fs.writeFile(path.join(plugin, 'evals/secrets/graders/no-secrets-logged.md'), '---\ntype: regex\npattern: DONE\ntarget: last_message\n---\nNo secrets logged in widget output.\n');
+  await fs.rm(path.join(plugin, 'evals/secrets/graders/done.md'));
+  const suite = await loadSuite(plugin);
+  assert.deepEqual(suite.cases.find((c) => c.dir === 'secrets').graders.map((g) => g.name), ['no-secrets-logged']);
+  const mutants = await generateMutants(plugin, suite, { operators: ['delete-rule', 'invert-rule', 'delete-section'] });
+  const calls = [];
+  const res = await runMutations({ plugin, suite, mutants, defaults: true, budget: 5, log: () => {}, suiteRunner: fakeSuiteRunner(calls) });
+  assert.deepEqual(calls.map((c) => c.ablation), ['with-without', ...Array(calls.length - 1).fill('none')], 'only the reference runs without the plugin');
+  assert.equal(res.reference.ablation, 'with-without');
+  assert.deepEqual(res.reference.cases, [{ dir: 'controller', score: 1, without: 0 }, { dir: 'secrets', score: 1, without: 1, indistinct: true }]);
+  const by = Object.fromEntries(res.mutants.map((m) => [m.id, m]));
+  assert.deepEqual(by['delete-rule:skill/widgets/never-log-secrets-in-widget-code'].modelDefault, { graders: [{ case: 'secrets', grader: 'no-secrets-logged', without: '2 of 2' }] });
+  assert.match(by['delete-rule:skill/widgets/never-log-secrets-in-widget-code'].note, /the model does this with no plugin \(grader no-secrets-logged passes 2 of 2 runs without it\), so today the rule is not steering anything\. You can drop it to save context, but keep the grader: it becomes a tripwire/);
+  assert.equal(by['delete-section:skills/widgets/SKILL.md#widgets'].modelDefault, undefined, 'one of its rules has a related grader that fails with no plugin, so the section still matters');
+  assert.equal(by['delete-rule:skill/widgets/controllers-return-dtos-never-entities-dtomark'].modelDefault, undefined, 'its grader fails with no plugin');
+  assert.match(by['invert-rule:skill/widgets/never-log-secrets-in-widget-code'].note, /1 other rule in section 'Widgets' still stands/);
+
+  const j = mutateJson(res, { suite: 'widget-kit', generatedAt: '2026-10-28T10:00:00Z' });
+  assert.equal(j.defaults, true);
+  assert.deepEqual(j.summary.modelDefaults, ['rule skill/widgets/never-log-secrets-in-widget-code']);
+  assert.deepEqual(j.summary.weak, ['rule skill/widgets/controllers-return-dtos-never-entities-dtomark', "section 'Widgets' of skills/widgets/SKILL.md"], 'a model default is not also listed as a weak test');
+  assert.match(j.summary.sentence, /The model does these with no plugin, so today they are not steering anything \(keep their graders as tripwires\): /);
+  const html = renderMutateHtml(j), md = renderMutateMd(j);
+  assert.match(html, /<h2>The model does these anyway<\/h2><p class="hint">Their graders pass even with no plugin installed, so today these rules cost context without changing behaviour\. Keep the graders either way/);
+  assert.match(html, /Cases that cannot tell your setup from no plugin/);
+  assert.match(html, /secrets: 1\.00 with, 1\.00 without/);
+  assert.match(html, /plus a no-plugin arm/);
+  assert.match(md, /\*\*The model does these anyway:\*\* rule skill\/widgets\/never-log-secrets-in-widget-code\./);
+  assert.match(md, /with a no-plugin arm/);
+  assert.match(md, /\*\*Cases that cannot tell your setup from no plugin:\*\* secrets \(1\.00 with, 1\.00 without\)/);
+  for (const text of [html, md, j.summary.sentence, ...j.mutants.map((m) => m.note ?? '')]) assert.doesNotMatch(text, /[–—~]/, 'no en or em dashes, no tildes');
+  assert.doesNotMatch(html + md, /cut it/i);
+
+  // without --defaults nothing runs with no plugin and nothing is labelled
+  const calls2 = [];
+  const plain = await runMutations({ plugin, suite, mutants, budget: 5, log: () => {}, suiteRunner: fakeSuiteRunner(calls2) });
+  assert.ok(calls2.every((c) => c.ablation === 'none'));
+  assert.ok(plain.mutants.every((m) => !m.modelDefault));
+  assert.equal(plain.reference.ablation, undefined);
+
+  // with a --baseline that covers every case, --defaults still runs the reference once, and the baseline's scores win
+  const calls3 = [];
+  const baseline = { cases: ['controller', 'secrets'].map((dir) => ({ dir, summary: { score: 0.9 }, arms: { with: [{ score: 0.9 }] } })) };
+  const withBase = await runMutations({ plugin, suite, mutants, defaults: true, baseline, budget: 5, log: () => {}, suiteRunner: fakeSuiteRunner(calls3) });
+  assert.equal(calls3[0].ablation, 'with-without');
+  assert.deepEqual(withBase.reference.cases.map((c) => c.score), [0.9, 0.9]);
+  assert.equal(withBase.reference.source, 'baseline');
+});
+
+test('runSuite passes --ablation to the official runner and the shim; the shim then runs a no-plugin arm', async () => {
+  const plugin = await makePlugin();
+  const bin = await tmp('mutate-bin-'), state = await tmp('mutate-state-');
+  await fs.writeFile(path.join(bin, 'claude'), `#!/bin/sh\nexec node "${FAKE}" "$@"\n`, { mode: 0o755 });
+  const env = { ...process.env, FAKE_CLAUDE_STATE: state, CLAUDE_CONFIG_DIR: await tmp('mutate-cfg-'), ...fakeEnv };
+  const r = await runSuite({ plugin, binDir: bin, env, runner: 'official', caseGlob: 'controller', runs: 1, scaffold: false, ablation: 'with-without' });
+  const calls = (await fs.readFile(path.join(state, 'calls.jsonl'), 'utf8')).trim().split('\n').map((l) => JSON.parse(l)).filter((e) => !e.done);
+  const official = calls.find((c) => c.args[0] === 'plugin' && c.args[1] === 'eval');
+  assert.ok(official, 'the official runner was tried first');
+  assert.equal(official.args[official.args.indexOf('--ablation') + 1], 'with-without');
+  assert.equal(r.runner, 'shim', 'the fake writes no official result, so it falls back');
+  const agent = calls.filter((c) => c.args.includes('-p'));
+  assert.equal(agent.filter((c) => c.args.includes('--plugin-dir')).length, 1);
+  assert.equal(agent.filter((c) => !c.args.includes('--plugin-dir')).length, 1, 'the no-plugin arm loads no plugin');
+  assert.equal(r.json.cases[0].arms.without.length, 1);
+});
+
+test('modelDefaultGraders: one related grader that fails with no plugin means the rule still matters', () => {
+  const m = { targets: { texts: ['Every response is wrapped: ApiResponse.ok(body) or ApiResponse.ok(items, PageMeta.of(page, size, total))'] } };
+  const suiteCases = [{ dir: 'c', graders: [{ name: 'api-response-wrapper', text: 'The response is wrapped in ApiResponse.ok(...).' }, { name: 'page-clamping', text: 'Page size is clamped against a MAX_PAGE_SIZE constant.' }] }];
+  const run = (wrapper, clamp) => ({ score: 0.5, graders: [{ name: 'api-response-wrapper', passed: wrapper }, { name: 'page-clamping', passed: clamp }] });
+  assert.deepEqual(modelDefaultGraders(m, ['c'], suiteCases, new Map([['c', { arms: { without: [run(false, true)] } }]])), [], 'the wrapper grader fails without the plugin');
+  assert.deepEqual(modelDefaultGraders(m, ['c'], suiteCases, new Map([['c', { arms: { without: [run(true, true)] } }]])).map((g) => g.grader), ['api-response-wrapper', 'page-clamping']);
+});
+
+test('runMutations --defaults: a no-fire case passes with no plugin by design and is not flagged as a look-alike', async () => {
+  const plugin = await makePlugin();
+  await fs.writeFile(path.join(plugin, 'evals/secrets/graders/stays-out.md'), '---\ntype: tool_used\ntool: Skill\ninput_match: widgets\nmin: 0\nmax: 0\n---\nThe widget skill stays out.\n');
+  const suite = await loadSuite(plugin);
+  const mutants = await generateMutants(plugin, suite, { operators: ['delete-rule'] });
+  const res = await runMutations({ plugin, suite, mutants, defaults: true, budget: 5, log: () => {}, suiteRunner: fakeSuiteRunner([]) });
+  assert.equal(res.reference.cases.find((c) => c.dir === 'secrets').indistinct, undefined);
 });

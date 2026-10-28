@@ -2,24 +2,24 @@
   "schemaVersion": 1,
   "tool": "trigger-map",
   "plugin": "komo-stack",
-  "generatedAt": "2026-10-24T10:02:59.755Z",
+  "generatedAt": "2026-10-28T11:28:52.355Z",
   "harness": {
     "name": "claude-code",
-    "version": "2.1.310"
+    "version": "2.1.312"
   },
   "config": {
     "model": "haiku",
     "judgeModel": "haiku",
-    "runs": 1,
+    "runs": 3,
     "maxTurns": 1,
-    "budget": 0.3,
-    "concurrency": 3,
+    "budget": 1,
+    "concurrency": 4,
     "minFire": 0.8,
     "maxFalseFire": 0.1,
-    "generate": 10,
-    "cache": "prompts.json",
-    "prompts": null,
-    "evals": true
+    "generate": 0,
+    "cache": ".cdc-trigger-prompts.json",
+    "prompts": "prompts-fixed.json",
+    "evals": false
   },
   "resolvedModels": [
     "claude-haiku-5-5"
@@ -44,17 +44,17 @@
     "run-skill-generator",
     "plugin-authoring"
   ],
-  "spent": 0.038247175,
+  "spent": 0.11373553999999998,
   "budget": {
-    "capUsd": 0.3,
-    "spentUsd": 0.038247175,
+    "capUsd": 1,
+    "spentUsd": 0.11373553999999998,
     "exceeded": false,
     "skipped": 0
   },
   "sources": {
-    "file": 0,
-    "evals": 5,
-    "generated": 20
+    "file": 25,
+    "evals": 0,
+    "generated": 0
   },
   "generationErrors": [],
   "headline": {
@@ -65,35 +65,53 @@
   "skills": [
     {
       "name": "spring-boot-conventions",
-      "description": "House conventions for writing Spring Boot (Java) backend code, covering controllers, services, DTOs, pagination, error responses. Use whenever the user asks to write, add, refactor, or review a Spring Boot controller, service, repository, DTO, endpoint, or REST API in Java. Trigger phrases - \"Spring Boot\", \"REST controller\", \"@RestController\", \"endpoint\", \"service class\", \"DTO\", \"JPA repository\". Do NOT use for Vue, Pinia, TypeScript, or frontend work.",
-      "status": "misses",
-      "label": "misses in-scope work",
+      "description": "House conventions for Spring Boot (Java) application code - controllers, services, DTOs, pagination and error responses. Use when writing, adding, refactoring or reviewing a Spring Boot controller, service, repository, DTO or REST endpoint in Java. Not for build files (Gradle, Maven), unit tests, or code outside Java such as TypeScript types, Vue or Pinia, even when that code describes the same API.",
+      "status": "leaky",
+      "label": "fires out of scope",
       "tone": "warn",
       "positives": {
-        "k": 10,
-        "n": 14,
-        "rate": 0.7142857142857143,
+        "k": 37,
+        "n": 42,
+        "rate": 0.8809523809523809,
         "ci": {
-          "low": 0.45350915474002584,
-          "high": 0.8827862143729825
+          "low": 0.7499960961284236,
+          "high": 0.9480619670510726
         }
       },
       "negatives": {
-        "k": 3,
-        "n": 10,
-        "rate": 0.3,
+        "k": 6,
+        "n": 29,
+        "rate": 0.20689655172413793,
         "ci": {
-          "low": 0.10779126655639398,
-          "high": 0.6032218546540291
+          "low": 0.09846070140456342,
+          "high": 0.3839009055677167
         }
       },
       "collisions": [],
       "coFired": [
         {
+          "skill": "init",
+          "count": 2,
+          "prompts": [
+            "We need a paginated list endpoint for products with page, size, and sort query params. Please wire it through the service layer.",
+            "Create a repository interface for the Invoice entity with a method to find unpaid invoices for a given customer."
+          ],
+          "external": true
+        },
+        {
+          "skill": "run",
+          "count": 2,
+          "prompts": [
+            "Add validation annotations to the CreateUserRequest DTO and make sure the controller returns 400 with field-level messages when they fail.",
+            "Our /reports endpoint is slow on large datasets. Can you change it to return results in pages instead of everything at once?"
+          ],
+          "external": true
+        },
+        {
           "skill": "code-review",
           "count": 1,
           "prompts": [
-            "Can you check whether our Spring service methods are handling transactions correctly and the exceptions are mapped to the right HTTP statuses?"
+            "Review the error handling in our payments controller and make sure failures come back in a consistent error body."
           ],
           "external": true
         },
@@ -101,16 +119,16 @@
           "skill": "workflow-authoring",
           "count": 1,
           "prompts": [
-            "We need a paginated list endpoint for products with page, size, and sort query params. Please wire it through the service layer."
+            "Our /reports endpoint is slow on large datasets. Can you change it to return results in pages instead of everything at once?"
           ],
           "external": true
         }
       ],
-      "misses": 4,
+      "misses": 5,
       "missPrompts": [
+        "Can you add a new endpoint to our orders API that lets customers cancel an order by ID and returns the updated order?",
         "Review the error handling in our payments controller and make sure failures come back in a consistent error body.",
         "Create a repository interface for the Invoice entity with a method to find unpaid invoices for a given customer.",
-        "Refactor this service class so the business logic for shipping cost calculation lives in its own component and the controller stays thin.",
         "Our /reports endpoint is slow on large datasets. Can you change it to return results in pages instead of everything at once?"
       ],
       "falseFirePrompts": [
@@ -119,7 +137,7 @@
         "Write a JUnit 5 unit test for this utility method that parses ISO-8601 date strings into LocalDate."
       ],
       "stolen": [],
-      "verdict": "spring-boot-conventions fires on 71% of in-scope prompts (10 of 14 prompts, 95% CI 45 to 88%); 4 fired no skill; on 1 it fired together with code-review; on 1 it fired together with workflow-authoring. It fired on 3 of 10 out-of-scope prompts (30%, 95% CI 11 to 60%)",
+      "verdict": "spring-boot-conventions fires on 88% of in-scope prompts (37 of 42 runs, 95% CI 75 to 95%); 5 fired no skill; on 2 it fired together with init; on 2 it fired together with run. It fired on 6 of 29 out-of-scope runs (21%, 95% CI 10 to 38%)",
       "notes": []
     }
   ],
@@ -130,7 +148,11 @@
         "external": false
       },
       {
-        "id": "run",
+        "id": "claude-api",
+        "external": true
+      },
+      {
+        "id": "workflow-authoring",
         "external": true
       },
       {
@@ -143,20 +165,21 @@
       {
         "skill": "spring-boot-conventions",
         "kind": "fire",
-        "total": 14,
+        "total": 42,
         "counts": {
-          "spring-boot-conventions": 10,
-          "none": 4
+          "spring-boot-conventions": 37,
+          "none": 5
         }
       },
       {
         "skill": "spring-boot-conventions",
         "kind": "no_fire",
-        "total": 10,
+        "total": 29,
         "counts": {
-          "none": 6,
-          "spring-boot-conventions": 3,
-          "run": 1
+          "none": 19,
+          "spring-boot-conventions": 6,
+          "claude-api": 2,
+          "workflow-authoring": 2
         }
       }
     ]
@@ -170,7 +193,7 @@
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "eval:spring-controller-follows-conventions"
+            "file"
           ]
         }
       ]
@@ -183,7 +206,7 @@
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "eval:spring-request-dtos-are-validated-records"
+            "file"
           ]
         }
       ]
@@ -196,7 +219,7 @@
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "eval:spring-service-owns-rules-and-errors"
+            "file"
           ]
         }
       ]
@@ -209,150 +232,150 @@
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "eval:spring-work-triggers-skill"
+            "file"
           ]
         }
       ]
     },
     {
       "id": "p5",
-      "text": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
-      "expect": [
-        {
-          "skill": "spring-boot-conventions",
-          "expect": "no_fire",
-          "sources": [
-            "eval:vue-request-does-not-trigger-skill"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "p6",
       "text": "Can you add a new endpoint to our orders API that lets customers cancel an order by ID and returns the updated order?",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p7",
+      "id": "p6",
       "text": "My controller for the inventory service is returning raw entity objects and leaking internal fields. Can you clean that up so it uses proper response DTOs?",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p8",
+      "id": "p7",
       "text": "We need a paginated list endpoint for products with page, size, and sort query params. Please wire it through the service layer.",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p9",
+      "id": "p8",
       "text": "Review the error handling in our payments controller and make sure failures come back in a consistent error body.",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p10",
+      "id": "p9",
       "text": "Create a repository interface for the Invoice entity with a method to find unpaid invoices for a given customer.",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p11",
+      "id": "p10",
       "text": "Refactor this service class so the business logic for shipping cost calculation lives in its own component and the controller stays thin.",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p12",
+      "id": "p11",
       "text": "Add validation annotations to the CreateUserRequest DTO and make sure the controller returns 400 with field-level messages when they fail.",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p13",
+      "id": "p12",
       "text": "I'm building a small REST API for a library catalog in Java. Can you scaffold the book controller, service, and a JPA repository for it?",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p14",
+      "id": "p13",
       "text": "Our /reports endpoint is slow on large datasets. Can you change it to return results in pages instead of everything at once?",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
     },
     {
-      "id": "p15",
+      "id": "p14",
       "text": "Can you check whether our Spring service methods are handling transactions correctly and the exceptions are mapped to the right HTTP statuses?",
       "expect": [
         {
           "skill": "spring-boot-conventions",
           "expect": "fire",
           "sources": [
-            "generated"
+            "file"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p15",
+      "text": "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+      "expect": [
+        {
+          "skill": "spring-boot-conventions",
+          "expect": "no_fire",
+          "sources": [
+            "file"
           ]
         }
       ]
@@ -365,7 +388,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -378,7 +401,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -391,7 +414,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -404,7 +427,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -417,7 +440,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -430,7 +453,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -443,7 +466,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -456,7 +479,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -469,7 +492,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -482,7 +505,7 @@
           "skill": "spring-boot-conventions",
           "expect": "no_fire",
           "sources": [
-            "generated"
+            "file"
           ]
         }
       ]
@@ -498,19 +521,19 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00113309,
+      "costUsd": 0.0014574,
       "model": "claude-haiku-5-5",
-      "durationMs": 2300,
+      "durationMs": 2919,
       "error": null
     },
     {
-      "prompt": "p5",
+      "prompt": "p15",
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.00194517,
+      "costUsd": 0.00242976,
       "model": "claude-haiku-5-5",
-      "durationMs": 7233,
+      "durationMs": 9428,
       "error": null
     },
     {
@@ -522,9 +545,9 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00112759,
+      "costUsd": 0.0015206,
       "model": "claude-haiku-5-5",
-      "durationMs": 2013,
+      "durationMs": 3207,
       "error": null
     },
     {
@@ -532,9 +555,9 @@
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.00114189,
+      "costUsd": 0.0014123,
       "model": "claude-haiku-5-5",
-      "durationMs": 2474,
+      "durationMs": 2390,
       "error": null
     },
     {
@@ -546,9 +569,9 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00118399,
+      "costUsd": 0.0011591899999999998,
       "model": "claude-haiku-5-5",
-      "durationMs": 2466,
+      "durationMs": 2218,
       "error": null
     },
     {
@@ -556,9 +579,9 @@
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.00111779,
+      "costUsd": 0.0011304899999999998,
       "model": "claude-haiku-5-5",
-      "durationMs": 1853,
+      "durationMs": 2637,
       "error": null
     },
     {
@@ -570,27 +593,43 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00112899,
+      "costUsd": 0.00117219,
       "model": "claude-haiku-5-5",
-      "durationMs": 1783,
+      "durationMs": 2646,
       "error": null
     },
     {
       "prompt": "p18",
       "run": 0,
       "fired": [
-        "spring-boot-conventions",
-        "claude-api",
-        "update-config"
+        "spring-boot-conventions"
       ],
       "invoked": [
-        "komo-stack:spring-boot-conventions",
-        "claude-api",
-        "update-config"
+        "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00117369,
+      "costUsd": 0.0012432900000000002,
       "model": "claude-haiku-5-5",
-      "durationMs": 2506,
+      "durationMs": 2374,
+      "error": null
+    },
+    {
+      "prompt": "p5",
+      "run": 0,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0011947900000000003,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2747,
+      "error": null
+    },
+    {
+      "prompt": "p19",
+      "run": 0,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0015169900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 6665,
       "error": null
     },
     {
@@ -600,21 +639,28 @@
         "spring-boot-conventions"
       ],
       "invoked": [
+        "komo-stack:spring-boot-conventions",
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.0011882899999999998,
+      "costUsd": 0.00115699,
       "model": "claude-haiku-5-5",
-      "durationMs": 2183,
+      "durationMs": 1951,
       "error": null
     },
     {
-      "prompt": "p19",
+      "prompt": "p20",
       "run": 0,
-      "fired": [],
-      "invoked": [],
-      "costUsd": 0.00147419,
+      "fired": [
+        "spring-boot-conventions",
+        "init"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "init"
+      ],
+      "costUsd": 0.00111489,
       "model": "claude-haiku-5-5",
-      "durationMs": 5580,
+      "durationMs": 2796,
       "error": null
     },
     {
@@ -624,29 +670,26 @@
         "spring-boot-conventions"
       ],
       "invoked": [
+        "komo-stack:spring-boot-conventions",
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00112319,
+      "costUsd": 0.00116669,
       "model": "claude-haiku-5-5",
-      "durationMs": 3133,
+      "durationMs": 2114,
       "error": null
     },
     {
-      "prompt": "p20",
+      "prompt": "p21",
       "run": 0,
       "fired": [
-        "spring-boot-conventions",
-        "run",
-        "update-config"
+        "claude-api"
       ],
       "invoked": [
-        "komo-stack:spring-boot-conventions",
-        "run",
-        "update-config"
+        "claude-api"
       ],
-      "costUsd": 0.0011241900000000002,
+      "costUsd": 0.0012573900000000002,
       "model": "claude-haiku-5-5",
-      "durationMs": 2367,
+      "durationMs": 3781,
       "error": null
     },
     {
@@ -654,39 +697,15 @@
       "run": 0,
       "fired": [
         "spring-boot-conventions",
-        "workflow-authoring"
+        "code-review"
       ],
       "invoked": [
         "komo-stack:spring-boot-conventions",
-        "workflow-authoring"
+        "code-review"
       ],
-      "costUsd": 0.0011225900000000001,
+      "costUsd": 0.0024599800000000005,
       "model": "claude-haiku-5-5",
-      "durationMs": 6643,
-      "error": null
-    },
-    {
-      "prompt": "p21",
-      "run": 0,
-      "fired": [
-        "run"
-      ],
-      "invoked": [
-        "run"
-      ],
-      "costUsd": 0.00121479,
-      "model": "claude-haiku-5-5",
-      "durationMs": 3113,
-      "error": null
-    },
-    {
-      "prompt": "p9",
-      "run": 0,
-      "fired": [],
-      "invoked": [],
-      "costUsd": 0.0011661900000000001,
-      "model": "claude-haiku-5-5",
-      "durationMs": 2010,
+      "durationMs": 9382,
       "error": null
     },
     {
@@ -694,19 +713,19 @@
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.0020445999999999997,
+      "costUsd": 0.00119359,
       "model": "claude-haiku-5-5",
-      "durationMs": 9710,
+      "durationMs": 2720,
       "error": null
     },
     {
-      "prompt": "p10",
+      "prompt": "p9",
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.00114119,
+      "costUsd": 0.0011469900000000003,
       "model": "claude-haiku-5-5",
-      "durationMs": 2149,
+      "durationMs": 1851,
       "error": null
     },
     {
@@ -714,23 +733,13 @@
       "run": 0,
       "fired": [],
       "invoked": [],
-      "costUsd": 0.0023343699999999997,
+      "costUsd": 0.005027210000000001,
       "model": "claude-haiku-5-5",
-      "durationMs": 12572,
-      "error": null
+      "durationMs": 34541,
+      "error": "API Error: Claude's response exceeded the 1024 output token maximum. To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable."
     },
     {
-      "prompt": "p11",
-      "run": 0,
-      "fired": [],
-      "invoked": [],
-      "costUsd": 0.0011392899999999998,
-      "model": "claude-haiku-5-5",
-      "durationMs": 1961,
-      "error": null
-    },
-    {
-      "prompt": "p24",
+      "prompt": "p10",
       "run": 0,
       "fired": [
         "spring-boot-conventions"
@@ -738,9 +747,44 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00118369,
+      "costUsd": 0.0011929900000000001,
       "model": "claude-haiku-5-5",
-      "durationMs": 2477,
+      "durationMs": 3114,
+      "error": null
+    },
+    {
+      "prompt": "p24",
+      "run": 0,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00113779,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2264,
+      "error": null
+    },
+    {
+      "prompt": "p11",
+      "run": 0,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00116499,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2505,
+      "error": null
+    },
+    {
+      "prompt": "p25",
+      "run": 0,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00120769,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3794,
       "error": null
     },
     {
@@ -752,24 +796,294 @@
       "invoked": [
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00113529,
+      "costUsd": 0.00111789,
       "model": "claude-haiku-5-5",
-      "durationMs": 2224,
+      "durationMs": 3076,
       "error": null
-    },
-    {
-      "prompt": "p25",
-      "run": 0,
-      "fired": [],
-      "invoked": [],
-      "costUsd": 0.00500435,
-      "model": "claude-haiku-5-5",
-      "durationMs": 28014,
-      "error": "API Error: Claude's response exceeded the 1024 output token maximum. To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable."
     },
     {
       "prompt": "p13",
       "run": 0,
+      "fired": [
+        "spring-boot-conventions",
+        "workflow-authoring",
+        "run"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "workflow-authoring",
+        "run"
+      ],
+      "costUsd": 0.00116469,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2094,
+      "error": null
+    },
+    {
+      "prompt": "p14",
+      "run": 0,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00119489,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2271,
+      "error": null
+    },
+    {
+      "prompt": "p1",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00119519,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3566,
+      "error": null
+    },
+    {
+      "prompt": "p15",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00219335,
+      "model": "claude-haiku-5-5",
+      "durationMs": 9001,
+      "error": null
+    },
+    {
+      "prompt": "p2",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00114079,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2121,
+      "error": null
+    },
+    {
+      "prompt": "p16",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00113759,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1875,
+      "error": null
+    },
+    {
+      "prompt": "p3",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00115969,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2090,
+      "error": null
+    },
+    {
+      "prompt": "p17",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00112859,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1832,
+      "error": null
+    },
+    {
+      "prompt": "p4",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011376900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2219,
+      "error": null
+    },
+    {
+      "prompt": "p18",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions",
+        "claude-api"
+      ],
+      "invoked": [
+        "spring-boot-conventions",
+        "claude-api"
+      ],
+      "costUsd": 0.00127239,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3372,
+      "error": null
+    },
+    {
+      "prompt": "p5",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0011884900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1781,
+      "error": null
+    },
+    {
+      "prompt": "p19",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00200682,
+      "model": "claude-haiku-5-5",
+      "durationMs": 7506,
+      "error": null
+    },
+    {
+      "prompt": "p6",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00115249,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2621,
+      "error": null
+    },
+    {
+      "prompt": "p20",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions",
+        "run"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "run"
+      ],
+      "costUsd": 0.00113089,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2490,
+      "error": null
+    },
+    {
+      "prompt": "p7",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00116889,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1961,
+      "error": null
+    },
+    {
+      "prompt": "p21",
+      "run": 1,
+      "fired": [
+        "workflow-authoring"
+      ],
+      "invoked": [
+        "workflow-authoring"
+      ],
+      "costUsd": 0.00236995,
+      "model": "claude-haiku-5-5",
+      "durationMs": 7066,
+      "error": null
+    },
+    {
+      "prompt": "p8",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00113999,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1615,
+      "error": null
+    },
+    {
+      "prompt": "p22",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00118329,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1596,
+      "error": null
+    },
+    {
+      "prompt": "p9",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00115359,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2228,
+      "error": null
+    },
+    {
+      "prompt": "p23",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0050259499999999995,
+      "model": "claude-haiku-5-5",
+      "durationMs": 27923,
+      "error": "API Error: Claude's response exceeded the 1024 output token maximum. To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable."
+    },
+    {
+      "prompt": "p10",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011884900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2976,
+      "error": null
+    },
+    {
+      "prompt": "p24",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00113969,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1938,
+      "error": null
+    },
+    {
+      "prompt": "p11",
+      "run": 1,
       "fired": [
         "spring-boot-conventions"
       ],
@@ -777,35 +1091,392 @@
         "komo-stack:spring-boot-conventions",
         "komo-stack:spring-boot-conventions"
       ],
-      "costUsd": 0.00116029,
+      "costUsd": 0.00122549,
       "model": "claude-haiku-5-5",
-      "durationMs": 2073,
+      "durationMs": 2786,
+      "error": null
+    },
+    {
+      "prompt": "p25",
+      "run": 1,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00503167,
+      "model": "claude-haiku-5-5",
+      "durationMs": 26632,
+      "error": "API Error: Claude's response exceeded the 1024 output token maximum. To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable."
+    },
+    {
+      "prompt": "p12",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00112799,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2505,
+      "error": null
+    },
+    {
+      "prompt": "p13",
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00118969,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2706,
       "error": null
     },
     {
       "prompt": "p14",
-      "run": 0,
-      "fired": [],
-      "invoked": [],
-      "costUsd": 0.00114949,
+      "run": 1,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011937900000000001,
       "model": "claude-haiku-5-5",
-      "durationMs": 2192,
+      "durationMs": 1977,
+      "error": null
+    },
+    {
+      "prompt": "p1",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00113919,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2405,
       "error": null
     },
     {
       "prompt": "p15",
-      "run": 0,
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00191105,
+      "model": "claude-haiku-5-5",
+      "durationMs": 7652,
+      "error": null
+    },
+    {
+      "prompt": "p2",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00114189,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2202,
+      "error": null
+    },
+    {
+      "prompt": "p16",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00118419,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3615,
+      "error": null
+    },
+    {
+      "prompt": "p3",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00121329,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2748,
+      "error": null
+    },
+    {
+      "prompt": "p17",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00115439,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2936,
+      "error": null
+    },
+    {
+      "prompt": "p4",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0012205900000000001,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2729,
+      "error": null
+    },
+    {
+      "prompt": "p18",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00125559,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3501,
+      "error": null
+    },
+    {
+      "prompt": "p5",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011904900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2702,
+      "error": null
+    },
+    {
+      "prompt": "p19",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.00201519,
+      "model": "claude-haiku-5-5",
+      "durationMs": 10509,
+      "error": null
+    },
+    {
+      "prompt": "p6",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011517900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3332,
+      "error": null
+    },
+    {
+      "prompt": "p20",
+      "run": 2,
       "fired": [
         "spring-boot-conventions",
-        "code-review"
+        "update-config",
+        "run"
       ],
       "invoked": [
         "komo-stack:spring-boot-conventions",
-        "code-review"
+        "update-config",
+        "run"
       ],
-      "costUsd": 0.002520685,
+      "costUsd": 0.0011303900000000002,
       "model": "claude-haiku-5-5",
-      "durationMs": 8028,
+      "durationMs": 2201,
+      "error": null
+    },
+    {
+      "prompt": "p7",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions",
+        "init"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "init"
+      ],
+      "costUsd": 0.00113079,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2462,
+      "error": null
+    },
+    {
+      "prompt": "p21",
+      "run": 2,
+      "fired": [
+        "claude-api"
+      ],
+      "invoked": [
+        "claude-api"
+      ],
+      "costUsd": 0.0012558900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 4461,
+      "error": null
+    },
+    {
+      "prompt": "p8",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011993900000000003,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3369,
+      "error": null
+    },
+    {
+      "prompt": "p22",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0019454799999999999,
+      "model": "claude-haiku-5-5",
+      "durationMs": 11322,
+      "error": null
+    },
+    {
+      "prompt": "p9",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions",
+        "init"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "init"
+      ],
+      "costUsd": 0.00112939,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2366,
+      "error": null
+    },
+    {
+      "prompt": "p23",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.005027210000000001,
+      "model": "claude-haiku-5-5",
+      "durationMs": 27273,
+      "error": "API Error: Claude's response exceeded the 1024 output token maximum. To configure this behavior, set the CLAUDE_CODE_MAX_OUTPUT_TOKENS environment variable."
+    },
+    {
+      "prompt": "p10",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00119329,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2573,
+      "error": null
+    },
+    {
+      "prompt": "p24",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0011753900000000001,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2509,
+      "error": null
+    },
+    {
+      "prompt": "p11",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions",
+        "run"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "run"
+      ],
+      "costUsd": 0.00114689,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2449,
+      "error": null
+    },
+    {
+      "prompt": "p25",
+      "run": 2,
+      "fired": [
+        "workflow-authoring",
+        "claude-api"
+      ],
+      "invoked": [
+        "workflow-authoring",
+        "claude-api"
+      ],
+      "costUsd": 0.00236971,
+      "model": "claude-haiku-5-5",
+      "durationMs": 10533,
+      "error": null
+    },
+    {
+      "prompt": "p12",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions",
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.00116389,
+      "model": "claude-haiku-5-5",
+      "durationMs": 2449,
+      "error": null
+    },
+    {
+      "prompt": "p13",
+      "run": 2,
+      "fired": [],
+      "invoked": [],
+      "costUsd": 0.0011346899999999998,
+      "model": "claude-haiku-5-5",
+      "durationMs": 1840,
+      "error": null
+    },
+    {
+      "prompt": "p14",
+      "run": 2,
+      "fired": [
+        "spring-boot-conventions"
+      ],
+      "invoked": [
+        "komo-stack:spring-boot-conventions"
+      ],
+      "costUsd": 0.0012313900000000002,
+      "model": "claude-haiku-5-5",
+      "durationMs": 3518,
       "error": null
     }
   ]

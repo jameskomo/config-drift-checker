@@ -1,0 +1,33 @@
+{
+ "spring-boot-conventions": {
+  "fire": [
+   "Write a Spring Boot REST controller for listing a customer's invoices with pagination.\nPackage `com.acme.billing`. Endpoint `GET /api/billing/invoices?page=&size=`.\nAssume an `InvoiceService` with `InvoiceQueryResult listInvoices(int page, int size)` exists, where the result has `items()` and `total()`.\nPrint the complete Java source in your reply.",
+   "Add invoice creation to our Spring Boot billing module, package `com.acme.billing`:\n`POST /api/billing/invoices`. The body carries `customerId` (required, positive),\n`amountCents` (required, at least 1) and an optional `note` (up to 200 characters).\nAssume `InvoiceService.create(long customerId, long amountCents, String note)` exists and\nreturns the created invoice's data. Define the request and response shapes and the controller\nmethod. Print the complete Java source in your reply.",
+   "Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.\nThe rule: a customer may cancel only their own invoice, and only while it is still unpaid.\nAssume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the\ncaller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,\n`status()` and `markCancelled()`. Write the service class that implements this, and whatever\nelse is needed for a failed cancellation to reach the API client as a proper error response.\nPrint the complete Java source in your reply.",
+   "Quick one: sketch a Spring Boot endpoint `GET /api/billing/invoices/{id}` for our billing module,\npackage `com.acme.billing`, assuming `InvoiceService.getInvoice(long id)` exists. Print the Java\nsource in your reply.",
+   "Can you add a new endpoint to our orders API that lets customers cancel an order by ID and returns the updated order?",
+   "My controller for the inventory service is returning raw entity objects and leaking internal fields. Can you clean that up so it uses proper response DTOs?",
+   "We need a paginated list endpoint for products with page, size, and sort query params. Please wire it through the service layer.",
+   "Review the error handling in our payments controller and make sure failures come back in a consistent error body.",
+   "Create a repository interface for the Invoice entity with a method to find unpaid invoices for a given customer.",
+   "Refactor this service class so the business logic for shipping cost calculation lives in its own component and the controller stays thin.",
+   "Add validation annotations to the CreateUserRequest DTO and make sure the controller returns 400 with field-level messages when they fail.",
+   "I'm building a small REST API for a library catalog in Java. Can you scaffold the book controller, service, and a JPA repository for it?",
+   "Our /reports endpoint is slow on large datasets. Can you change it to return results in pages instead of everything at once?",
+   "Can you check whether our Spring service methods are handling transactions correctly and the exceptions are mapped to the right HTTP statuses?"
+  ],
+  "no_fire": [
+   "Write a Pinia store (Vue 3, Composition API, TypeScript) for a shopping cart with add, remove, and a total getter. Print the complete file.",
+   "Build a Vue 3 component that shows a paginated table of products and lets users sort each column.",
+   "Set up a Pinia store to hold the shopping cart state and persist it to localStorage.",
+   "Write a TypeScript interface for the API response shape of our orders endpoint so the frontend can type it.",
+   "Why does my Spring Boot application fail to start with a 'Port 8080 already in use' error on my laptop?",
+   "Configure the Gradle build file so our Spring Boot project uses Java 21 and the Spring Boot 3.3 plugin.",
+   "Write a Python script that pulls all rows from a Postgres table and exports them to a CSV file.",
+   "Help me debug a React hook that re-renders infinitely when I pass an object into useEffect's dependency array.",
+   "Explain the difference between Java records and Lombok @Value classes for holding immutable data.",
+   "Write a JUnit 5 unit test for this utility method that parses ISO-8601 date strings into LocalDate.",
+   "Design a Kafka topic layout for streaming clickstream events from our web app into a data warehouse."
+  ]
+ }
+}

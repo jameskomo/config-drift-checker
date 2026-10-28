@@ -9,7 +9,7 @@
 | [Security](security.md) | what runs where, what data exists, the safety net |
 | [Claude Code release report](https://jameskomo.github.io/config-drift-checker/release-report/) | every public eval suite we can find, loaded on each new Claude Code release for $0; regenerated daily by `.github/workflows/release-report.yml` |
 | [One suite, three agents](agents/) | the same suite on Claude Code, Gemini and Codex, with each report |
-| [Mutation test of our suite](https://jameskomo.github.io/config-drift-checker/mutation/report.html) | 15 sabotages of our own setup and which ones the suite caught |
-| [Trigger map of our skill](https://jameskomo.github.io/config-drift-checker/triggers/report.html) | how often the Spring skill fires in and out of scope, with the prompts |
+| [Mutation test of our suite](https://jameskomo.github.io/config-drift-checker/mutation/report.html) | 19 sabotages of our own setup, which ones the suite caught, and which misses the model follows with no plugin at all ([first run](https://jameskomo.github.io/config-drift-checker/mutation/before-2026-10-28.html)) |
+| [Trigger map of our skill](https://jameskomo.github.io/config-drift-checker/triggers/report.html) | how often the Spring skill fires in and out of scope, with the prompts ([before the description rewrite](https://jameskomo.github.io/config-drift-checker/triggers/before-description-change.html)) |
 | [Model and version matrix](https://jameskomo.github.io/config-drift-checker/matrix/report.html) | Sonnet and Haiku on two Claude Code releases, one page |
 | [Community suites](community-suites.md) | maintained setups with published with/without worth measurements; Spring Boot first |

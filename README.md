@@ -28,11 +28,16 @@ else would have:
   [the repair](docs/example-break/repair-summary.md)
 - **Claude Code 2.1.310 stopped running shell-based evals on GitHub's Ubuntu runners**, because
   of a sandbox check. Our release canary caught it the day it shipped; the Action now handles it.
-- **Our own tests were weaker than they looked.** We sabotaged our setup 15 ways on purpose. The
-  suite caught 6. Some rules made no difference at all, because the model follows them anyway.
-  [The mutation report](https://jameskomo.github.io/config-drift-checker/mutation/report.html)
-- **Our skill fires on 30% of prompts it should ignore**, and misses 29% it should take. One
-  passing test had been saying "works".
+- **Our own tests were weaker than they looked.** We sabotaged our setup 15 ways on purpose and the
+  suite caught 6 ([first run](https://jameskomo.github.io/config-drift-checker/mutation/before-2026-10-28.html)).
+  Running the same cases with no plugin showed why: the model already did constructor injection
+  3 times out of 3, so two of our rules steered nothing. We cut them, kept their checks as
+  tripwires for the next model, and fixed the weak cases.
+  [The re-run](https://jameskomo.github.io/config-drift-checker/mutation/report.html) sorts every
+  miss into "the model does this anyway" or "a test to tighten".
+- **Our skill fires on about 1 in 5 prompts it should ignore.** One passing test had been saying
+  "works". Telling the description what the skill is not for stopped some false fires, but not
+  "configure the Gradle build for our Spring Boot project": 3 out of 3, with Gradle named as out of scope.
   [The trigger map](https://jameskomo.github.io/config-drift-checker/triggers/report.html)
 
 ## Try it
@@ -72,7 +77,7 @@ plain terminal, and `--no-agent` scaffolds everything for $0.
 | **Why did it break?** | The report says whether a skill was never invoked (wording) or never found (packaging), whether the model refused, and whether Claude Code or the model moved since the baseline | [a real break](https://jameskomo.github.io/config-drift-checker/example-break/report.html) |
 | **Which release broke it?** | `drift-bisect` searches the releases in between and names the first bad one in log2(N) runs | [guide](docs/user-guide.md#which-release-broke-it-drift-bisect) |
 | **How do I fix it?** | On red, the repair skill makes the smallest edit to your setup that restores the behaviour, proves it with a re-run, and opens a PR. Never auto-merged | [a real repair](docs/example-break/repair-summary.md) |
-| **Would my tests even catch a break?** | `mutate` sabotages copies of your setup and scores how many breaks the suite catches | [ours: 6 of 15](https://jameskomo.github.io/config-drift-checker/mutation/report.html) |
+| **Would my tests even catch a break?** | `mutate` sabotages copies of your setup and scores how many breaks the suite catches | [ours: 7 of 19, and which rules the model follows anyway](https://jameskomo.github.io/config-drift-checker/mutation/report.html) |
 | **Does my skill fire when it should?** | `trigger-map` measures fire and false-fire rates with 95% ranges, and which skills steal each other's prompts | [ours](https://jameskomo.github.io/config-drift-checker/triggers/report.html) |
 | **Does the suite test what people actually do?** | `usage-check` compares your eval cases with your real sessions; `case-miner` turns real prompts into suggested cases, anonymised on your machine | [guide](docs/user-guide.md#real-usage-vs-evals-is-your-suite-testing-what-people-do) |
 | **Which model or version can I move to?** | `drift-matrix` runs the suite across models and Claude Code versions on one page, with a plain verdict per model | [ours: Sonnet holds, Haiku misses one case](https://jameskomo.github.io/config-drift-checker/matrix/report.html) |
@@ -91,7 +96,8 @@ answers *"did anything stop working since it last did, on any release, without m
 | | `claude plugin eval` | config-drift-checker |
 |---|---|---|
 | Run cases, grade, report one run | yes | uses it |
-| Baseline to compare against, history across releases | no | yes |
+| With and without your plugin, in the same run | yes (`--ablation`, since 2.1.312) | uses it, and names the rules the model follows anyway |
+| A pinned baseline, and history across releases | no | yes |
 | Runs on every Claude Code release, on its own | no | release watch and canary |
 | Flake or real break | a 2-of-3 judge vote per run | noise bands from history, confidence ranges |
 | Why a case failed | a score | the cause, and a proposed fix |
@@ -102,7 +108,7 @@ answers *"did anything stop working since it last did, on any release, without m
 ## Free, private, yours
 
 It runs on your CI runner with your key. There is no server of ours, so nothing is sent to us.
-Zero npm dependencies, 325 tests that run against a fake `claude`, every third-party action pinned
+Zero npm dependencies, 331 tests that run against a fake `claude`, every third-party action pinned
 to a commit, CodeQL on every push. The `v1` tag never breaks your workflow; breaking changes get a
 new major and an upgrade note. Spend is capped per run and per month from a ledger, and on a
 Pro or Max token it costs no API credit at all. Details: [security](docs/security.md),

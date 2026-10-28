@@ -297,7 +297,7 @@ When the monthly budget or the canary interval skips a run, the Action still run
 on the new Claude Code release: the skill linter, a suite load check with zero agent runs, and the
 context cost. It stores them as `history/floor/<stamp>-cc<version>.json` and the job summary says
 plainly what was not tested and why, for example "Behaviour not tested on 2.1.310 (monthly budget
-reached). Free checks ran: suite loads 6 of 6, context cost 123 tokens." Until a behaviour run
+reached). Free checks ran: suite loads 6 of 6, context cost 109 tokens." Until a behaviour run
 covers that release, the dashboard, `verdicts.json`, the feed and the badge show it as
 **untested**, never as green. The Action's `floor` and `untested-version` outputs say the same.
 With `preflight: fail`, a skipped run goes red if the suite no longer loads on the new release.
@@ -404,22 +404,55 @@ by sabotaging copies of your setup on purpose and running the cases that should 
 ```bash
 node <plugin-root>/tools/mutate.mjs <plugin> --dry-run                 # the sabotages and a cost estimate, $0
 node <plugin-root>/tools/mutate.mjs <plugin> --budget 3 --html mutate.html
+node <plugin-root>/tools/mutate.mjs <plugin> --budget 3 --defaults      # also run once with no plugin, to spot rules the model follows anyway
 ```
 
-It deletes or inverts a rule in CLAUDE.md or a skill, blurs a skill's trigger description, removes
-a skill, or disables a hook, one change per copy. A sabotage is **caught** when a case drops more
-than your `.cdc.yml` score threshold below a run of the unchanged setup. You get a score and one
-sentence, such as "Your suite catches 6 of 15 sabotages", followed by the rules nothing tests. **Nothing
-tests** means no case claims that rule in `covers.yaml`, which is a coverage gap; **tested but not
-caught** means a case claims the rule but its graders are too loose. Inverted rules come from a
-simple word swap and are marked heuristic. `--max-mutants N --seed s` takes a repeatable sample,
-`--budget` caps the whole session, and your original files are never touched.
+It deletes or inverts a rule in CLAUDE.md or a skill, deletes a whole section, blurs a skill's
+trigger description, removes a skill, or disables a hook, one change per copy. A sabotage is
+**caught** when a case drops more than your `.cdc.yml` score threshold below a run of the unchanged
+setup. You get a score and one sentence, such as "Your suite catches 7 of 19 sabotages", followed
+by the rules nothing tests. **Nothing tests** means no case claims that rule in `covers.yaml`,
+which is a coverage gap; **tested but not caught** means a case claims the rule but its graders are
+too loose. `--max-mutants N --seed s` takes a repeatable sample, `--budget` caps the whole session,
+and your original files are never touched.
+
+Two kinds of sabotage exist because rules back each other up:
+
+- **Deleting a section** removes every rule under one heading at once (only for headings with two
+  or more rules). "Constructor injection only" and "never use field injection" say the same thing
+  twice, so deleting either one alone changes nothing. Deleting the section tests them together.
+- **Inverting a rule** swaps one word (never to always, do not to do), so it is marked heuristic.
+  The report says when something else may have hidden the swap: the rest of the same rule still
+  says the opposite ("Every response is wrapped... always return raw entities"), or other rules
+  under the same heading still stand. A missed inversion with one of those notes says more about
+  the rule's wording than about your graders.
+
+**Which rules does the model follow anyway?** `--defaults` runs the reference once more with no
+plugin installed. It adds one run per needed case, on the reference only, so it roughly doubles
+the reference cost (the `--dry-run` estimate includes it); with `--baseline` the reference still
+runs once, for the no-plugin arm. A missed rule is listed under **The model does these anyway**
+when the graders that test it pass every no-plugin run and none of them fails. Graders are matched
+to the rule they share the most words with, so a judge that checks five rules at once counts for
+none of them, and a case built to show a skill stays out is never flagged for passing without it.
+The match is a heuristic: read the grader names in the note before you act on it. Today those
+rules cost context without changing behaviour, so you can drop them. Keep their
+graders either way: they become tripwires, and on every Claude Code or model release the canary
+turns red if the model stops doing it by default, which is your cue to put the rule back. The
+report also flags any case that scores as well with no plugin as with it, because no sabotage can
+turn that case red; make its prompt ask for something only your setup knows.
 
 How to read a missed sabotage: either the graders are too loose to see the change, or the model
-behaves the same without the rule, which means the rule may not be pulling its weight. Our own
-suite [catches 6 of 15 sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html):
-deleting "use constructor injection" or "validate request bodies" changed nothing, because Sonnet
-does both by default, while deleting the response-wrapper or pagination rules was caught at once.
+behaves the same without the rule, which means the rule may not be pulling its weight. Our first
+run [caught 6 of 15](https://jameskomo.github.io/config-drift-checker/mutation/before-2026-10-28.html),
+and readers asked the right question: how many misses were weak tests, and how many were rules the
+model follows anyway? So we measured. With no plugin at all, the model already used constructor
+injection 3 times out of 3, so we deleted both injection rules and kept their graders as
+tripwires. Two case prompts spelled out what the rule should have supplied, so we rewrote them, and
+we added graders for the class-level request mapping and for try/catch. The
+[re-run](https://jameskomo.github.io/config-drift-checker/mutation/report.html) catches 7 of 19:
+of the 12 misses, 7 are rules the model follows with no plugin installed, and 5 point at a test or
+a rule to look at (the class-level mapping, the response wrapper and the error handling). It is one
+run per mutant, so a single miss is a lead, not a verdict.
 
 ### Trigger map: how reliably does each skill fire?
 
@@ -436,9 +469,18 @@ by one cheap model call per skill (cached in `.cdc-trigger-prompts.json`, so rer
 can edit the set). Each prompt runs as a fresh one-turn session with your plugin loaded and the
 Skill tool as the only tool. You get a fire rate and a false-fire rate per skill, each with a 95%
 range, and a matrix of which skill took which prompts, so collisions between skills show up. On
-Haiku, 100 prompts cost about $0.14. [Our own measurement](https://jameskomo.github.io/config-drift-checker/triggers/report.html): the Spring Boot skill fires on 71%
-of in-scope prompts and on 30% of out-of-scope ones, which is exactly what a trigger description
-rewrite should fix.
+Haiku, 100 prompts cost about $0.14.
+
+[Our own measurement](https://jameskomo.github.io/config-drift-checker/triggers/report.html), 25
+fixed prompts run 3 times each: the Spring Boot skill fires on 88% of in-scope prompts and on 21%
+of out-of-scope ones. Before we rewrote its description to say what it is not for (build files,
+unit tests, TypeScript, Vue), it was 81% and 20%
+([the run before](https://jameskomo.github.io/config-drift-checker/triggers/before-description-change.html)).
+The rewrite stopped the Vue and Pinia false fires, but "configure the Gradle build for our Spring
+Boot project" still fires it 3 times out of 3, even though the description names Gradle as out of
+scope. The ranges overlap, so a wording change this small is within the noise. That is the point
+of measuring: pass `--prompts` with a fixed file (or keep the cache) so a before and after compare
+like with like, and use `--runs 3` or more when the difference you are looking for is small.
 
 ### Real usage vs evals: is your suite testing what people do?
 
@@ -518,8 +560,8 @@ component, in a throwaway config with no credentials and no model calls, and add
 (which that command doesn't count) as a labelled estimate. On releases without `plugin details`
 it falls back to an estimate and says so. With `--history` it reports the trend per release: when the
 number moves, it says by how much, names the components that moved most, and says whether your
-files changed or Claude Code did. Ours is 123 always-on tokens per session, measured by Claude Code
-itself on every run. The Action measures it on every run, and the observatory shows a "Context cost per
+files changed or Claude Code did. Ours is 109 always-on tokens per session, measured by Claude Code
+itself (it was 123 until we tightened the skill's description on 2026-10-28). The Action measures it on every run, and the observatory shows a "Context cost per
 release" strip once measurements exist.
 
 ### When and how repair runs
@@ -672,8 +714,8 @@ API cost is $0 but runs count against that plan's usage limits: a six-case canar
 short agent runs per release, three times that only when a case deviates. Use `ablation: none`
 in CI and Haiku for PR smoke.
 
-The deeper tools, measured on our six-case suite: a mutation test of 15 sabotages cost $3.08; a
-trigger map of 25 prompts on Haiku cost $0.04; a model and version matrix of 24 cells (2 models, 2 releases, 6 cases)
+The deeper tools, measured on our six-case suite: a mutation test of 19 sabotages, with the
+no-plugin arm, cost $4.59; a trigger map of 25 prompts run 3 times each on Haiku cost $0.11; a model and version matrix of 24 cells (2 models, 2 releases, 6 cases)
 cost $0.73 (`--dry-run` prices any grid first). The preflight, `context-cost`, `harness-diff`,
 `usage-check`, `case-miner`, `pr-impact` and the release report cost nothing: no model runs.
 

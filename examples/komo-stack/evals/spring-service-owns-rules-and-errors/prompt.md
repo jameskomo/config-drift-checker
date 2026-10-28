@@ -5,10 +5,9 @@ runs: 3
 max_turns: 8
 timeout_seconds: 300
 ---
-Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`.
-The rule: a customer may cancel only their own invoice, and only while it is still unpaid.
-Assume an `InvoiceRepository` with `Optional<Invoice> findById(long id)` exists and that the
-caller passes the current customer's id as `long customerId`; `Invoice` has `customerId()`,
-`status()` and `markCancelled()`. Write the service class that implements this, and whatever
-else is needed for a failed cancellation to reach the API client as a proper error response.
-Print the complete Java source in your reply.
+Add invoice cancellation to our Spring Boot billing module, package `com.acme.billing`:
+`POST /api/billing/invoices/{id}/cancel`. A customer may cancel only their own invoice, and only
+while it is still unpaid. Assume an `InvoiceRepository` with `Optional<Invoice> findById(long id)`
+exists and that the caller's customer id is available as `long customerId`; `Invoice` has
+`customerId()`, `status()` and `markCancelled()`. Write the endpoint and everything behind it,
+including how a refused cancellation reaches the API client. Print the complete Java source in your reply.

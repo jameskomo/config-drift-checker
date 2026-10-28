@@ -6,7 +6,7 @@
 //   publishedVersions()                       every @anthropic-ai/claude-code version on npm (network, free)
 //   versionsBetween(all, good, bad) / lastVersions(all, n)   stable releases, ascending
 //   installRelease(version)                   → { binDir, cleanup } or null when npm install fails
-//   runSuite({ plugin, binDir, runner, model, runs, budget, concurrency, ... })   → { raw, json, runner, note }
+//   runSuite({ plugin, binDir, runner, model, runs, budget, concurrency, ablation, ... })   → { raw, json, runner, note }
 //   usableReason(json, expectCases)           '' when a result is a usable measurement, else why not
 import { promises as fs, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
@@ -78,15 +78,16 @@ const readRaw = async (p) => { try { return JSON.parse(await fs.readFile(p, 'utf
 
 // One suite run on the release installed in binDir. runner: 'shim' | 'official' | 'auto' (official when
 // the release has it, shim otherwise). An official run that is not a usable measurement falls back to
-// the shim, so a runner CLI change never takes a cell down. The with arm only (ablation none).
-export async function runSuite({ plugin, binDir, env = process.env, runner = 'shim', model = null, judgeModel = null, runs = 1, budget = null, caseGlob = null, scaffold = true, expectCases = null, outDir = null, version = null, concurrency = 1 }) {
+// the shim, so a runner CLI change never takes a cell down. The with arm only by default; ablation
+// 'with-without' adds the no-plugin arm (mutate --defaults uses it on the reference run).
+export async function runSuite({ plugin, binDir, env = process.env, runner = 'shim', model = null, judgeModel = null, runs = 1, budget = null, caseGlob = null, scaffold = true, expectCases = null, outDir = null, version = null, concurrency = 1, ablation = 'none' }) {
   const out = outDir ?? await fs.mkdtemp(path.join(os.tmpdir(), 'cdc-suite-out-'));
   await fs.mkdir(out, { recursive: true });
   const file = path.join(out, 'aggregate-result.json');
   const runEnv = withBin(binDir, env);
   let used = runner === 'auto' ? (hasOfficialRunner(binDir, env) ? 'official' : 'shim') : runner, note = null;
   if (used === 'official') {
-    let args = ['plugin', 'eval', plugin, '--ablation', 'none', ...(model ? ['--model', model] : []), ...(judgeModel ? ['--judge-model', judgeModel] : []),
+    let args = ['plugin', 'eval', plugin, '--ablation', ablation, ...(model ? ['--model', model] : []), ...(judgeModel ? ['--judge-model', judgeModel] : []),
       '--runs', String(runs), ...(scaffold ? ['--scaffold'] : []), '--allow-tools', 'Bash', 'Write', 'Edit', '--no-publish', '--trust-plugin',
       ...(budget !== null ? ['--max-cost-usd', String(budget)] : []), ...(concurrency > 1 && officialHasConcurrency(runEnv) ? ['-j', String(concurrency)] : []), '--json', file];
     // older releases reject flags they predate; drop only those two and retry
@@ -102,7 +103,7 @@ export async function runSuite({ plugin, binDir, env = process.env, runner = 'sh
   }
   let tail = '';
   if (used === 'shim') {
-    const r = spawnSync('node', [SHIM, plugin, ...(caseGlob ? ['--case', caseGlob] : []), '--runs', String(runs), '--ablation', 'none', ...(scaffold ? ['--scaffold'] : []),
+    const r = spawnSync('node', [SHIM, plugin, ...(caseGlob ? ['--case', caseGlob] : []), '--runs', String(runs), '--ablation', ablation, ...(scaffold ? ['--scaffold'] : []),
       ...(budget !== null ? ['--budget', String(budget)] : []), ...(concurrency > 1 ? ['--concurrency', String(concurrency)] : []), ...(model ? ['--model', model] : []), ...(judgeModel ? ['--judge-model', judgeModel] : []), '--output-dir', out], { encoding: 'utf8', env: runEnv });
     tail = String(r.stderr ?? '').trim().split('\n').slice(-3).join(' ').slice(-300);
   }

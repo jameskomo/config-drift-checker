@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // mutate: are my evals any good? Mutation testing for an agent setup.
 //
-//   node tools/mutate.mjs <plugin> [--operators delete-rule,blur-trigger,drop-skill,disable-hook,invert-rule]
+//   node tools/mutate.mjs <plugin> [--operators delete-rule,blur-trigger,drop-skill,disable-hook,invert-rule,delete-section]
 //        [--max-mutants N] [--seed s] [--full] [--runs 1] [--budget 5] [--baseline <aggregate-result.json>]
-//        [--runner auto|official|shim] [--concurrency n] [--history <dir>] [--out-dir <dir>]
+//        [--defaults] [--runner auto|official|shim] [--concurrency n] [--history <dir>] [--out-dir <dir>]
 //        [--json <file>|-] [--md <file>|-] [--html <file>] [--dry-run]
 //
 // A mutant is one small sabotage of the setup, made in a temp copy of the plugin (the original is never
@@ -12,7 +12,11 @@
 //   blur-trigger   replace a skill's description with a vague generic one (the frontmatter stays valid)
 //   drop-skill     remove a skill directory, and its entry in plugin.json
 //   disable-hook   remove one hook entry from the hooks config
-//   invert-rule    negate a must / never / always / do not rule by a word swap (heuristic: it can read oddly)
+//   invert-rule    negate a must / never / always / do not rule by a word swap (heuristic: it can read oddly).
+//                  It records what may mask the swap: the rest of the same rule (the swap is in a later
+//                  sentence) and the other rules under the same heading, and a missed inversion says so.
+//   delete-section remove every rule under one heading that has two or more, so rules that back each other
+//                  up (constructor injection only / never field injection) are tested together
 //
 // Each mutant runs only the cases relevant to it: cases whose covers.yaml names the rule, and for a skill or
 // hook mutant also the cases that mention the skill or the hook's script. --full then runs the rest of the
@@ -26,6 +30,12 @@
 // --budget caps the whole session, the reference run included: no mutant starts once it is spent, and those
 // show as not run. --dry-run lists the mutants with an estimated cost from past results and spends $0.
 // --out-dir keeps every suite result (reference.json can be the next --baseline).
+// --defaults also runs the reference with no plugin loaded (one extra arm, on the reference only, so it
+// roughly doubles the reference cost). A missed rule whose related graders pass in every no-plugin run is
+// marked as a model default: today the model does it anyway, so the rule is not steering anything, but its
+// grader stays useful as a tripwire for the release that changes that. Graders are related to a rule by
+// shared words. A case that scores as well with no plugin is flagged too. With
+// --baseline the reference still runs once, for the no-plugin arm; the baseline's scores stay the reference.
 import { promises as fs, existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -35,7 +45,8 @@ import { runSuite, usableReason } from './cc-release.mjs';
 import { key, classifyCase, normalizeResult, resolveThresholds } from './eval-classify.mjs';
 import { readResults } from './drift-matrix.mjs';
 
-export const OPERATORS = ['delete-rule', 'blur-trigger', 'drop-skill', 'disable-hook', 'invert-rule'];
+export const OPERATORS = ['delete-rule', 'blur-trigger', 'drop-skill', 'disable-hook', 'invert-rule', 'delete-section'];
+const RULE_OPS = new Set(['delete-rule', 'invert-rule', 'delete-section']);
 export const BLURRED = 'Helps with general tasks. Use when it seems useful.';
 const SKIP_DIRS = new Set(['node_modules', '.git', 'results', 'evals', 'target', 'dist']);
 
@@ -57,12 +68,16 @@ export async function loadSuite(plugin) {
   const evalRel = manifest.experimental?.evals ?? 'evals', evalDir = path.join(plugin, evalRel);
   const cases = [];
   for (const c of [...cov.cases].sort((a, b) => a.dir.localeCompare(b.dir))) {
-    const dir = path.join(evalDir, c.dir), parts = [c.dir, await readText(path.join(dir, 'prompt.md')), await readText(path.join(dir, 'case.yaml'))];
+    const dir = path.join(evalDir, c.dir), parts = [c.dir, await readText(path.join(dir, 'prompt.md')), await readText(path.join(dir, 'case.yaml'))], graders = [];
     for (const sub of ['graders', '.']) {
       const d = path.join(dir, sub);
-      if (existsSync(d)) for (const f of (await fs.readdir(d)).filter((x) => /\.(md|sh|bash)$/.test(x) && x !== 'prompt.md').sort()) parts.push(await readText(path.join(d, f)));
+      if (existsSync(d)) for (const f of (await fs.readdir(d)).filter((x) => /\.(md|sh|bash)$/.test(x) && x !== 'prompt.md').sort()) {
+        const text = await readText(path.join(d, f));
+        parts.push(text);
+        if (sub === 'graders' && f.endsWith('.md')) graders.push({ name: f.replace(/\.md$/, ''), text: text ?? '' });
+      }
     }
-    cases.push({ dir: c.dir, covers: c.covers, text: parts.filter(Boolean).join('\n').toLowerCase() });
+    cases.push({ dir: c.dir, covers: c.covers, text: parts.filter(Boolean).join('\n').toLowerCase(), graders });
   }
   return { manifest, cov, evalRel, cases };
 }
@@ -109,10 +124,18 @@ export function invertLines(lines, a, b) {
     if (best) {
       const out = [...lines];
       out[i] = lines[i].slice(0, best.index) + best.to + lines[i].slice(best.index + best.from.length);
-      return { lines: out, from: best.from, to: best.to };
+      return { lines: out, from: best.from, to: best.to, line: i, index: best.index };
     }
   }
   return null;
+}
+
+// true when the swap in lines[a..b] sits after the rule's first sentence, so the rest of the rule still says
+// the opposite ("Every response is wrapped: ... Never return raw entities" inverted to "Always return ...")
+export function swapAfterFirstSentence(lines, a, b, inv) {
+  const before = lines.slice(a, inv.line).map((l) => `${l}\n`).join('') + lines[inv.line].slice(0, inv.index);
+  const body = before.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').replace(/\b(e\.g|i\.e|etc|vs)\./gi, '$1');
+  return /[.;:!?](\s|$)/.test(body.replace(/`[^`]*`/g, ''));
 }
 
 function hooksSource(manifest, plugin) {
@@ -131,13 +154,22 @@ export async function generateMutants(plugin, suite, { operators = OPERATORS } =
   for (const r of suite.cov.rules.filter((x) => x.scope !== 'hook')) rulesByFile.set(r.source, [...(rulesByFile.get(r.source) ?? []), r]);
   for (const [file, rules] of rulesByFile) {
     const src = await fs.readFile(path.join(plugin, file), 'utf8'), lines = src.split('\n');
+    const sections = new Map();
+    for (const r of rules) if (r.heading) sections.set(r.heading, [...(sections.get(r.heading) ?? []), r]);
     for (const r of rules) {
       const a = (r.start ?? r.line) - 1, b = r.line - 1;
       if (want.has('delete-rule')) add({ operator: 'delete-rule', file, ruleId: r.id, description: `deleted rule '${short(r.text)}' from ${file}`,
-        targets: { rules: [r.id], mentions: [] }, ops: [{ path: file, content: [...lines.slice(0, a), ...lines.slice(b + 1)].join('\n') }] });
+        targets: { rules: [r.id], mentions: [], texts: [r.text] }, ops: [{ path: file, content: [...lines.slice(0, a), ...lines.slice(b + 1)].join('\n') }] });
       const inv = want.has('invert-rule') ? invertLines(lines, a, b) : null;
       if (inv) add({ operator: 'invert-rule', file, ruleId: r.id, heuristic: true, description: `inverted rule '${short(r.text)}' in ${file} ('${inv.from}' became '${inv.to}')`,
-        targets: { rules: [r.id], mentions: [] }, ops: [{ path: file, content: inv.lines.join('\n') }] });
+        masking: { sameRule: swapAfterFirstSentence(lines, a, b, inv), section: r.heading ?? null, siblings: r.heading ? sections.get(r.heading).filter((x) => x !== r).map((x) => x.id) : [] },
+        targets: { rules: [r.id], mentions: [], texts: [r.text] }, ops: [{ path: file, content: inv.lines.join('\n') }] });
+    }
+    if (want.has('delete-section')) for (const [heading, rs] of sections) {
+      if (rs.length < 2) continue;
+      const drop = new Set(rs.flatMap((r) => Array.from({ length: r.line - (r.start ?? r.line) + 1 }, (_, k) => (r.start ?? r.line) - 1 + k)));
+      add({ operator: 'delete-section', file, section: heading, description: `deleted section '${short(heading)}' (${rs.length} rules) from ${file}`,
+        targets: { rules: rs.map((r) => r.id), mentions: [], texts: rs.map((r) => r.text) }, ops: [{ path: file, content: lines.filter((_, i) => !drop.has(i)).join('\n') }] });
     }
   }
   for (const p of await skillFiles(plugin, suite.manifest)) {
@@ -175,7 +207,7 @@ export async function generateMutants(plugin, suite, { operators = OPERATORS } =
   }
   const seen = new Map();
   for (const m of out) {
-    const base = `${m.operator}:${m.ruleId ?? (m.skill ? `skill/${slug(m.skill)}` : m.file)}`, n = (seen.get(base) ?? 0) + 1;
+    const base = `${m.operator}:${m.ruleId ?? (m.skill ? `skill/${slug(m.skill)}` : m.section ? `${m.file}#${slug(m.section)}` : m.file)}`, n = (seen.get(base) ?? 0) + 1;
     seen.set(base, n); m.id = n === 1 ? base : `${base}-${n}`;
   }
   return out;
@@ -187,6 +219,63 @@ export function relevantCases(m, cases) {
   const rules = new Set(m.targets.rules), words = m.targets.mentions.filter(Boolean).map(mentionRe);
   return cases.filter((c) => c.covers.some((id) => rules.has(id)) || words.some((re) => re.test(c.text))).map((c) => c.dir);
 }
+
+// ---------- model defaults: graders that pass with no plugin loaded (--defaults) ----------
+// words of four letters or more, a plural s dropped; rule boilerplate and grader frontmatter keys are not evidence
+const STOPWORDS = new Set(['never', 'always', 'must', 'should', 'every', 'each', 'only', 'that', 'this', 'these', 'those', 'with', 'from', 'when', 'what', 'which', 'then', 'than', 'there', 'their', 'them', 'they', 'into', 'does', 'done', 'have', 'make', 'made', 'more', 'some', 'also', 'even', 'like', 'just', 'used', 'uses', 'using', 'your', 'ours', 'code', 'file', 'rule', 'test', 'tests', 'case', 'says', 'reply', 'score', 'hold', 'holds', 'true', 'false', 'type', 'regex', 'target', 'last', 'message', 'last_message', 'match', 'contains', 'not_contains', 'focus', 'criteria', 'flags', 'pattern', 'tool', 'input', 'name', 'description', 'other', 'where', 'here', 'about', 'will', 'would', 'without']);
+export const ruleWords = (s) => new Set(String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !STOPWORDS.has(w)).map((w) => (w.length > 4 ? w.replace(/s$/, '') : w)));
+// related when the grader shares two words with the rule, or every word of the grader's name is in the rule
+export function relatedGrader(ruleText, grader) {
+  const rw = ruleWords(ruleText), name = [...ruleWords(String(grader.name).replace(/[-_]/g, ' '))];
+  return (name.length && name.every((w) => rw.has(w))) || sharedWords(ruleText, grader) >= 2;
+}
+export const sharedWords = (ruleText, grader) => { const rw = ruleWords(ruleText); return [...ruleWords(`${String(grader.name).replace(/[-_]/g, ' ')} ${grader.text ?? ''}`)].filter((w) => rw.has(w)).length; };
+// official runs carry passed; shim runs carry verdict and score. Indicators and skipped graders do not count.
+const graderPassed = (g) => (g.withOnly || g.scored === false || g.verdict === 'skipped' ? null : typeof g.passed === 'boolean' ? g.passed : g.verdict ? g.verdict === 'pass' : typeof g.score === 'number' ? g.score >= 0.5 : null);
+// per grader name: { with: { k, n }, without: { k, n } } over the runs that did not error
+export function graderRates(c) {
+  const out = new Map();
+  for (const arm of ['with', 'without']) for (const r of c?.arms?.[arm] ?? []) {
+    if (r.isError || r.error) continue;
+    for (const g of r.graders ?? []) {
+      const p = graderPassed(g);
+      if (p === null) continue;
+      const e = out.get(g.name) ?? { with: { k: 0, n: 0 }, without: { k: 0, n: 0 } };
+      e[arm].n++; if (p) e[arm].k++;
+      out.set(g.name, e);
+    }
+  }
+  return out;
+}
+// the graders that show the model follows every targeted rule anyway. Only graders specific to the mutant
+// count: related to a targeted rule and sharing fewer words with every other rule, so a judge that checks
+// five rules at once is not evidence about one. Each rule needs at least one specific grader that ran without the plugin, and every
+// one of them must pass every no-plugin run; [] as soon as one fails there (the rule still matters) or a
+// rule has no evidence either way
+export function modelDefaultGraders(m, relevant, suiteCases, withoutCases, ruleTexts = []) {
+  const targets = m.targets.texts ?? [], others = ruleTexts.filter((t) => !targets.includes(t)), found = new Map();
+  for (const text of targets) {
+    let evidence = 0;
+    for (const d of relevant) {
+      const c = withoutCases.get(d), sc = suiteCases.find((x) => x.dir === d);
+      if (!c || !sc) continue;
+      const rates = graderRates(c);
+      for (const g of sc.graders ?? []) {
+        const rt = rates.get(g.name);
+        if (!rt?.without.n || !relatedGrader(text, g)) continue;
+        const own = sharedWords(text, g);
+        if (others.some((o) => relatedGrader(o, g) && sharedWords(o, g) >= own)) continue;
+        if (rt.without.k < rt.without.n) return [];
+        evidence++; found.set(`${d}\0${g.name}`, { case: d, grader: g.name, without: `${rt.without.k} of ${rt.without.n}` });
+      }
+    }
+    if (!evidence) return [];
+  }
+  return [...found.values()];
+}
+
+// a case whose job is to show a skill stays out (a Skill tool_used grader with max 0) passes with no plugin by design
+const noFireCase = (sc) => (sc?.graders ?? []).some((g) => /^type:\s*tool_used\s*$/m.test(g.text) && /^tool:\s*Skill\s*$/m.test(g.text) && /^max:\s*0\s*$/m.test(g.text));
 
 // ---------- reproducible sampling ----------
 function prng(seed) {
@@ -232,17 +321,17 @@ const fileStem = (id) => id.replace(/[^\w.-]+/g, '_');
 
 // ---------- the run ----------
 // suiteRunner is injectable for tests; the default is cc-release's runSuite (official runner or the shim).
-export async function runMutations({ plugin, suite, mutants, full = false, runs = 1, budget = 5, runner = 'auto', binDir = null, env = process.env, concurrency = 1, baseline = null, judgeModel = null, threshold = 0.15, outDir = null, log = console.error, suiteRunner = runSuite }) {
+export async function runMutations({ plugin, suite, mutants, full = false, runs = 1, budget = 5, runner = 'auto', binDir = null, env = process.env, concurrency = 1, baseline = null, judgeModel = null, threshold = 0.15, outDir = null, defaults = false, log = console.error, suiteRunner = runSuite }) {
   const all = suite.cases.map((c) => c.dir);
   const plan = mutants.map((m) => ({ m, relevant: relevantCases(m, suite.cases) }));
   const needed = full ? all : [...new Set(plan.flatMap((p) => p.relevant))].sort();
   if (outDir) await fs.mkdir(outDir, { recursive: true });
   let spent = 0;
-  const run = async (ops, cases, stem) => {
+  const run = async (ops, cases, stem, ablation = 'none') => {
     const copy = await materialize(plugin, { ops, cases, evalRel: suite.evalRel });
     const out = await fs.mkdtemp(path.join(os.tmpdir(), 'cdc-mutate-out-'));
     try {
-      const r = await suiteRunner({ plugin: copy.dir, binDir, env, runner, judgeModel, runs, concurrency, budget: Math.max(0.01, Number((budget - spent).toFixed(2))), expectCases: cases.length, outDir: out });
+      const r = await suiteRunner({ plugin: copy.dir, binDir, env, runner, judgeModel, runs, concurrency, budget: Math.max(0.01, Number((budget - spent).toFixed(2))), expectCases: cases.length, outDir: out, ablation });
       spent += r.json?.aggregates?.costUsd ?? 0;
       if (r.raw && outDir) await fs.writeFile(path.join(outDir, `${stem}.json`), JSON.stringify(r.raw, null, 2));
       return { ...r, problem: r.json ? usableReason(r.json, cases.length) : (r.note ?? 'the runner wrote no result') };
@@ -253,15 +342,24 @@ export async function runMutations({ plugin, suite, mutants, full = false, runs 
   const refCases = new Map(), reference = { source: baseline ? 'baseline' : 'run', costUsd: 0, runner: null, note: null, cases: [] };
   for (const c of baseline?.cases ?? []) if (typeof c.summary?.score === 'number') refCases.set(key(c), c);
   const missing = needed.filter((d) => !refCases.has(d));
-  if (missing.length) {
-    if (baseline) { reference.source = 'baseline + run'; log(`· the baseline has no score for ${andList(missing)}; running the original setup on those`); }
-    log(`· reference: the unmutated setup on ${plural(missing.length, 'case')}`);
-    const r = await run([], missing, 'reference');
+  // --defaults runs every needed case once more with no plugin; a --baseline still supplies the with-plugin scores
+  const refRun = defaults ? needed : missing, withoutCases = new Map();
+  if (missing.length && baseline) { reference.source = 'baseline + run'; log(`· the baseline has no score for ${andList(missing)}; running the original setup on those`); }
+  if (refRun.length) {
+    log(`· reference: the unmutated setup on ${plural(refRun.length, 'case')}${defaults ? ', with and without the plugin' : ''}`);
+    const r = await run([], refRun, 'reference', defaults ? 'with-without' : 'none');
     if (r.problem) throw new Error(`the reference run of the unmutated setup is not usable (${r.problem}${r.note && r.note !== r.problem ? `; ${r.note}` : ''})`);
-    Object.assign(reference, { costUsd: r.json.aggregates?.costUsd ?? 0, runner: r.runner, note: r.note });
-    for (const c of r.json.cases) if (typeof c.summary?.score === 'number') refCases.set(key(c), c);
+    Object.assign(reference, { costUsd: r.json.aggregates?.costUsd ?? 0, runner: r.runner, note: r.note, ...(defaults && { ablation: 'with-without' }) });
+    for (const c of r.json.cases) {
+      if (typeof c.summary?.score === 'number' && !refCases.has(key(c))) refCases.set(key(c), c);
+      if (c.arms?.without?.length) withoutCases.set(key(c), c);
+    }
   }
-  reference.cases = needed.map((d) => ({ dir: d, score: refCases.get(d)?.summary?.score ?? null }));
+  reference.cases = needed.map((d) => {
+    const score = refCases.get(d)?.summary?.score ?? null, w = mean((withoutCases.get(d)?.arms?.without ?? []).filter((r) => !r.isError).map((r) => r.score).filter((x) => typeof x === 'number'));
+    // a case that scores as well with no plugin cannot tell a sabotaged setup from a working one
+    return { dir: d, score, ...(w !== null && { without: w, ...(score !== null && w >= score - threshold && !noFireCase(suite.cases.find((x) => x.dir === d)) && { indistinct: true }) }) };
+  });
 
   const results = [];
   for (const { m, relevant } of plan) {
@@ -292,34 +390,48 @@ export async function runMutations({ plugin, suite, mutants, full = false, runs 
     if (status === 'survived' && measured.every((c) => (c.before ?? 0) <= threshold)) notes.push('the reference already fails every case that ran, so none of them could catch it');
     if (status === 'killed' && !killedBy.some((d) => relevant.includes(d))) notes.push('caught only by a case that does not claim it; add the rule to that case\'s covers.yaml');
     if (status === 'errored' && !notes.length) notes.push('no case could be compared with the reference');
-    results.push({ ...base, status, cases: compared, killedBy, costUsd: cost, note: notes.join('; ') || null });
+    if (status === 'survived' && m.masking?.sameRule) notes.push('the swap is in a later sentence, so the rest of the rule still says the opposite; the model may follow that');
+    if (status === 'survived' && m.masking?.siblings.length) notes.push(`${plural(m.masking.siblings.length, 'other rule')} in section '${short(m.masking.section)}' still ${m.masking.siblings.length === 1 ? 'stands' : 'stand'} and may say the opposite; the delete-section mutant tests them together`);
+    const defaultsBy = status === 'survived' && RULE_OPS.has(m.operator) ? modelDefaultGraders(m, relevant, suite.cases, withoutCases, suite.cov.rules.map((r) => r.text)) : [];
+    // a default today can change with the next model or Claude Code release, so the grader stays as a tripwire
+    const many = m.operator === 'delete-section', g0 = defaultsBy[0];
+    if (defaultsBy.length) notes.push(`the model does this with no plugin (${defaultsBy.length === 1 ? `grader ${g0.grader} passes ${g0.without} runs` : `graders ${andList([...new Set(defaultsBy.map((g) => g.grader))])} pass every run`} without it), so today ${many ? 'these rules are' : 'the rule is'} not steering anything. You can drop ${many ? 'them' : 'it'} to save context, but keep the grader: it becomes a tripwire, and the release canary turns red if a new model stops doing this, which is your cue to put ${many ? 'them' : 'it'} back`);
+    results.push({ ...base, status, cases: compared, killedBy, costUsd: cost, note: notes.join('; ') || null, ...(defaultsBy.length && { modelDefault: { graders: defaultsBy } }) });
     const k = compared.find((c) => c.status === 'regressed');
     log(`  ${LABEL[status].padEnd(17)} ${m.description}${k ? ` (by ${k.dir}, ${f2(k.before)} to ${f2(k.after)})` : ''} · ${usd(cost)} · spent ${usd(spent)} of $${budget}`);
   }
-  return { reference, mutants: results, spent, budget, full, runs, threshold };
+  return { reference, mutants: results, spent, budget, full, runs, threshold, defaults };
 }
 
 // ---------- the verdict ----------
 const LABEL = { killed: 'caught', survived: 'missed', uncovered: 'nothing tests it', unrun: 'not run', errored: 'errored' };
-export const targetLabel = (r) => (r.operator === 'blur-trigger' ? `the trigger of skill ${r.skill}` : r.operator === 'drop-skill' ? `skill ${r.skill}` : r.operator === 'disable-hook' ? `hook ${r.hook}` : `rule ${r.ruleId}`);
+export const targetLabel = (r) => (r.operator === 'blur-trigger' ? `the trigger of skill ${r.skill}` : r.operator === 'drop-skill' ? `skill ${r.skill}` : r.operator === 'disable-hook' ? `hook ${r.hook}` : r.operator === 'delete-section' ? `section '${r.section}' of ${r.file}` : `rule ${r.ruleId}`);
 export function summarize(results) {
   const n = (s) => results.filter((r) => r.status === s).length;
   const killed = n('killed'), survived = n('survived'), uncovered = n('uncovered'), unrun = n('unrun'), errored = n('errored');
   const judged = killed + survived + uncovered;
-  const labels = (s) => [...new Set(results.filter((r) => r.status === s).map(targetLabel))];
-  const untested = labels('uncovered'), weak = labels('survived');
+  const labels = (s, keep = () => true) => [...new Set(results.filter((r) => r.status === s && keep(r)).map(targetLabel))];
+  // a missed rule the model follows with no plugin is a different finding from a weak test, so the lists stay apart
+  const modelDefaults = labels('survived', (r) => r.modelDefault), untested = labels('uncovered'), weak = labels('survived').filter((l) => !modelDefaults.includes(l));
   const parts = [judged ? `Your suite catches ${killed} of ${plural(judged, 'sabotage')}.` : 'No sabotage was measured, so there is no score yet.'];
   if (untested.length) parts.push(`Nothing tests: ${andList(untested)}.`);
   if (weak.length) parts.push(`Tested but not caught: ${andList(weak)}.`);
+  if (modelDefaults.length) parts.push(`The model does these with no plugin, so today they are not steering anything (keep their graders as tripwires): ${andList(modelDefaults)}.`);
   if (unrun) parts.push(`${plural(unrun, 'mutant')} did not run (budget).`);
   if (errored) parts.push(`${plural(errored, 'mutant')} could not be measured (the runner errored).`);
-  return { killed, survived, uncovered, unrun, errored, judged, total: results.length, score: judged ? killed / judged : null, untested, weak, sentence: parts.join(' ') };
+  return { killed, survived, uncovered, unrun, errored, judged, total: results.length, score: judged ? killed / judged : null, untested, weak, modelDefaults, sentence: parts.join(' ') };
 }
+// cases that score as well with no plugin as with it (only known after a --defaults reference)
+const DEFAULTS_HINT = 'Their graders pass even with no plugin installed, so today these rules cost context without changing behaviour. Keep the graders either way: on every Claude Code or model release they tell you if the model stops doing it by default. Graders are matched to rules by the words they share, so check that the named grader really tests the rule before you drop it.';
+const SAME_HINT = 'With no plugin installed they score within the catch threshold of your full setup, so no sabotage can turn them red. Make their prompts ask for something only your setup knows.';
+const defaultsCount = (j) => j.mutants.filter((m) => m.modelDefault).length;
+const indistinct = (j) => (j.reference?.cases ?? []).filter((c) => c.indistinct);
+const noPluginArm = (j) => j.reference?.ablation === 'with-without';
 
 export function mutateJson(res, meta = {}) {
   return { schemaVersion: 1, tool: 'mutate', suite: meta.suite ?? null, generatedAt: meta.generatedAt ?? new Date().toISOString(),
     operators: meta.operators ?? OPERATORS, generated: meta.generated ?? res.mutants.length, seed: meta.seed ?? null, maxMutants: meta.maxMutants ?? null,
-    runner: meta.runner ?? null, runs: res.runs, full: res.full, budget: res.budget, spent: res.spent, threshold: res.threshold,
+    runner: meta.runner ?? null, runs: res.runs, full: res.full, defaults: !!res.defaults, budget: res.budget, spent: res.spent, threshold: res.threshold,
     reference: res.reference, summary: summarize(res.mutants), mutants: res.mutants };
 }
 
@@ -327,9 +439,12 @@ const caughtBy = (r) => { const c = r.cases.find((x) => x.status === 'regressed'
 export function renderMutateMd(j) {
   const s = j.summary;
   const rows = j.mutants.map((r) => `| ${LABEL[r.status]} | ${r.operator}${r.heuristic ? ' (heuristic)' : ''} | ${r.description.replace(/\|/g, '\\|')} | ${caughtBy(r) || (r.status === 'uncovered' ? 'no case claims it' : r.status === 'survived' ? 'stayed green' : '')} | ${r.costUsd ? usd(r.costUsd) : ''} |`);
+  const same = indistinct(j);
   return [`### Mutation test: ${j.suite ?? 'suite'}`, '',
     `**${s.score === null ? 'No score yet' : `Score ${f2(s.score)}`}.** ${s.sentence}`, '',
-    `Reference: ${j.reference.source === 'baseline' ? 'the --baseline result' : `one run of the unmutated setup (${usd(j.reference.costUsd)})`} · ${plural(j.runs, 'run')} per case${j.full ? ' · --full' : ''} · spent ${usd(j.spent)} of $${j.budget}`, '',
+    `Reference: ${j.reference.source === 'baseline' ? 'the --baseline result' : `one run of the unmutated setup (${usd(j.reference.costUsd)})`}${noPluginArm(j) ? ', with a no-plugin arm' : ''} · ${plural(j.runs, 'run')} per case${j.full ? ' · --full' : ''} · spent ${usd(j.spent)} of $${j.budget}`, '',
+    ...((s.modelDefaults ?? []).length ? [`**The model does these anyway:** ${andList(s.modelDefaults, 99)}. ${DEFAULTS_HINT}`, ''] : []),
+    ...(same.length ? [`**Cases that cannot tell your setup from no plugin:** ${andList(same.map((c) => `${c.dir} (${f2(c.score)} with, ${f2(c.without)} without)`), 99)}. No sabotage can turn them red.`, ''] : []),
     '| result | operator | mutant | caught by | cost |', '|---|---|---|---|---|', ...rows, ''].join('\n');
 }
 
@@ -339,12 +454,12 @@ export function renderMutateHtml(j) {
   const s = j.summary, tone = s.score === null ? 'muted' : s.score >= 0.8 ? 'pass' : s.score >= 0.5 ? 'warn' : 'fail';
   const head = s.judged ? `Catches ${s.killed} of ${plural(s.judged, 'sabotage')}` : 'Nothing measured yet';
   // the page lists the gaps right below, so its lede counts them instead of naming them
-  const brief = [s.uncovered && `${plural(s.uncovered, 'mutant')} had no case that tests ${s.uncovered === 1 ? 'it' : 'them'}.`, s.survived && `${s.survived} stayed green under a case that claims ${s.survived === 1 ? 'it' : 'them'}.`,
+  const brief = [s.uncovered && `${plural(s.uncovered, 'mutant')} had no case that tests ${s.uncovered === 1 ? 'it' : 'them'}.`, s.survived && `${s.survived} stayed green under a case that claims ${s.survived === 1 ? 'it' : 'them'}${defaultsCount(j) ? `; with no plugin installed the model already does what ${defaultsCount(j) === 1 ? 'one' : defaultsCount(j)} of them test${defaultsCount(j) === 1 ? 's' : ''}` : ''}.`,
     s.unrun && `${s.unrun} did not run (budget).`, s.errored && `${s.errored} could not be measured (the runner errored).`].filter(Boolean).join(' ') || (s.judged ? 'Every sabotage turned a case red.' : s.sentence);
   const stamp = [
     ['score', `<b>${s.score === null ? 'n/a' : f2(s.score)}</b> <span class="from">caught / (caught + missed + nothing tests it)</span>`],
     ['mutants', `<b>${s.total}</b> <span class="from">${j.generated > s.total ? `sampled from ${j.generated} (seed ${esc(j.seed)})` : 'every one generated'}</span>`],
-    ['reference', `<b>${esc(j.reference.source === 'run' ? 'one run of the original' : j.reference.source)}</b>${j.reference.costUsd ? ` <span class="from">${usd(j.reference.costUsd)}</span>` : ''}`],
+    ['reference', `<b>${esc(j.reference.source === 'run' ? 'one run of the original' : j.reference.source)}</b>${noPluginArm(j) ? ' <span class="from">plus a no-plugin arm</span>' : ''}${j.reference.costUsd ? ` <span class="from">${usd(j.reference.costUsd)}</span>` : ''}`],
     ['spend', `<b>${usd(j.spent)}</b> <span class="from">of $${j.budget} budget, ${plural(j.runs, 'run')} per case${j.full ? ', --full' : ''}</span>`],
     ['caught when', `<span class="from">a case drops more than ${j.threshold} below the reference</span>`],
     ['generated', `<span class="from">${esc(String(j.generatedAt).replace('T', ' ').slice(0, 16))} UTC</span>`],
@@ -360,10 +475,12 @@ export function renderMutateHtml(j) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>${CSS}</style></head><body><div class="wrap">
 <header class="verdict"><div><p class="eyebrow">config-drift-checker · <b>${esc(j.suite ?? 'suite')}</b> · mutation test</p>
 <h1 class="${tone}"><span>${esc(head)}</span></h1><p class="lede">${esc(brief)}</p>
-<p class="lede">Each mutant is one small sabotage of a temp copy of the setup: a deleted or inverted rule, a blurred skill trigger, a removed skill or a disabled hook. A good suite goes red on every one.</p></div>
+<p class="lede">Each mutant is one small sabotage of a temp copy of the setup: a deleted or inverted rule, a deleted section, a blurred skill trigger, a removed skill or a disabled hook. A good suite goes red on every one.</p></div>
 <dl class="stamp">${stamp.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></header>
 ${s.untested.length ? `<h2>Nothing tests these</h2><p class="hint">No case claims them in covers.yaml or mentions them. Add a case, or list the rule id in an existing case's covers.yaml.</p>${chips(s.untested, 'gap')}` : ''}
 ${s.weak.length ? `<h2>Tested but not caught</h2><p class="hint">A case claims them, but it stayed green with the sabotage in place. Tighten its graders.</p>${chips(s.weak, 'weak')}` : ''}
+${(s.modelDefaults ?? []).length ? `<h2>The model does these anyway</h2><p class="hint">${esc(DEFAULTS_HINT)}</p>${chips(s.modelDefaults, 'default')}` : ''}
+${indistinct(j).length ? `<h2>Cases that cannot tell your setup from no plugin</h2><p class="hint">${esc(SAME_HINT)}</p>${chips(indistinct(j).map((c) => `${c.dir}: ${f2(c.score)} with, ${f2(c.without)} without`), 'gap')}` : ''}
 <h2>Every mutant</h2><div class="tablewrap"><table><thead><tr><th>result</th><th>operator</th><th>mutant</th><th>caught by</th><th class="num">cost</th></tr></thead><tbody>${rows}</tbody></table></div>
 <p class="foot">Scores are the mean over a case's runs with the setup loaded, against a reference run of the unmutated setup. Inverted rules are a word swap and can read oddly, so they are marked heuristic. Generated by <a href="https://jameskomo.github.io/config-drift-checker/">config-drift-checker</a> mutate.</p>
 </div></body></html>`;
@@ -383,7 +500,7 @@ h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-wei
 .stamp dt{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;padding-top:2px}.stamp dd{margin:0}.stamp b{font-weight:600}.from{color:var(--muted)}
 h2{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:30px 0 6px}.hint{color:var(--muted);font-size:13.5px;margin:0 0 10px}
 .chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}.chips li{font:12.5px/1.4 "IBM Plex Mono",ui-monospace,Menlo,monospace;padding:4px 9px;border-radius:6px;border:1px solid var(--rule);background:var(--surface);overflow-wrap:anywhere}
-.chips li.gap{border-left:3px solid var(--fail)}.chips li.weak{border-left:3px solid var(--warn)}
+.chips li.gap{border-left:3px solid var(--fail)}.chips li.weak{border-left:3px solid var(--warn)}.chips li.default{border-left:3px solid var(--track)}
 .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%;font-size:13.5px}th,td{padding:8px 12px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}tr:last-child td{border-bottom:0}
 thead th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -397,14 +514,15 @@ thead th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(
 
 // ---------- cost estimate (dry run) ----------
 // per-case mean cost of one with-arm run from past results, the all-case mean for a case with no history
-export function estimatePlan(plan, history, { runs = 1, full = false, all = [], baselineCases = [] } = {}) {
+// --defaults: every needed case runs in the reference with both arms, so its share counts twice
+export function estimatePlan(plan, history, { runs = 1, full = false, all = [], baselineCases = [], defaults = false } = {}) {
   const byCase = new Map();
   for (const { json } of history) for (const c of json.cases ?? []) for (const r of c.arms?.with ?? []) if (!r.isError && typeof r.costUsd === 'number') byCase.set(key(c), [...(byCase.get(key(c)) ?? []), r.costUsd]);
   const samples = [...byCase.values()].flat();
   if (!samples.length) return null;
   const overall = mean(samples), perCase = (d) => (mean(byCase.get(d) ?? []) ?? overall) * runs;
   const needed = full ? all : [...new Set(plan.flatMap((p) => p.relevant))];
-  const reference = sum(needed.filter((d) => !baselineCases.includes(d)).map(perCase));
+  const reference = defaults ? 2 * sum(needed.map(perCase)) : sum(needed.filter((d) => !baselineCases.includes(d)).map(perCase));
   const mutants = plan.map(({ relevant }) => (relevant.length || full ? sum((full ? all : relevant).map(perCase)) : 0));
   return { perRunUsd: overall, samples: samples.length, casesWithHistory: needed.filter((d) => byCase.has(d)).length, needed: needed.length, reference, mutants, total: reference + sum(mutants) };
 }
@@ -413,7 +531,7 @@ export function estimatePlan(plan, history, { runs = 1, full = false, all = [], 
 const isMain = (() => { try { return process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url); } catch { return false; } })();
 if (isMain) {
   const argv = process.argv.slice(2);
-  const opt = { plugin: null, operators: OPERATORS, maxMutants: null, seed: '1', runs: 1, budget: 5, baseline: null, full: false, runner: 'auto', concurrency: 1, history: null, outDir: null, json: null, md: null, html: null, dryRun: false };
+  const opt = { plugin: null, operators: OPERATORS, maxMutants: null, seed: '1', runs: 1, budget: 5, baseline: null, full: false, defaults: false, runner: 'auto', concurrency: 1, history: null, outDir: null, json: null, md: null, html: null, dryRun: false };
   const outArg = (v) => (v === '-' ? '-' : path.resolve(v));
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], next = () => argv[++i];
@@ -424,12 +542,12 @@ if (isMain) {
     else if (a === '--runner') opt.runner = next(); else if (a === '--concurrency' || a === '-j') opt.concurrency = Number(next());
     else if (a === '--history') opt.history = path.resolve(next()); else if (a === '--out-dir') opt.outDir = path.resolve(next());
     else if (a === '--json') opt.json = outArg(next()); else if (a === '--md') opt.md = outArg(next()); else if (a === '--html') opt.html = path.resolve(next());
-    else if (a === '--dry-run') opt.dryRun = true;
+    else if (a === '--dry-run') opt.dryRun = true; else if (a === '--defaults') opt.defaults = true;
     else if (!a.startsWith('-')) opt.plugin = path.resolve(a);
     else { console.error(`unknown option ${a}`); process.exit(2); }
   }
   const die = (m, code = 2) => { console.error(m); process.exit(code); };
-  if (!opt.plugin) die('usage: mutate.mjs <plugin> [--operators a,b] [--max-mutants N] [--seed s] [--full] [--runs 1] [--budget 5] [--baseline result.json] [--runner auto|official|shim] [--concurrency n] [--dry-run] [--json f|-] [--md f|-] [--html f]');
+  if (!opt.plugin) die('usage: mutate.mjs <plugin> [--operators a,b] [--max-mutants N] [--seed s] [--full] [--runs 1] [--budget 5] [--baseline result.json] [--defaults] [--runner auto|official|shim] [--concurrency n] [--dry-run] [--json f|-] [--md f|-] [--html f]');
   const unknownOps = opt.operators.filter((o) => !OPERATORS.includes(o));
   if (!opt.operators.length || unknownOps.length) die(`--operators takes a comma list of ${OPERATORS.join(', ')}${unknownOps.length ? ` (not ${unknownOps.join(', ')})` : ''}`);
   if (!['auto', 'official', 'shim'].includes(opt.runner)) die('--runner must be auto, official or shim');
@@ -449,18 +567,18 @@ if (isMain) {
   const name = suite.manifest.name ?? path.basename(opt.plugin);
   const say = opt.json === '-' || opt.md === '-' ? console.error : console.log; // stdout stays clean for - outputs
   const byOp = OPERATORS.filter((o) => opt.operators.includes(o)).map((o) => `${mutants.filter((m) => m.operator === o).length} ${o}`).join(', ');
-  say(`Mutants: ${mutants.length}${mutants.length < generated.length ? ` of ${generated.length} (seed ${opt.seed})` : ''} · ${byOp} · ${plural(suite.cases.length, 'case')} · ${plural(opt.runs, 'run')} per case${opt.full ? ' · --full' : ''} · budget $${opt.budget}`);
+  say(`Mutants: ${mutants.length}${mutants.length < generated.length ? ` of ${generated.length} (seed ${opt.seed})` : ''} · ${byOp} · ${plural(suite.cases.length, 'case')} · ${plural(opt.runs, 'run')} per case${opt.full ? ' · --full' : ''}${opt.defaults ? ' · --defaults' : ''} · budget $${opt.budget}`);
 
   if (opt.dryRun) {
     const history = [...await readResults(path.join(opt.plugin, suite.evalRel, 'results')), ...await readResults(opt.history)];
     const baselineCases = (baseline?.cases ?? []).filter((c) => typeof c.summary?.score === 'number').map(key);
-    const est = estimatePlan(plan, history, { runs: opt.runs, full: opt.full, all: suite.cases.map((c) => c.dir), baselineCases });
+    const est = estimatePlan(plan, history, { runs: opt.runs, full: opt.full, all: suite.cases.map((c) => c.dir), baselineCases, defaults: opt.defaults });
     for (const [i, { m, relevant }] of plan.entries()) say(`  ${m.id}\n      ${m.description}${m.heuristic ? ' (heuristic)' : ''}\n      ${relevant.length ? `runs ${andList(relevant)}` : `nothing tests it${opt.full ? ', so --full runs every case' : ''}`}${est && est.mutants[i] ? ` · about ${usd(est.mutants[i])}` : ''}`);
     if (!est) say(`\nNo past results to estimate from (looked in ${path.join(opt.plugin, suite.evalRel, 'results')}${opt.history ? ` and ${opt.history}` : ''}). Run the suite once, or pass --history <dir>.`);
     else {
       let cum = est.reference, fits = 0;
       for (const c of est.mutants) { if (cum >= opt.budget) break; cum += c; fits++; }
-      say(`\nEstimated cost: about ${usd(est.total)}${opt.full ? ' at most' : ''} (reference run ${usd(est.reference)}${baseline ? ' after --baseline' : ''}, mutants ${usd(est.total - est.reference)}), from ${usd(est.perRunUsd)} per agent run over ${est.samples} past runs; ${est.casesWithHistory} of ${est.needed} cases have their own history.`);
+      say(`\nEstimated cost: about ${usd(est.total)}${opt.full ? ' at most' : ''} (reference run ${usd(est.reference)}${opt.defaults ? ' with the no-plugin arm' : baseline ? ' after --baseline' : ''}, mutants ${usd(est.total - est.reference)}), from ${usd(est.perRunUsd)} per agent run over ${est.samples} past runs; ${est.casesWithHistory} of ${est.needed} cases have their own history.`);
       say(fits >= est.mutants.length ? `The $${opt.budget} budget covers every mutant.` : `The $${opt.budget} budget starts about ${fits} of ${est.mutants.length} mutants; the rest would show as not run.`);
     }
     if (opt.json) {
@@ -474,7 +592,7 @@ if (isMain) {
   const { th, cfg } = resolveThresholds(opt.plugin, 'pinned'), judgeModel = cfg?.judgeModel ?? null;
   const generatedAt = new Date().toISOString();
   let res;
-  try { res = await runMutations({ plugin: opt.plugin, suite, mutants, full: opt.full, runs: opt.runs, budget: opt.budget, runner: opt.runner, concurrency: opt.concurrency, baseline, judgeModel, threshold: th.score, outDir: opt.outDir }); }
+  try { res = await runMutations({ plugin: opt.plugin, suite, mutants, full: opt.full, runs: opt.runs, budget: opt.budget, runner: opt.runner, concurrency: opt.concurrency, baseline, judgeModel, threshold: th.score, outDir: opt.outDir, defaults: opt.defaults }); }
   catch (e) { die(e.message, 1); }
   const j = mutateJson(res, { suite: name, generatedAt, operators: opt.operators, generated: generated.length, seed: opt.seed, maxMutants: opt.maxMutants, runner: opt.runner });
   if (opt.outDir) await fs.writeFile(path.join(opt.outDir, 'mutate.json'), JSON.stringify(j, null, 2) + '\n');
