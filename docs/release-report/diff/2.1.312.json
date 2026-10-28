@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.311",
+  "to": "2.1.312",
+  "tools": {
+    "from": 44,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "AskUserQuestion",
+      "decl": "AskUserQuestionOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "annotations.[k: string].unanswered",
+      "type": "\"skipped\" | \"replied_in_chat\" | \"dismissed\"",
+      "optional": true,
+      "after": "How the question went unanswered: 'skipped' (the user skipped it), 'replied_in_chat' (the user sent a chat message instead), or 'dismissed' (the user closed the card). The model does not see this field; put the text it should read in `answers`. Absent when the question was answered, and also when the answering client did not report it (in a session that does not advertise ask_user_question_unanswered_v1, from an older client, or in an older transcript): then only the text in `answers` says how it ended. Treat any other value as absent.",
+      "nested": 0,
+      "display": "AskUserQuestion.annotations.[k: string].unanswered"
+    }
+  ],
+  "summary": {
+    "from": "2.1.311",
+    "to": "2.1.312",
+    "headline": "Claude Code 2.1.312 kept every built-in tool's instructions and capabilities; 1 change touches types only.",
+    "counts": {
+      "instruction": 0,
+      "capability": 0,
+      "typeOnly": 1
+    },
+    "instructionTools": [],
+    "capabilitiesAdded": 0,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [],
+    "toolsRemoved": [],
+    "items": []
+  }
+}
