@@ -1,52 +1,30 @@
 <!-- {% raw %} -->
 # User guide
 
-Everything from install to reading a red report. What the tool is and how it relates to
-`claude plugin eval` is in the [README](../README.md); this page assumes you want it running.
-Claude Code is the first-class agent throughout; Codex and Gemini are in the FAQ.
+Everything from install to reading a red report, and the tools that go further. What the tool is
+and how it compares with `claude plugin eval` is in the [README](../README.md); this page assumes
+you want it running. Claude Code is the first-class agent throughout; Codex and Gemini are in the
+FAQ.
 
-Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) (this
-plugin's own suite on every Claude Code release) · [a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) · [the repair that fixed it](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) · [demo repo](https://github.com/jameskomo/config-drift-checker-demo)
+**How this guide is laid out**
 
-## 0. Everything in the box
-
-One row per capability, with where this guide covers it. If you can't find a feature here, we
-didn't ship it.
-
-| Capability | Where |
+| If you want to | Read |
 |---|---|
-| One-command setup, headless or $0 scaffold (`cdc-bootstrap`) | §2 |
-| Ready-made community suites with published worth numbers | §2 |
-| CI wiring, secrets, branch gating, useful Action inputs | §3, §4 |
-| Pins, canary cadence, thresholds, budgets (`.cdc.yml`) | §5 |
-| Release watch, canary runs, bump and pin PRs | §6 |
-| Free preflight before any model run: skill linter, suite format doctor, format drift per release | §7 |
-| Reading reports: noise bands, refusals, discovered vs invoked, panels | §7 |
-| Which release broke it (`drift-bisect`) | §7 |
-| Which model and Claude Code version your setup survives (`drift-matrix`) | §7 |
-| Context-cost drift: tokens your setup adds to every session, per release (`context-cost`) | §7 |
-| Real usage vs evals: tested but unused, used but untested (`usage-check`) | §7 |
-| Bring skill-creator `evals.json` suites, or export to them (`evals-convert`) | §2 |
-| Plugins with MCP servers: mocks and `mock_calls` graders under both runners | §2 |
-| Parallel agent runs (`concurrency` input) | §4 |
-| Pull request impact comment and case selection (`pr-impact`, `pr-select`) | §4 |
-| Turn real sessions into suggested test cases (`case-miner`) | §2 |
-| Free floor when the budget skips a run; untested releases shown as untested | §6 |
-| Mutation testing: are my evals any good? (`mutate`) | §7 |
-| Trigger map: how reliably each skill fires, and collisions (`trigger-map`) | §7 |
-| Confidence ranges and runs needed per case (`runs-needed`) | §7 |
-| What changed inside Claude Code between releases (`harness-diff`) | §9 |
-| Badges for public suite authors | §9 |
-| The public Claude Code release report | §9 |
-| Autonomous repair: when it runs, its hard limits, a live example | §7 |
-| Fleet dashboard and pin policy across repos | §8 |
-| Org-wide rollout with a reusable workflow, no hosted app | §8 |
-| The observatory, stability streak, status badge, drift-wire feed | §9 |
-| Weekly digest and the pre-written release post | §9 |
-| Local commands for every tool, including `trace-keeper` | §10 |
-| Measured costs and the levers that cap them | §11 |
-| Safety: workspaces, the safety-net hook, third-party suites | §12 |
-| Codex and Gemini: same cases, other agents, and a published comparison | §14 (FAQ) |
+| get a repo protected | [1. Install](#1-install-once-per-machine), [2. Set up a repo](#2-set-up-a-repo-about-10-minutes-mostly-watching), [3. Wire CI](#3-wire-ci-the-parts-only-you-can-do) |
+| add the check to a pipeline you already have | [4. Adding the check to an existing pipeline](#4-adding-the-check-to-an-existing-pipeline-no-claude-code-needed) |
+| tune pins, budgets and thresholds | [5. `.cdc.yml` reference](#cdcyml) |
+| know what runs on its own, and what a skipped release looks like | [6. What happens from now on](#6-what-happens-from-now-on-automatic) |
+| act on a red check | [7. Reading a report](#7-reading-a-report) |
+| find out whether your tests would catch a break | [8. Test your tests](#8-test-your-tests) |
+| explain a change: which release, which model, what it costs, how to fix it | [9. Investigate a change](#9-investigate-a-change) |
+| run it across many repos | [10. Fleet](#10-fleet-many-repos-one-view) |
+| publish your results, or read ours | [11. The drift index](#11-the-drift-index) |
+| look up a command, a cost, a safety rule | [12. Local commands](#12-local-commands), [13. Cost](#13-cost-measured), [14. Safety](#14-safety) |
+
+Live examples: [our drift index](https://jameskomo.github.io/config-drift-checker/drift/) ·
+[a real break, self-diagnosed](https://jameskomo.github.io/config-drift-checker/example-break/report.html) ·
+[our suite, mutation-tested](https://jameskomo.github.io/config-drift-checker/mutation/report.html) ·
+[the demo repo](https://github.com/jameskomo/config-drift-checker-demo)
 
 ## 1. Install (once per machine)
 
@@ -58,7 +36,7 @@ claude plugin install config-drift-checker@jameskomo
 You now have four skills in Claude Code (`/config-drift-checker:setup`, `:run`, `:write-case`,
 `:repair`) and the runner tools inside the plugin. Nothing has touched any repo yet.
 
-## 2. Set up a repo (10 minutes, mostly watching)
+## 2. Set up a repo (about 10 minutes, mostly watching)
 
 In the repo whose setup you want protected:
 
@@ -112,19 +90,6 @@ and lists every check skill-creator has no place for (regex, tool order and simi
 dropping them silently. The full mapping is in
 [the format reference](eval-format-and-runner.md).
 
-### Plugins with MCP servers: test against mocks
-
-A plugin that talks to a tracker, a database or any other MCP server can be tested without the
-real service. Put mocks in `evals/mocks/<server>/<tool>.md` (or a case's own `mocks/` folder) in
-the official `claude plugin eval` format: the body is the tool's answer, and frontmatter can add
-`expect:` (the run fails if the agent sends something else), `error: true`, and substitutions like
-`{{input.id}}`. Both runners answer from the mocks and keep the plugin's real servers down by
-default (`--allow-real-servers` lets unmocked ones start). Grade what the agent sent with
-`target: mock_calls`. The bundled runner supports fixed mocks; a case that needs a `type: agent`
-mock (the judge model playing the server) is marked "needs the official runner" instead of
-failing. `suite-doctor` checks mock files before any run, which matters because the official $0
-load check does not validate them.
-
 ### Turn real sessions into test cases
 
 A suite written from guesses tests prompts nobody types. `case-miner` reads your local Claude Code
@@ -144,6 +109,19 @@ and long pasted code are replaced, and each candidate says what was removed. Can
 in `<plugin>/.eval-candidates/` with a `candidates.md` explaining why each was picked; nothing
 enters `evals/` until you `accept` it, and accepting never overwrites a case. The heuristics are
 plain keyword and phrase matching in English, so read each candidate before accepting it.
+
+### Plugins with MCP servers: test against mocks
+
+A plugin that talks to a tracker, a database or any other MCP server can be tested without the
+real service. Put mocks in `evals/mocks/<server>/<tool>.md` (or a case's own `mocks/` folder) in
+the official `claude plugin eval` format: the body is the tool's answer, and frontmatter can add
+`expect:` (the run fails if the agent sends something else), `error: true`, and substitutions like
+`{{input.id}}`. Both runners answer from the mocks and keep the plugin's real servers down by
+default (`--allow-real-servers` lets unmocked ones start). Grade what the agent sent with
+`target: mock_calls`. The bundled runner supports fixed mocks; a case that needs a `type: agent`
+mock (the judge model playing the server) is marked "needs the official runner" instead of
+failing. `suite-doctor` checks mock files before any run, which matters because the official $0
+load check does not validate them.
 
 ## 3. Wire CI (the parts only you can do)
 
@@ -234,7 +212,6 @@ the `watch` job from the full template at `ci/config-drift-checker.yml` in the p
 | a platform team adding a stage to an existing pipeline | this section: the step, the secret, the two repo settings |
 | on GitLab / Buildkite / other CI | run the tools directly: `node <plugin-root>/tools/eval-shim.mjs <plugin> --track pinned --scaffold` then `eval-diff.mjs --config <plugin>`; the Action is a thin wrapper around them |
 
-<a id="cdcyml"></a>
 ## 5. `.cdc.yml` reference
 
 One file at the plugin root says what is pinned, what floats, and how much may be spent.
@@ -359,6 +336,18 @@ In one sentence: a green report asks nothing of you; a red one tells you which o
 happened (the model refused, the setup regressed, the grader was wrong, or the run was flaky) and
 what to do.
 
+### Confidence ranges and runs needed
+
+Every diff and report now says how sure each score is. "0.83 (0.55 to 0.95)" means the true score
+most likely lies in that 95% range, and more runs narrow it; "2 of 3 (0.21 to 0.94)" is the same for
+the share of passing runs. These numbers never change a verdict. **Runs needed** is how many runs a
+case takes to catch a drop of your threshold 8 times in 10, given its spread so far:
+
+```bash
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>          # per case
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin> --write  # raise runs: in prompt.md
+```
+
 ### Preflight: catch broken skills and format drift for free
 
 Before any model run, the Action runs two static checks on the Claude Code version it just
@@ -400,6 +389,85 @@ What changed in Claude Code 2.1.287, which `--fix` handles: llm graders take `fo
 `target:`; `context.scaffold_script` names a script file; `tool_used` needs `min: 0` with `max: 0`
 to mean "never"; `arm: with` becomes `with-only`; a `covers:` key moves to `covers.yaml`. The full
 list with reasons is in the [v1.2.0 release notes](https://github.com/jameskomo/config-drift-checker/releases/tag/v1.2.0).
+
+## 8. Test your tests
+
+A green suite proves something only if it would go red when the setup breaks, and only if it
+tests what people actually do. These three tools check that, each from a different side: break
+the setup on purpose, measure how reliably each skill fires, and compare the suite with real use.
+
+### Mutation testing: are my evals any good?
+
+A green suite only means something if it would go red when the setup breaks. `mutate` checks that
+by sabotaging copies of your setup on purpose and running the cases that should notice:
+
+```bash
+node <plugin-root>/tools/mutate.mjs <plugin> --dry-run                 # the sabotages and a cost estimate, $0
+node <plugin-root>/tools/mutate.mjs <plugin> --budget 3 --html mutate.html
+```
+
+It deletes or inverts a rule in CLAUDE.md or a skill, blurs a skill's trigger description, removes
+a skill, or disables a hook, one change per copy. A sabotage is **caught** when a case drops more
+than your `.cdc.yml` score threshold below a run of the unchanged setup. You get a score and one
+sentence, such as "Your suite catches 6 of 15 sabotages", followed by the rules nothing tests. **Nothing
+tests** means no case claims that rule in `covers.yaml`, which is a coverage gap; **tested but not
+caught** means a case claims the rule but its graders are too loose. Inverted rules come from a
+simple word swap and are marked heuristic. `--max-mutants N --seed s` takes a repeatable sample,
+`--budget` caps the whole session, and your original files are never touched.
+
+How to read a missed sabotage: either the graders are too loose to see the change, or the model
+behaves the same without the rule, which means the rule may not be pulling its weight. Our own
+suite [catches 6 of 15 sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html):
+deleting "use constructor injection" or "validate request bodies" changed nothing, because Sonnet
+does both by default, while deleting the response-wrapper or pagination rules was caught at once.
+
+### Trigger map: how reliably does each skill fire?
+
+One passing trigger case says a skill fired once. `trigger-map` measures it as a rate:
+
+```bash
+node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run                      # prompt counts and cost, $0
+node <plugin-root>/tools/trigger-map.mjs <plugin> --model haiku --budget 0.5 --html triggers.html
+```
+
+For every skill it builds prompts the skill should fire on and nearby prompts it should not, from
+your own `--prompts prompts.yaml`, the eval cases that have a Skill grader, and paraphrases written
+by one cheap model call per skill (cached in `.cdc-trigger-prompts.json`, so reruns are free and you
+can edit the set). Each prompt runs as a fresh one-turn session with your plugin loaded and the
+Skill tool as the only tool. You get a fire rate and a false-fire rate per skill, each with a 95%
+range, and a matrix of which skill took which prompts, so collisions between skills show up. On
+Haiku, 100 prompts cost about $0.14. [Our own measurement](https://jameskomo.github.io/config-drift-checker/triggers/report.html): the Spring Boot skill fires on 71%
+of in-scope prompts and on 30% of out-of-scope ones, which is exactly what a trigger description
+rewrite should fix.
+
+### Real usage vs evals: is your suite testing what people do?
+
+Your eval suite says which skills trigger. Your session history says which ones people actually
+use. `usage-check` sets the two side by side:
+
+```bash
+node <plugin-root>/tools/usage-check.mjs <plugin>                                     # last 30 days
+node <plugin-root>/tools/usage-check.mjs <plugin> results/aggregate-result.json --since 90d --projects '*my-repo*'
+claude -p "/skill-doctor" > sd.txt && node <plugin-root>/tools/usage-check.mjs <plugin> --skill-doctor sd.txt --html usage.html
+```
+
+It reads your local Claude Code transcripts (`~/.claude/projects`), counts how often each skill was
+invoked, and gives every skill one verdict:
+
+- **dead weight**: never invoked and no case. It costs context every session.
+- **tested but unused**: your suite may test a prompt nobody writes.
+- **used but untested**: if it breaks, nothing will tell you.
+- **healthy**.
+
+Add the text of `/skill-doctor` with `--skill-doctor` to include its measured context cost per
+skill. Output is text, `--json`, `--md` or a self-contained `--html` page. Only skill names, counts
+and dates are read out of the transcripts; no prompt or reply text is ever copied. This one runs
+on your machine, not in CI, because that's where the real usage lives.
+
+## 9. Investigate a change
+
+When something moved, these answer the next question: which release did it, which models and
+versions are safe, what the setup now costs per session, and what the smallest fix is.
 
 ### Which release broke it: `drift-bisect`
 
@@ -446,91 +514,11 @@ node <plugin-root>/tools/context-cost.mjs --history evals/results --md -        
 It asks Claude Code's own `claude plugin details` for the always-on and on-invoke tokens of each
 component, in a throwaway config with no credentials and no model calls, and adds CLAUDE.md
 (which that command doesn't count) as a labelled estimate. On releases without `plugin details`
-it falls back to an estimate and says so. With `--history` it reports the trend, for example
-"Your setup got 18% more expensive on Claude Code 2.1.295: 400 to 472 always-on tokens per
-session", names the components that moved most, and says whether your files changed or Claude
-Code did. The Action measures it on every run, and the observatory shows a "Context cost per
+it falls back to an estimate and says so. With `--history` it reports the trend per release: when the
+number moves, it says by how much, names the components that moved most, and says whether your
+files changed or Claude Code did. Ours is 123 always-on tokens per session, measured by Claude Code
+itself on every run. The Action measures it on every run, and the observatory shows a "Context cost per
 release" strip once measurements exist.
-
-### Real usage vs evals: is your suite testing what people do?
-
-Your eval suite says which skills trigger. Your session history says which ones people actually
-use. `usage-check` sets the two side by side:
-
-```bash
-node <plugin-root>/tools/usage-check.mjs <plugin>                                     # last 30 days
-node <plugin-root>/tools/usage-check.mjs <plugin> results/aggregate-result.json --since 90d --projects '*my-repo*'
-claude -p "/skill-doctor" > sd.txt && node <plugin-root>/tools/usage-check.mjs <plugin> --skill-doctor sd.txt --html usage.html
-```
-
-It reads your local Claude Code transcripts (`~/.claude/projects`), counts how often each skill was
-invoked, and gives every skill one verdict:
-
-- **dead weight**: never invoked and no case. It costs context every session.
-- **tested but unused**: your suite may test a prompt nobody writes.
-- **used but untested**: if it breaks, nothing will tell you.
-- **healthy**.
-
-Add the text of `/skill-doctor` with `--skill-doctor` to include its measured context cost per
-skill. Output is text, `--json`, `--md` or a self-contained `--html` page. Only skill names, counts
-and dates are read out of the transcripts; no prompt or reply text is ever copied. This one runs
-on your machine, not in CI, because that's where the real usage lives.
-
-### Mutation testing: are my evals any good?
-
-A green suite only means something if it would go red when the setup breaks. `mutate` checks that
-by sabotaging copies of your setup on purpose and running the cases that should notice:
-
-```bash
-node <plugin-root>/tools/mutate.mjs <plugin> --dry-run                 # the sabotages and a cost estimate, $0
-node <plugin-root>/tools/mutate.mjs <plugin> --budget 3 --html mutate.html
-```
-
-It deletes or inverts a rule in CLAUDE.md or a skill, blurs a skill's trigger description, removes
-a skill, or disables a hook, one change per copy. A sabotage is **caught** when a case drops more
-than your `.cdc.yml` score threshold below a run of the unchanged setup. You get a score and one
-sentence, such as "Your suite catches 7 of 10 sabotages. Nothing tests: rule X, rule Y." **Nothing
-tests** means no case claims that rule in `covers.yaml`, which is a coverage gap; **tested but not
-caught** means a case claims the rule but its graders are too loose. Inverted rules come from a
-simple word swap and are marked heuristic. `--max-mutants N --seed s` takes a repeatable sample,
-`--budget` caps the whole session, and your original files are never touched.
-
-How to read a missed sabotage: either the graders are too loose to see the change, or the model
-behaves the same without the rule, which means the rule may not be pulling its weight. Our own
-suite [catches 6 of 15 sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html):
-deleting "use constructor injection" or "validate request bodies" changed nothing, because Sonnet
-does both by default, while deleting the response-wrapper or pagination rules was caught at once.
-
-### Trigger map: how reliably does each skill fire?
-
-One passing trigger case says a skill fired once. `trigger-map` measures it as a rate:
-
-```bash
-node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run                      # prompt counts and cost, $0
-node <plugin-root>/tools/trigger-map.mjs <plugin> --model haiku --budget 0.5 --html triggers.html
-```
-
-For every skill it builds prompts the skill should fire on and nearby prompts it should not, from
-your own `--prompts prompts.yaml`, the eval cases that have a Skill grader, and paraphrases written
-by one cheap model call per skill (cached in `.cdc-trigger-prompts.json`, so reruns are free and you
-can edit the set). Each prompt runs as a fresh one-turn session with your plugin loaded and the
-Skill tool as the only tool. You get a fire rate and a false-fire rate per skill, each with a 95%
-range, and a matrix of which skill took which prompts, so collisions between skills show up. On
-Haiku, 100 prompts cost about $0.14. [Our own measurement](https://jameskomo.github.io/config-drift-checker/triggers/report.html): the Spring Boot skill fires on 71%
-of in-scope prompts and on 30% of out-of-scope ones, which is exactly what a trigger description
-rewrite should fix.
-
-### Confidence ranges and runs needed
-
-Every diff and report now says how sure each score is. "0.83 (0.55 to 0.95)" means the true score
-most likely lies in that 95% range, and more runs narrow it; "2 of 3 (0.21 to 0.94)" is the same for
-the share of passing runs. These numbers never change a verdict. **Runs needed** is how many runs a
-case takes to catch a drop of your threshold 8 times in 10, given its spread so far:
-
-```bash
-node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>          # per case
-node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin> --write  # raise runs: in prompt.md
-```
 
 ### When and how repair runs
 
@@ -547,7 +535,7 @@ and its PR is never auto-merged, you review it like any other. Full procedure:
 What one looks like in practice:
 [a real repair, verified](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md).
 
-## 8. Fleet: many repos, one view
+## 10. Fleet: many repos, one view
 
 Running the check on several repos? `tools/fleet.mjs` pulls every repo's published results (their
 `eval-results` branches) into one dashboard with a pin policy:
@@ -575,7 +563,7 @@ overview with zero hosted infrastructure. A GitHub App could remove even the cal
 would put a server of ours between your code and your key, which is exactly what this tool
 promises not to have; if that trade ever changes, it will be loudly opt-in.
 
-## 9. The drift index
+## 11. The drift index
 
 Every CI run also writes a dashboard to the `eval-results` branch under `docs/`: the verdict,
 pinned baseline vs latest canary, budget spent, coverage, a ribbon of every case over every run,
@@ -626,51 +614,68 @@ node <plugin-root>/tools/harness-diff.mjs --from 2.1.295 --to 2.1.310 --md -
 **Badges for suite authors.** Every suite card on the release report offers a README badge,
 "loads on 2.1.310", "N of M cases load" or "never loaded", with the markdown to paste.
 
-## 10. Local commands
+## 12. Local commands
+
+`<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every
+run writes `aggregate-result.json` and `report.html` into `<your-plugin>/evals/results/<timestamp>/`.
 
 ```bash
+# run and compare
 /config-drift-checker:run                      # inside Claude Code: run, diff, explain red
 /config-drift-checker:repair                   # after red: smallest setup fix, verified, PR-ready summary
 node <plugin-root>/tools/eval-shim.mjs <plugin> --scaffold                  # everything, with/without ablation
 node <plugin-root>/tools/eval-shim.mjs <plugin> --track canary --scaffold   # what developers get today
 node <plugin-root>/tools/eval-shim.mjs <plugin> --case 'guard*' --runs 1 --ablation none --scaffold --budget 0.5
-node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --config <plugin>   # exit 1 on red
-node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --history evals/results --config <plugin>   # + noise bands
-node <plugin-root>/tools/baseline-check.mjs aggregate-result.json --config <plugin>   # exit 1 if not baseline material
+node <plugin-root>/tools/eval-diff.mjs baseline.json current.json --history evals/results --config <plugin>   # exit 1 on red
 node <plugin-root>/tools/eval-report.mjs current.json --baseline baseline.json --config <plugin>
 node <plugin-root>/tools/eval-dashboard.mjs <plugin>/evals/results --config <plugin> --out dashboard.html
-node <plugin-root>/tools/config-coverage.mjs <plugin> --list       # rule ids to put in a case's covers.yaml
-node <plugin-root>/tools/config-coverage.mjs <plugin> --fail-under 80   # exit 1 under 80% coverage
-node <plugin-root>/tools/cdc-config.mjs <plugin> init              # write .cdc.yml; set-pins --model … --harness …
-node <plugin-root>/tools/release-watch.mjs --state .release-watch.json --models --pin claude-sonnet-5
-node <plugin-root>/tools/trace-keeper.mjs out.json --clean         # after claude plugin eval --keep-temp: keep transcripts
-node <plugin-root>/tools/drift-matrix.mjs <plugin> --models sonnet,haiku --last 5 --dry-run   # models x releases grid
+
+# free checks (no model runs)
+node <plugin-root>/tools/skill-lint.mjs <plugin>                    # every SKILL.md
+node <plugin-root>/tools/suite-doctor.mjs <plugin> --fix            # eval cases vs the installed runner
 node <plugin-root>/tools/context-cost.mjs <plugin> --md -           # tokens your setup adds to every session
-node <plugin-root>/tools/usage-check.mjs <plugin> --since 30d       # real skill usage vs your eval cases
-node <plugin-root>/tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run   # skill-creator suites in
-node <plugin-root>/tools/release-report.mjs --discover              # every public suite on the newest release, $0
-node <plugin-root>/tools/mutate.mjs <plugin> --dry-run              # mutation testing: are my evals any good?
-node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run         # fire rates per skill with 95% ranges, collisions
-node <plugin-root>/tools/case-miner.mjs <plugin> --dry-run          # real sessions into suggested cases (review first)
-node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>   # runs each case needs
-node <plugin-root>/tools/harness-diff.mjs --from <v> --to <v> --md -   # what changed inside Claude Code
+node <plugin-root>/tools/config-coverage.mjs <plugin> --list         # rule ids for a case's covers.yaml
 node <plugin-root>/tools/pr-impact.mjs --base main --head HEAD --plugin <plugin>   # what a branch changes in the setup
+node <plugin-root>/tools/harness-diff.mjs --from <v> --to <v> --md -   # what changed inside Claude Code
+node <plugin-root>/tools/release-report.mjs --discover              # every public suite on the newest release
+
+# test your tests
+node <plugin-root>/tools/mutate.mjs <plugin> --dry-run              # sabotages and a cost estimate
+node <plugin-root>/tools/trigger-map.mjs <plugin> --dry-run         # fire rates per skill, collisions
+node <plugin-root>/tools/usage-check.mjs <plugin> --since 30d       # real skill usage vs your eval cases
+node <plugin-root>/tools/case-miner.mjs <plugin> --dry-run          # real sessions into suggested cases
+node <plugin-root>/tools/runs-needed.mjs <plugin>/evals/results --config <plugin>   # runs each case needs
+
+# investigate
+node <plugin-root>/tools/drift-bisect.mjs <plugin> --case '<glob>' --good <v> --bad <v>
+node <plugin-root>/tools/drift-matrix.mjs <plugin> --models sonnet,haiku --last 5 --dry-run
+
+# set up and operate
+node <plugin-root>/tools/cdc-bootstrap.mjs .                        # headless setup; --no-agent for $0
+node <plugin-root>/tools/cdc-config.mjs <plugin> init               # write .cdc.yml; set-pins --model ... --harness ...
+node <plugin-root>/tools/evals-convert.mjs import skills/<s>/evals/evals.json --dry-run   # skill-creator suites in
+node <plugin-root>/tools/baseline-check.mjs aggregate-result.json --config <plugin>   # exit 1 if not baseline material
+node <plugin-root>/tools/release-watch.mjs --state .release-watch.json --models --pin <model-id>
+node <plugin-root>/tools/trace-keeper.mjs out.json --clean          # after claude plugin eval --keep-temp
+node <plugin-root>/tools/fleet.mjs --config fleet.yml --out fleet.html
 ```
 
-`<plugin-root>` is where Claude Code installed the plugin (`claude plugin list` shows it). Every
-run writes `aggregate-result.json` and `report.html` into `<your-plugin>/evals/results/<timestamp>/`.
-
-## 11. Cost (measured)
+## 13. Cost (measured)
 
 $0.05 to $0.08 per short Sonnet run; $0.20 to $0.25 per real-code run. A 3-case suite at 3 runs is
-about $0.43 per pinned run; a canary at 1 run per case is $0.15 to $0.20. With
+about $0.43 per pinned run; a canary at 1 run per case is $0.15 to $0.25. With
 `min_interval_hours: 72`, 25 Claude Code releases a month collapse into at most about 10 canaries,
 and `budget.per_month_usd` is the hard ceiling whatever npm publishes. On a subscription token,
 API cost is $0 but runs count against that plan's usage limits: a six-case canary is about six
 short agent runs per release, three times that only when a case deviates. Use `ablation: none`
 in CI and Haiku for PR smoke.
 
-## 12. Safety
+The deeper tools, measured on our six-case suite: a mutation test of 15 sabotages cost $3.08; a
+trigger map of 25 prompts on Haiku cost $0.04; a model and version matrix of 24 cells costs about
+$1.60 (`--dry-run` prices any grid first). The preflight, `context-cost`, `harness-diff`,
+`usage-check`, `case-miner`, `pr-impact` and the release report cost nothing: no model runs.
+
+## 14. Safety
 
 Workspaces are throwaway directories, not sandboxes for Docker, the network or your host. Every
 run carries a safety-net hook that blocks `docker compose down -v`, prunes, force-pushes, `rm -rf`
@@ -680,7 +685,7 @@ does this for you). Read third-party suites before running them with `--scaffold
 skill may edit `CLAUDE.md`, skills and hooks only, never a case or grader, and every PR it opens
 carries its re-run evidence and is never auto-merged.
 
-## 13. See it work: the demo repo
+## 15. See it work: the demo repo
 
 [config-drift-checker-demo](https://github.com/jameskomo/config-drift-checker-demo) is a small
 Spring Boot notes API with a typical setup: CLAUDE.md, one conventions skill, one guard hook.
@@ -691,7 +696,7 @@ smoke-ran them, fixed two of its own graders, and reached 1.00. Everything it pr
 repo as generated, run log included. Read those three cases first; they are the best starting
 point for writing your own.
 
-## 14. FAQ
+## 16. FAQ
 
 **Isn't this what `/doctor` or `/skill-doctor` does?** No. Those are static health checks: they
 never run the agent. A setup can be perfectly well-formed and silently useless after a release.

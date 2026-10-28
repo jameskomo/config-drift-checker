@@ -16,17 +16,18 @@ cp "$SRC/LICENSE" "$DST/LICENSE"
 cat > "$DST/README.md" <<'MD'
 # config-drift-checker
 
-**Your agent conventions are code. This is their CI.** The rules your team taught its coding agent
-(`CLAUDE.md` or `AGENTS.md`, skills, hooks) decide how your software gets written, and they break
-silently: Claude Code ships about 25 releases a month, and the model behind an alias changes with
-no changelog. This Action runs your eval cases on every PR and every release, diffs them against a
-pinned baseline, and tells you the moment something stops working: when, why, and what moved.
+**CI for your coding agent's instructions.** Your `CLAUDE.md`, skills and hooks decide how your
+code gets written, and nothing tests them. Claude Code ships about 25 releases a month, the model
+behind an alias changes without a changelog, and a one-line edit can switch a skill off. This
+Action runs your eval cases on every pull request and every Claude Code release, against a pinned
+baseline, and turns the check red with the reason when something stops working.
 
-**Proof, not promises** (all public, unedited):
-[a deliberately broken setup, diagnosed by its own report](https://jameskomo.github.io/config-drift-checker/example-break/report.html) ·
-[the repair skill fixing it for $0.28](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) ·
-[our suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/) ·
-[the per-release verdicts feed](https://jameskomo.github.io/config-drift-checker/drift/feed.xml)
+**What it caught on our own setup** (all public, unedited):
+a careless PR that silently switched off a skill, [diagnosed by its own report](https://jameskomo.github.io/config-drift-checker/example-break/report.html)
+and [repaired for $0.28](https://github.com/jameskomo/config-drift-checker/blob/main/docs/example-break/repair-summary.md) ·
+Claude Code 2.1.310 refusing shell-based evals on GitHub's Ubuntu runners, caught the day it shipped ·
+a suite that caught only [6 of 15 deliberate sabotages](https://jameskomo.github.io/config-drift-checker/mutation/report.html) ·
+[our suite on every Claude Code release](https://jameskomo.github.io/config-drift-checker/drift/)
 
 ## Quick start
 
@@ -47,7 +48,7 @@ jobs:
         with: { plugin-dir: . }
 ```
 
-No eval cases yet? The companion Claude Code plugin writes them from your real setup in about five
+No eval cases yet? The companion Claude Code plugin writes them from your real setup in about ten
 minutes: `claude plugin install config-drift-checker@jameskomo`, then `/config-drift-checker:setup`.
 It also writes the full two-track workflow (pinned baseline on PRs, canary on every release).
 
@@ -57,19 +58,18 @@ way `.cdc.yml` caps spend per run and per month, and the Action refuses to start
 
 ## What it does
 
-- **Detects:** pinned baseline vs a canary on the latest Claude Code; per-case noise bands learned
-  from history so flakes warn instead of failing, with guards so a real break can't hide in a band;
-  model refusals labelled as refusals; slower, pricier or longer runs flagged even when cases pass.
-- **Diagnoses:** a failed skill case says whether the skill was never discovered (fix the packaging)
-  or discovered but never invoked (fix the trigger wording); every report lists the whole suite,
-  every skill and whether it fired, and exactly which checks ran.
-- **Repairs:** with `repair: true`, a red run gets the smallest setup fix as a PR, verified by
-  re-running the failing cases; two proven-green canaries open the PR that moves your pins.
-- **Reports:** red or green check, PR comment, Slack alert, an HTML report artifact, and a drift
-  index with a stability streak and status badge on GitHub Pages.
-- **Across agents:** the same cases also run through OpenAI's Codex and Google's Gemini CLIs
-  ([side by side](https://jameskomo.github.io/config-drift-checker/agents/)), so the rules you wrote
-  once stay testable wherever your agent goes next.
+- **Catches breaks:** a pinned baseline on every PR, a canary on every Claude Code release, noise
+  bands from history so flakes stay amber and real breaks go red. A release the budget skipped
+  shows as untested, never green.
+- **Explains them:** whether a skill was never invoked (fix the wording) or never found (fix the
+  packaging), whether the model refused, and whether Claude Code or the model moved.
+- **Fixes them:** with `repair: true`, the smallest setup fix as a PR, proven by a re-run.
+- **Tells you what a PR changes:** tokens it adds to every session, the rules it touches, and the
+  cases that test them, as one PR comment.
+- **Reports:** check, PR comment, Slack, an HTML report, and a drift index with a status badge.
+- **Goes further, with the plugin:** mutation testing of your suite, skill trigger rates, a model
+  and version matrix, and the same cases on Codex and Gemini
+  ([side by side](https://jameskomo.github.io/config-drift-checker/agents/)).
 
 ## Inputs
 
