@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "pluginDir": "komo-stack",
-  "total": 11,
-  "covered": 11,
+  "total": 10,
+  "covered": 10,
   "pct": 100,
   "rules": [
     {
@@ -10,9 +10,9 @@
       "source": "skills/spring-boot-conventions/SKILL.md",
       "line": 11,
       "start": 11,
-      "heading": "Dependency injection",
-      "text": "**Explicit constructor injection only.** Declare dependencies as `private final` fields and write the constructor by hand.",
-      "id": "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
+      "heading": "Dependencies",
+      "text": "**Lombok is not on the classpath.** Never use it (`@RequiredArgsConstructor`, `@Data`, `@Builder`, etc.).",
+      "id": "skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
       "cases": [
         "spring-controller-follows-conventions"
       ]
@@ -20,20 +20,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 12,
-      "start": 12,
-      "heading": "Dependency injection",
-      "text": "**Never** use field injection (`@Autowired` on a field) and **never** use Lombok (`@RequiredArgsConstructor`, `@Data`, `@Builder`, etc.). Lombok is not on the classpath.",
-      "id": "skill/spring-boot-conventions/never-use-field-injection-autowired",
-      "cases": [
-        "spring-controller-follows-conventions"
-      ]
-    },
-    {
-      "scope": "skill/spring-boot-conventions",
-      "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 15,
-      "start": 15,
+      "line": 14,
+      "start": 14,
       "heading": "DTOs",
       "text": "Request and response shapes are Java `record`s, grouped in a `<Feature>Dtos` holder class (e.g. `ModerationDtos.ListingQueueItem`).",
       "id": "skill/spring-boot-conventions/request-and-response-shapes-are-java",
@@ -44,8 +32,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 16,
-      "start": 16,
+      "line": 15,
+      "start": 15,
       "heading": "DTOs",
       "text": "Validate request bodies with `jakarta.validation` (`@Valid`, `@NotBlank`, `@Positive`).",
       "id": "skill/spring-boot-conventions/validate-request-bodies-with-jakarta-validation",
@@ -56,8 +44,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 19,
-      "start": 19,
+      "line": 18,
+      "start": 18,
       "heading": "Controllers",
       "text": "`@RestController` + `@RequestMapping(\"/api/<area>\")`. Thin: parse/validate input, call one service method, wrap the result.",
       "id": "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse",
@@ -68,8 +56,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 20,
-      "start": 20,
+      "line": 19,
+      "start": 19,
       "heading": "Controllers",
       "text": "Every response is wrapped: `ApiResponse.ok(body)` or `ApiResponse.ok(items, PageMeta.of(page, size, total))` for lists. Never return raw entities or bare lists.",
       "id": "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
@@ -80,8 +68,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 21,
-      "start": 21,
+      "line": 20,
+      "start": 20,
       "heading": "Controllers",
       "text": "Pagination is 1-based `page` and `size` query params. Clamp: `int pageNo = Math.max(page, 1); int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);` with `MAX_PAGE_SIZE = 100` as a `private static final` constant.",
       "id": "skill/spring-boot-conventions/pagination-is-1-based-page",
@@ -92,8 +80,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 24,
-      "start": 24,
+      "line": 23,
+      "start": 23,
       "heading": "Services",
       "text": "Business rules and authorization checks live in the service, even when `SecurityConfig` already gates the route (\"two locks on the door\").",
       "id": "skill/spring-boot-conventions/business-rules-and-authorization-checks-live",
@@ -104,8 +92,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 25,
-      "start": 25,
+      "line": 24,
+      "start": 24,
       "heading": "Services",
       "text": "Services return records or small result types, never `Map<String, Object>`.",
       "id": "skill/spring-boot-conventions/services-return-records-or-small-result",
@@ -116,8 +104,8 @@
     {
       "scope": "skill/spring-boot-conventions",
       "source": "skills/spring-boot-conventions/SKILL.md",
-      "line": 28,
-      "start": 28,
+      "line": 27,
+      "start": 27,
       "heading": "Errors",
       "text": "Throw domain exceptions; a `@RestControllerAdvice` handler maps them to `ApiResponse.error(...)`. Do not try/catch in controllers.",
       "id": "skill/spring-boot-conventions/throw-domain-exceptions-a-restcontrolleradvice-handler",
@@ -151,8 +139,7 @@
     {
       "dir": "spring-controller-follows-conventions",
       "covers": [
-        "skill/spring-boot-conventions/explicit-constructor-injection-only-declare-dependencies",
-        "skill/spring-boot-conventions/never-use-field-injection-autowired",
+        "skill/spring-boot-conventions/lombok-is-not-on-the-classpath",
         "skill/spring-boot-conventions/every-response-is-wrapped-apiresponse-ok",
         "skill/spring-boot-conventions/pagination-is-1-based-page",
         "skill/spring-boot-conventions/restcontroller-requestmapping-api-area-thin-parse"
