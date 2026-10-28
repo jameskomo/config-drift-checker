@@ -11,4 +11,5 @@
 | [One suite, three agents](agents/) | the same suite on Claude Code, Gemini and Codex, with each report |
 | [Mutation test of our suite](https://jameskomo.github.io/config-drift-checker/mutation/report.html) | 15 sabotages of our own setup and which ones the suite caught |
 | [Trigger map of our skill](https://jameskomo.github.io/config-drift-checker/triggers/report.html) | how often the Spring skill fires in and out of scope, with the prompts |
+| [Model and version matrix](https://jameskomo.github.io/config-drift-checker/matrix/report.html) | Sonnet and Haiku on two Claude Code releases, one page |
 | [Community suites](community-suites.md) | maintained setups with published with/without worth measurements; Spring Boot first |

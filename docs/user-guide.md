@@ -493,8 +493,10 @@ Each Claude Code version is installed into a throwaway folder, so your own insta
 touched, and each cell runs with the official runner when that release has one (the bundled runner
 otherwise). You get one page: rows are cases, columns are version and model, and every cell is
 coloured against a reference cell, by default the model and version pinned in `.cdc.yml`. Each
-model also gets a plain verdict, such as "haiku: safe on 2.1.290 to 2.1.295; fails
-spring-service-owns-rules-and-errors on 2.1.288". `--budget` caps the whole grid; cells past it
+model also gets a plain verdict. [Ours](https://jameskomo.github.io/config-drift-checker/matrix/report.html), Sonnet and Haiku on 2.1.296 and 2.1.310 for
+$0.73, reads "sonnet: safe on 2.1.296 to 2.1.310" and "haiku: safe on 2.1.296; fails
+spring-service-owns-rules-and-errors on 2.1.310". That was one run per cell, so the Haiku miss is a
+lead to confirm with `--runs 3` before you act on it. `--budget` caps the whole grid; cells past it
 show as not run rather than failed. `--case` and `--tag` narrow the suite, and `--json` / `--md`
 write the same result as data. To run it in GitHub Actions on demand, copy
 `ci/drift-matrix.yml` from the plugin.
@@ -671,8 +673,8 @@ short agent runs per release, three times that only when a case deviates. Use `a
 in CI and Haiku for PR smoke.
 
 The deeper tools, measured on our six-case suite: a mutation test of 15 sabotages cost $3.08; a
-trigger map of 25 prompts on Haiku cost $0.04; a model and version matrix of 24 cells costs about
-$1.60 (`--dry-run` prices any grid first). The preflight, `context-cost`, `harness-diff`,
+trigger map of 25 prompts on Haiku cost $0.04; a model and version matrix of 24 cells (2 models, 2 releases, 6 cases)
+cost $0.73 (`--dry-run` prices any grid first). The preflight, `context-cost`, `harness-diff`,
 `usage-check`, `case-miner`, `pr-impact` and the release report cost nothing: no model runs.
 
 ## 14. Safety
