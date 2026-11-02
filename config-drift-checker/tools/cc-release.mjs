@@ -8,6 +8,7 @@
 //   installRelease(version)                   → { binDir, cleanup } or null when npm install fails
 //   runSuite({ plugin, binDir, runner, model, runs, budget, concurrency, ablation, ... })   → { raw, json, runner, note }
 //   usableReason(json, expectCases)           '' when a result is a usable measurement, else why not
+//   errorCause(text)                          'credentials' | 'credit' | null, from a run's error message
 import { promises as fs, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -59,6 +60,15 @@ export function hasOfficialRunner(binDir, env = process.env) {
 }
 
 // a result the matrix or the Action can trust: something ran, not everything errored, every case loaded
+// why every run errored, when the message says: 'credentials' (Claude refused the token or key: an account
+// problem no runner can work around), 'credit' (the API key's account is out of credit), else null
+export function errorCause(text) {
+  const s = String(text ?? '');
+  if (/disabled Claude subscription access|ask your admin to enable access|invalid (?:api key|x-api-key|bearer token)|authentication_error|oauth token (?:has )?(?:expired|been revoked)|not logged in|please run \/login|\b401\b/i.test(s)) return 'credentials';
+  if (/credit balance is too low|insufficient (?:credit|balance)|billing/i.test(s)) return 'credit';
+  return null;
+}
+
 export function usableReason(j, expectCases = null) {
   if (!j) return 'no result file';
   const total = j.aggregates?.totalRuns ?? 0, errored = j.aggregates?.erroredRuns ?? 0, cases = (j.cases ?? []).length;
@@ -99,7 +109,9 @@ export async function runSuite({ plugin, binDir, env = process.env, runner = 'sh
     }
     const raw = await readRaw(file);
     const reason = usableReason(raw ? normalizeResult(raw) : null, expectCases);
-    if (reason) { note = `official runner gave no usable result (${reason}); fell back to the shim`; used = 'shim'; await fs.rm(file, { force: true }); }
+    // a refused token or key fails the shim the same way, so a fallback would only repeat the error
+    if (reason && errorCause(reason) === 'credentials') note = `Claude refused the credentials (${reason}); not retried on the shim, which would be refused too`;
+    else if (reason) { note = `official runner gave no usable result (${reason}); fell back to the shim`; used = 'shim'; await fs.rm(file, { force: true }); }
   }
   let tail = '';
   if (used === 'shim') {

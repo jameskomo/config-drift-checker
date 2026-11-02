@@ -355,7 +355,10 @@ runs:
           # is not a usable measurement (nothing written, every run refused, cases rejected), fall back
           expect=$(PLUGIN_DIR="$PLUGIN_DIR" node -e 'const fs=require("fs"),p=require("path");let d="evals";try{d=JSON.parse(fs.readFileSync(p.join(process.env.PLUGIN_DIR,".claude-plugin/plugin.json"),"utf8")).experimental?.evals||d}catch{};const e=p.join(process.env.PLUGIN_DIR,d);console.log(fs.existsSync(e)?fs.readdirSync(e,{withFileTypes:true}).filter(x=>x.isDirectory()&&!["results","mocks"].includes(x.name)).length:0)')
           health=$(node "$TOOLS/result-health.mjs" "$out/aggregate-result.json" --expect-cases "$expect")
-          if ! grep -q '^usable=true' <<< "$health"; then
+          if grep -q '^cause=credentials' <<< "$health"; then
+            # a refused token or key fails the bundled runner the same way: report it once, below, and do not retry
+            echo "::notice::Claude refused the credentials on Claude Code $CC_VERSION; not retrying on the bundled runner, which would be refused too"
+          elif ! grep -q '^usable=true' <<< "$health"; then
             reason=$(grep '^reason=' <<< "$health" | cut -d= -f2-)
             echo "::warning::the official runner on Claude Code $CC_VERSION gave no usable result ($reason); falling back to the bundled runner for this run"
             rm -f "$out/aggregate-result.json"
@@ -379,7 +382,13 @@ runs:
         echo "stem=$(date -u +%Y%m%dT%H%M%SZ)-cc${CC_VERSION}-${RUNNER}-${TRACK}" >> "$GITHUB_OUTPUT"
         h=$(node "$TOOLS/result-health.mjs" "$out/aggregate-result.json")
         errs="$(grep '^errored=' <<< "$h" | cut -d= -f2)/$(grep '^total=' <<< "$h" | cut -d= -f2) $(grep '^reason=' <<< "$h" | cut -d= -f2-)"
-        case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored — $errs. Nothing will be stored as a baseline. Common causes: no prepaid API credit on the key's account (console.anthropic.com → Billing), or a Claude Code startup failure — see the eval-report artifact's stderrTail."; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
+        cause=$(grep '^cause=' <<< "$h" | cut -d= -f2-)
+        case "$cause" in
+          credentials) hint="Claude refused the credentials, so this is an account or token problem, not your setup. Re-run claude setup-token and update CLAUDE_CODE_OAUTH_TOKEN, or switch to ANTHROPIC_API_KEY. If the message names an organization, its admin controls Claude Code access; the check works again as soon as access is back." ;;
+          credit) hint="The API key's account is out of credit: top it up at console.anthropic.com (Billing), or use CLAUDE_CODE_OAUTH_TOKEN from claude setup-token to run on a Pro or Max plan." ;;
+          *) hint="See the eval-report artifact's stderrTail for each run." ;;
+        esac
+        case "$errs" in 0/*) echo "errored=false" >> "$GITHUB_OUTPUT";; *) echo "::error::agent runs errored: $errs. Nothing will be stored as a baseline. $hint"; echo "errored=true" >> "$GITHUB_OUTPUT";; esac
         OUT_DIR="$out" node -e 'const a=require(process.env.OUT_DIR+"/aggregate-result.json").aggregates||{}; console.log(a.budget&&a.budget.exceeded ? "budget_hit=true" : "budget_hit=false")' >> "$GITHUB_OUTPUT"
 
     - id: diff
@@ -634,5 +643,5 @@ runs:
       run: |
         if [ "$COVERAGE_UNDER_MIN" = "true" ]; then echo "::error::agent-config coverage is under the required minimum (input coverage-min) — add cases for the untested rules listed in the job summary"; exit 1; fi
         if [ "$SKIPPED" = "true" ]; then echo "skipped ($SKIP_REASON) — not a failure"; exit 0; fi
-        if [ "$ERRORED" = "true" ]; then echo "::error::agent runs errored; see the eval-report artifact (stderrTail per run)"; exit 1; fi
+        if [ "$ERRORED" = "true" ]; then echo "::error::agent runs errored: the cause and the fix are in the error above, and each run's stderrTail is in the eval-report artifact"; exit 1; fi
         if [ "$RED" != "0" ]; then echo "::error::$RED case(s) red vs baseline (regressions or fail_on efficiency drift)"; exit 1; fi

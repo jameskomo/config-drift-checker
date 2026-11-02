@@ -186,6 +186,11 @@ test('runMatrix: --tag and --case narrow the suite through a copied view; auto f
   const state2 = await tmp('matrix-state-');
   const res2 = await runMatrix({ plugin, versions: ['2.1.1'], models: ['sonnet'], reference: { version: '2.1.1', model: 'sonnet' }, caseGlob: 'case-a', runner: 'official', outDir: await tmp('matrix-out-'), install: fakeInstaller(state2).install, log: () => {} });
   assert.equal(res2.cells[0].runner, 'shim'); assert.match(res2.cells[0].note, /official runner gave no usable result \(no result file\); fell back to the shim/);
+  // a refused token fails the shim the same way, so there is no fallback, and the note says why
+  const state3 = await tmp('matrix-state-'), refuse = 'Your organization has disabled Claude subscription access for Claude Code · Use an Anthropic API key instead, or ask your admin to enable access';
+  const res3 = await runMatrix({ plugin, versions: ['2.1.1'], models: ['sonnet'], reference: { version: '2.1.1', model: 'sonnet' }, caseGlob: 'case-a', runner: 'official', outDir: await tmp('matrix-out-'), install: fakeInstaller(state3, { extraEnv: { FAKE_CLAUDE_REFUSE: refuse } }).install, log: () => {} });
+  assert.equal(res3.cells[0].runner, 'official'); assert.match(res3.cells[0].note, /Claude refused the credentials .*disabled Claude subscription access.*; not retried on the shim/);
+  assert.equal((await calls(state3)).length, 0, 'no shim agent call was made');
   await assert.rejects(runMatrix({ plugin, versions: ['2.1.1'], models: ['m'], reference: { version: '2.1.1', model: 'm' }, tag: 'nope', outDir, install }), /no eval cases match --tag nope/);
 });
 

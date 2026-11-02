@@ -10,6 +10,8 @@
 //   FAKE_CLAUDE_ERROR    comma-separated agent-call indices that return an is_error result (e.g. credit exhausted)
 //   FAKE_CLAUDE_FAIL_MODEL     comma-separated --model values whose agent calls answer without "DONE"
 //   FAKE_CLAUDE_EARLY_ACCESS   when set, `claude plugin eval` answers like a release without the official runner
+//   FAKE_CLAUDE_REFUSE   when set, `claude plugin eval` writes a --json result whose every run errored with this message
+//                        (the way a refused token looks), and `claude -p` agent calls fail with it too
 //   FAKE_CLAUDE_SLOW     "<text>:<ms>": an agent call whose prompt contains <text> waits <ms> before answering
 //   FAKE_CLAUDE_ECHO     when set, the reply quotes the prompt's first line, so a test can tell runs apart
 //   FAKE_CLAUDE_REQUIRE  comma-separated "<marker>" or "<prompt text>:<marker>": an agent call whose prompt contains
@@ -35,6 +37,12 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\n');
 if (args.includes('--version')) { process.stdout.write(`${process.env.FAKE_CLAUDE_VERSION ?? '9.9.9'} (Claude Code)\n`); process.exit(0); }
 
 if (args[0] === 'plugin' && args[1] === 'eval' && process.env.FAKE_CLAUDE_EARLY_ACCESS) { console.error('claude plugin eval is in early access'); process.exit(1); }
+if (args[0] === 'plugin' && args[1] === 'eval' && process.env.FAKE_CLAUDE_REFUSE) {
+  const err = `exit 1: ${process.env.FAKE_CLAUDE_REFUSE}`, run = { score: 0, passed: false, turns: 0, error: err, graders: [] };
+  const json = args[args.indexOf('--json') + 1];
+  if (json) await fs.writeFile(json, JSON.stringify({ schemaVersion: 1, claudeVersion: '9.9.9', suite: { root: args[2] }, cases: [{ name: 'a', dir: 'evals/a', arms: { with: [run] }, aggregates: { score: 0 } }], aggregates: {} }));
+  process.exit(1);
+}
 
 const fmt = args[args.indexOf('--output-format') + 1];
 if (fmt === 'json') { // an LLM-judge call
@@ -68,6 +76,10 @@ const model = process.env.FAKE_CLAUDE_MODEL ?? 'claude-sonnet-5';
 const cost = Number(process.env.FAKE_CLAUDE_COST ?? 0.1);
 const turns = Number(process.env.FAKE_CLAUDE_TURNS ?? 2);
 
+if (process.env.FAKE_CLAUDE_REFUSE) {
+  out({ type: 'result', subtype: 'error_during_execution', is_error: true, result: process.env.FAKE_CLAUDE_REFUSE, total_cost_usd: 0, num_turns: 0, modelUsage: { [model]: {} } });
+  process.exit(1);
+}
 if (list('FAKE_CLAUDE_ERROR').includes(n)) {
   out({ type: 'result', subtype: 'error_during_execution', is_error: true, result: 'Credit balance is too low', total_cost_usd: 0, num_turns: 0, modelUsage: { [model]: {} } });
   process.exit(1);

@@ -79,3 +79,13 @@ test('normalizeResult gives native results an errored count and a partialReason 
   assert.equal(n.aggregates.erroredRuns, 1);
   assert.match(n.aggregates.partialReason, /1 of 2 agent runs errored: boom/);
 });
+
+test('cause: a refused token or key is credentials, an empty account is credit, anything else is blank', async () => {
+  const cause = async (error) => kv(spawnSync('node', [TOOL, await write(native([{ dir: 'evals/a', arms: { with: [run({ score: 0, turns: 0, error })] } }]))], { encoding: 'utf8' }).stdout).cause;
+  // the exact message every canary got from Oct 31 to Nov 2 2026
+  assert.equal(await cause('exit 1: Your organization has disabled Claude subscription access for Claude Code · Use an Anthropic API key instead, or ask your admin to enable access'), 'credentials');
+  assert.equal(await cause('API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}'), 'credentials');
+  assert.equal(await cause('API Error: 400 Your credit balance is too low to access the Anthropic API'), 'credit');
+  assert.equal(await cause('exit 1: A shell tool (Bash or PowerShell) was granted but this machine cannot confine it'), '');
+  assert.equal(kv(spawnSync('node', [TOOL, await write(native([{ dir: 'evals/a', arms: { with: [run()] } }]))], { encoding: 'utf8' }).stdout).cause, '');
+});

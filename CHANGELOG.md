@@ -2,6 +2,14 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.7.1 (2026-11-02)
+From Oct 31 to Nov 2 every canary on Claude Code 2.1.316 failed because Claude refused our
+subscription token ("Your organization has disabled Claude subscription access for Claude Code"),
+then accepted the same token again. The Action handled it badly: its error blamed missing API
+credit, and it retried on the bundled runner, which was refused the same way. Now the error says
+when Claude refused the credentials or the account is out of credit, with the fix for each, and a
+refused token is not retried. Nothing wrong was published: the failed runs stored no results.
+
 ## v1.7.0 (2026-10-28)
 Telling a weak test from a rule the model follows anyway. `mutate --defaults` runs the reference
 once more with no plugin installed. A missed rule whose graders pass with no plugin is listed as

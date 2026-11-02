@@ -328,7 +328,7 @@ every skill discovered at run start and whether any case invoked it.
 | **⚠ noisy** | dropped past the threshold but inside the historical band, with at least one run still at baseline. A warning; more runs shrink the band |
 | *likely refusals* note | the model declined the task (guardrail change), your setup did not break. Read the transcript; consider rewording the prompt. A full answer without tools is the opposite: real drift |
 | **⚠ baseline quality** (*thin* / *unstable*) | the baseline has too few runs or varies; re-baseline with more runs. Never red |
-| **⚠ agent runs errored** | read the first error. Usually no prepaid credit, or a Claude Code startup failure. Nothing was stored |
+| **⚠ agent runs errored** | read the first error: it says whether Claude refused the token or key, or the account is out of credit, and what to do. Otherwise it is usually a Claude Code startup failure. Nothing was stored |
 | a run shows **max_turns** (amber) | cut short and scored as-is; raise that case's `max_turns` (real-code cases need about 20) |
 | **skipped: budget / interval** | not a failure. Raise the cap, wait, or re-run with `force` |
 
