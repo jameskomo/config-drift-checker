@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T11:11:23.448Z",
+  "generatedAt": "2026-11-03T12:59:57.959Z",
   "claudeCode": {
-    "version": "2.1.316",
-    "previous": "2.1.315"
+    "version": "2.1.317",
+    "previous": "2.1.316"
   },
-  "headline": "Claude Code 2.1.316: 19 public suites, 639 cases. 544 load, 0 broke on this release, 95 never loaded",
+  "headline": "Claude Code 2.1.317: 20 public suites, 760 cases. 665 load, 0 broke on this release, 95 never loaded",
   "totals": {
-    "suites": 19,
-    "cases": 639,
-    "loads": 544,
+    "suites": 20,
+    "cases": 760,
+    "loads": 665,
     "broke": 0,
     "fixed": 0,
     "neverLoaded": 95,
@@ -32,14 +32,14 @@
       "source": "list",
       "stars": 33,
       "description": "CI for your coding-agent setup (CLAUDE.md, skills, hooks): pinned baselines, a canary on every Claude Code release, model and version matrix, context-cost drift, self-diagnosing reports, repair. Claude Code, Codex, Gemini.",
-      "commit": "6c4390c2bb0ed68d379a6ed19f71ac4d6dcbaa08",
+      "commit": "f89458ee2fe10edf27c1efb5c135b6cbb89fbac9",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -95,7 +95,7 @@
       "badge": {
         "file": "badges/jameskomo--config-drift-checker--examples-komo-stack.svg",
         "anchor": "jameskomo--config-drift-checker--examples-komo-stack",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/jameskomo--config-drift-checker--examples-komo-stack.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#jameskomo--config-drift-checker--examples-komo-stack)"
       }
@@ -107,14 +107,14 @@
       "source": "discovered",
       "stars": 205,
       "description": "Design cognition loop for Codex, Claude Code, and Pi-compatible agents — frame, diverge, see, reframe",
-      "commit": "c070cd886ab42f5abf01d048e65781e9a98782d2",
+      "commit": "dda380c677b5ed9efe96424b91ed33ec41689ad5",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 12
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 12
         }
@@ -296,20 +296,211 @@
       "cases": []
     },
     {
+      "repo": "Alexander-Tyagunov/magician",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 14,
+      "description": "Full-stack SDLC plugin for Claude Code & Codex — from idea to merged PR, autonomously. 25 skills, a local code knowledge-graph, cross-session memory, parallel agent orchestration, and an absolute destructive-command guard.",
+      "commit": "d3d5294c20028ed564ab3236c820b837f60a69be",
+      "status": "checked",
+      "load": {
+        "2.1.317": {
+          "status": "ok",
+          "failed": 0
+        },
+        "2.1.316": {
+          "status": "ok",
+          "failed": 0
+        }
+      },
+      "doctor": {
+        "errors": 20,
+        "fixable": 20
+      },
+      "cases": [
+        {
+          "name": "blueprint-emits-plan-folder",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "code-review-routes-to-review-skill",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "destructive-command-is-blocked",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "large-plan-fans-out",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "obstacles-on-missing-input",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "plain-question-loads-no-skill",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "planning-negative-control",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "review-uses-tags-and-count-line",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "scrutinize-fixes-seeded-bug",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "security-scan-routes-to-sentinel",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "session-state-before-wave",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "small-diff-stays-inline",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        },
+        {
+          "name": "ste-spec-writing",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "tdd-red-before-green",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": {
+            "rule": "case-yaml-header",
+            "file": "case.yaml",
+            "fix": "add schema_version: \"1.1\"",
+            "fixable": true,
+            "more": 1
+          }
+        }
+      ],
+      "badge": {
+        "file": "badges/alexander-tyagunov--magician.svg",
+        "anchor": "alexander-tyagunov--magician",
+        "message": "loads on 2.1.317",
+        "tone": "pass",
+        "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/alexander-tyagunov--magician.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#alexander-tyagunov--magician)"
+      }
+    },
+    {
       "repo": "ariadoss/superskills",
       "path": ".",
       "ref": null,
       "source": "discovered",
       "stars": 12,
       "description": "Curated AI skills pack for Claude Code, Codex, Cursor, OpenCode, etc. TDD, debugging, security, spec workflows, knowledge bases, and more. Supercharges gstack.",
-      "commit": "6cf43fb132fd4001ab9ee1ce17deaf33269cfe7a",
+      "commit": "c7ec8d78e5dc37484c2cfe90ab04de163d97dd41",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -715,7 +906,7 @@
       "badge": {
         "file": "badges/ariadoss--superskills.svg",
         "anchor": "ariadoss--superskills",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/ariadoss--superskills.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#ariadoss--superskills)"
       }
@@ -730,11 +921,11 @@
       "commit": "d6eee148e6bbc2d134f0e9edee1b92d69be2fd75",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -958,7 +1149,7 @@
       "badge": {
         "file": "badges/owid--skills.svg",
         "anchor": "owid--skills",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/owid--skills.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#owid--skills)"
       }
@@ -973,11 +1164,11 @@
       "commit": "67931bcee4245d0192d190685414b32bd8847305",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 3
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 3
         }
@@ -1070,14 +1261,14 @@
       "source": "discovered",
       "stars": 0,
       "description": "Claude Code plugin that turns Claude into a senior Cloudflare engineer: audits, optimizes and troubleshoots zones with human-approved, reversible changes.",
-      "commit": "04368c827d99b97ba7e81be4f95f02459c50a963",
+      "commit": "eb88b8139ad850fd4db9743a99a7b63ec30e5b1f",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -1168,10 +1359,22 @@
       "badge": {
         "file": "badges/denizbarish--claudeflare.svg",
         "anchor": "denizbarish--claudeflare",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/denizbarish--claudeflare.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#denizbarish--claudeflare)"
       }
+    },
+    {
+      "repo": "renhao-wan/devflow",
+      "path": ".",
+      "ref": null,
+      "source": "discovered",
+      "stars": 1,
+      "description": "Claude Code 的六阶段工程工作流插件：需求、计划、实现、测试、评审、调试。",
+      "commit": "f01ef43a37a9fabf06f6bb0b8f007f17d509d90b",
+      "status": "not-a-suite",
+      "reason": "no case directory with graders/ or case.yaml, so this is not a claude plugin eval suite",
+      "cases": []
     },
     {
       "repo": "evisoft/scio.md.plugin",
@@ -1183,11 +1386,11 @@
       "commit": "cd021b95bbf299a70527a62461f954d40e8cefbf",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -1243,7 +1446,7 @@
       "badge": {
         "file": "badges/evisoft--scio.md.plugin.svg",
         "anchor": "evisoft--scio.md.plugin",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/evisoft--scio.md.plugin.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#evisoft--scio.md.plugin)"
       }
@@ -1258,11 +1461,11 @@
       "commit": "a1ad251aed7a509fa3e342df92bb7cc21d08f78a",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -1388,7 +1591,7 @@
       "badge": {
         "file": "badges/jrock2004--poe2-ai-tool.svg",
         "anchor": "jrock2004--poe2-ai-tool",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/jrock2004--poe2-ai-tool.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#jrock2004--poe2-ai-tool)"
       }
@@ -1400,14 +1603,14 @@
       "source": "discovered",
       "stars": 4,
       "description": "Plugin repo for Software Engineering",
-      "commit": "6d0e461a854c9660169ad529246b58abf469a8ce",
+      "commit": "53af4ce5a79c5fe9b255c5a6c4d26ebbfb29be9d",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -1417,6 +1620,27 @@
         "fixable": 0
       },
       "cases": [
+        {
+          "name": "acceptance-sign-off/open-high-and-beta-stages",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "acceptance-sign-off/solo-owner-agent-cosign",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "acceptance-sign-off/tenant-cohort-refusal",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
         {
           "name": "adr-authoring/adr-frontmatter-and-trade-off",
           "status": "loads",
@@ -1433,6 +1657,111 @@
         },
         {
           "name": "adr-authoring/principle-not-adr",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "beta-program-design/closed-beta-pivot-not-extend",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "beta-program-design/earlyvangelist-partner-screen",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "beta-program-design/non-soc2-data-handling",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "business-model-canvas/honest-blanks-not-filler",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "business-model-canvas/revenue-points-to-gtm",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "business-model-canvas/write-lean-canvas-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "competitive-analysis/labelled-matrix-not-memory",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "competitive-analysis/win-loss-feeds-refresh",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "competitive-analysis/write-competitive-analysis-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "epic-definition/cross-context-onboarding-epic",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "epic-definition/lean-no-epic-list",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "epic-definition/write-epic-list-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "feedback-template/beta-checkin-note-triage",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "feedback-template/checkin-question-guide",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "feedback-template/multi-tenant-uat-and-debrief-triage",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -1460,6 +1789,223 @@
           "doctor": null
         },
         {
+          "name": "gtm-strategy/lean-internal-tool",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "gtm-strategy/pricing-from-evidence",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "gtm-strategy/write-gtm-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "impact-mapping/lean-and-backwards-mapping",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "impact-mapping/selected-path-not-moscow",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "impact-mapping/write-impact-map-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "jtbd-analysis/score-jobs-not-outcomes",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "jtbd-analysis/switch-interview-plan",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "jtbd-analysis/write-jtbd-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "moscow-prioritization/lean-block-not-moscow-file",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "moscow-prioritization/no-estimates-no-sixty-percent",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "moscow-prioritization/write-moscow-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "nfr-specification/residency-vs-failover",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "nfr-specification/review-draft-nfrs",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "nfr-specification/write-nfr-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "okr-authoring/okrs-before-kernel",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "okr-authoring/team-okrs-copy-parent",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "okr-authoring/three-good-okrs-no-policy",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "okr-authoring/write-okr-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "opportunity-solution-tree/prioritise-siblings-to-target",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "opportunity-solution-tree/root-and-opportunity-framing",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "opportunity-solution-tree/write-ost-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pricing-and-packaging/cost-plus-business-case",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pricing-and-packaging/discount-without-get",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "pricing-and-packaging/fenceless-tiers",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "requirements-analysis/lean-no-frd",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "requirements-analysis/wants-and-unheard-stakeholders",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "requirements-analysis/write-frd-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "roadmap-authoring/feature-list-with-dates",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "roadmap-authoring/roadmap-before-okrs",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "roadmap-authoring/uniform-confidence-later-segments",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "skill-authoring-standards/mixed-template-guidance-file",
           "status": "loads",
           "error": null,
@@ -1475,6 +2021,160 @@
         },
         {
           "name": "skill-authoring-standards/where-evals-live",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "stakeholder-mapping/fix-raci-and-grid",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "stakeholder-mapping/hospital-committee-split",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "stakeholder-mapping/write-stakeholder-map",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "story-mapping/lean-skeleton-block",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "story-mapping/must-equals-skeleton",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "story-mapping/write-story-map-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "strategy-kernel/goals-are-not-strategy",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "strategy-kernel/product-line-kernels",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "strategy-kernel/where-the-mission-went",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "strategy-kernel/write-kernel-artifact",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-plan/enterprise-acceptance-types",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-plan/partner-uat-defect-bar",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-plan/solo-owner-exception",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-scenario/stray-bug-and-blocked-run",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-scenario/technical-ac-translation",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "uat-scenario/tenant-isolation-fixtures",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-persona/fix-overclaimed-persona",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-persona/synthesise-interview-notes",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-persona/write-personas-no-research",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-story-writing/fix-story-hand-off-criteria",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-story-writing/lean-backlog-is-requirements",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "user-story-writing/split-multi-tenant-story",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -1512,7 +2212,7 @@
       "badge": {
         "file": "badges/shafibabar--sdlc-artifact-factory.svg",
         "anchor": "shafibabar--sdlc-artifact-factory",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/shafibabar--sdlc-artifact-factory.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#shafibabar--sdlc-artifact-factory)"
       }
@@ -1524,7 +2224,7 @@
       "source": "discovered",
       "stars": 0,
       "description": "Copier template that bootstraps AI-agent-optimized project setups: layered context routing, curated skills, and an enforced validation gate — synced across projects.",
-      "commit": "4b3903b39f57c7f45785bdd6d6d15c11cacb647e",
+      "commit": "01ea3b55b0270ef0f006914b455fb313282658cd",
       "status": "not-a-suite",
       "reason": "no case directory with graders/ or case.yaml, so this is not a claude plugin eval suite",
       "cases": []
@@ -1539,11 +2239,11 @@
       "commit": "f722e34d87659415881a8cef875eb252ca2c81a3",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 80
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 80
         }
@@ -2612,11 +3312,11 @@
       "commit": "7d8d85d5d131d69990ed986838820767903845ac",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -2707,7 +3407,7 @@
       "badge": {
         "file": "badges/frederikgnie--lost-mary.svg",
         "anchor": "frederikgnie--lost-mary",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/frederikgnie--lost-mary.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#frederikgnie--lost-mary)"
       }
@@ -2731,14 +3431,14 @@
       "source": "discovered",
       "stars": 0,
       "description": "This plugin helps you write code like a seasoned engineer, even if you don't know all the best practices.",
-      "commit": "0551a6bb958f37ce13e76712a2da23ab94643ceb",
+      "commit": "b342712a353dfc2010c643caa7411bd40bc513f3",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -2770,7 +3470,77 @@
           "doctor": null
         },
         {
+          "name": "agents/review-arm/documentation-lens",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/finding-at-each-own-edit-place",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/finding-in-each-copy",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/names-the-missing-test",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/one-note-for-a-change-remark",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/reads-a-moved-file-whole",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/reads-a-new-dependency-whole",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/security-lens",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm-search/settles-a-third-party-claim",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "agents/task-executor/done-with-assumptions",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/task-executor/keeps-launcher-files",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -2819,7 +3589,21 @@
           "doctor": null
         },
         {
+          "name": "agents/wave-reviewer/judges-by-the-repository-bar",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "agents/wave-reviewer/passes-a-clean-diff",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/wave-reviewer/reports-a-bar-departure-as-nit",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -3155,6 +3939,48 @@
           "doctor": null
         },
         {
+          "name": "skills/review/clean-diff",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/counts-the-files-no-arm-read",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/finding-in-each-of-three-files",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/finds-planted-defects",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/keeps-an-outside-lens-lead",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/writes-the-final-counts",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "skills/start-task/bug-offers-bugfix",
           "status": "loads",
           "error": null,
@@ -3214,7 +4040,7 @@
       "badge": {
         "file": "badges/sabind--ponderly.svg",
         "anchor": "sabind--ponderly",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/sabind--ponderly.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#sabind--ponderly)"
       }
@@ -3226,14 +4052,14 @@
       "source": "discovered",
       "stars": 0,
       "description": "One profile, every harness: author rules, skills, subagents, commands and hooks once and install them into the native configuration of seventeen AI coding assistants (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and more), behind a conformity gate and signed, reproducible releases.",
-      "commit": "1d22c457aa5781a506d64f41a753d48b2f96eefd",
+      "commit": "687216e5a3a8b72bce4db378cf87571c24861fd2",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -4591,7 +5417,7 @@
       "badge": {
         "file": "badges/ahmed-g-gad--apothem.svg",
         "anchor": "ahmed-g-gad--apothem",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/ahmed-g-gad--apothem.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#ahmed-g-gad--apothem)"
       }
@@ -4603,14 +5429,14 @@
       "source": "discovered",
       "stars": 0,
       "description": "Agent-amplified software pipeline (Frame → Plan → Implement), gated by graders. Two runnable example services + the reading map behind it.",
-      "commit": "305fbcfc1116c075aeb1f3ab6a64cf661c0bf947",
+      "commit": "e7f9ccc947631097cfbff319b88426c96ae32bd8",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -4645,7 +5471,7 @@
       "badge": {
         "file": "badges/roselabs-io--pro-code.svg",
         "anchor": "roselabs-io--pro-code",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/roselabs-io--pro-code.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#roselabs-io--pro-code)"
       }
@@ -4672,11 +5498,11 @@
       "commit": "758aefbd290a0fae66d0c93508c0942b0973f324",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -4844,7 +5670,7 @@
       "badge": {
         "file": "badges/comedianhhh--job-agent-skills.svg",
         "anchor": "comedianhhh--job-agent-skills",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/comedianhhh--job-agent-skills.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#comedianhhh--job-agent-skills)"
       }
@@ -4859,11 +5685,11 @@
       "commit": "e8bb089d2aa4305076b394560ccde9dc28488048",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -4989,7 +5815,7 @@
       "badge": {
         "file": "badges/animovement--animovement-agents.svg",
         "anchor": "animovement--animovement-agents",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/animovement--animovement-agents.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#animovement--animovement-agents)"
       }
@@ -5001,14 +5827,14 @@
       "source": "discovered",
       "stars": 1,
       "description": "When 'like' is not enough : collect, refine, compare, and share your perspectives with all (or none) of the nuances in your mind. On YouTube videos, for starters :)",
-      "commit": "5d106938e0351c845d95d1af2ac133e924d083ea",
+      "commit": "28981cb15327ed051ed07547cea815128f0d7a8f",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -5043,7 +5869,7 @@
       "badge": {
         "file": "badges/codewarrior-debug--perspectize.svg",
         "anchor": "codewarrior-debug--perspectize",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/codewarrior-debug--perspectize.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#codewarrior-debug--perspectize)"
       }
@@ -5052,17 +5878,17 @@
       "repo": "danielmalka/dev-harness",
       "path": ".",
       "ref": null,
-      "source": "discovered",
+      "source": "previous",
       "stars": 0,
       "description": "Portable AI-assisted development kit for Claude Code: coordinator, specialist agents, skills, PRD/ticket flow, review gates and a local dashboard.",
-      "commit": "61f813f90644e5d8f5d173a54df5fbb4d036496f",
+      "commit": "6a0bac413009f5a9b978c08621eb32824d50521b",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -5237,7 +6063,7 @@
       "badge": {
         "file": "badges/danielmalka--dev-harness.svg",
         "anchor": "danielmalka--dev-harness",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/danielmalka--dev-harness.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#danielmalka--dev-harness)"
       }
@@ -5249,14 +6075,14 @@
       "source": "previous",
       "stars": 0,
       "description": "This plugin helps you write code like a seasoned engineer, even if you don't know all the best practices.",
-      "commit": "0551a6bb958f37ce13e76712a2da23ab94643ceb",
+      "commit": "b342712a353dfc2010c643caa7411bd40bc513f3",
       "status": "checked",
       "load": {
-        "2.1.316": {
+        "2.1.317": {
           "status": "ok",
           "failed": 0
         },
-        "2.1.315": {
+        "2.1.316": {
           "status": "ok",
           "failed": 0
         }
@@ -5288,7 +6114,77 @@
           "doctor": null
         },
         {
+          "name": "agents/review-arm/documentation-lens",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/finding-at-each-own-edit-place",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/finding-in-each-copy",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/names-the-missing-test",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/one-note-for-a-change-remark",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/reads-a-moved-file-whole",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/reads-a-new-dependency-whole",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm/security-lens",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/review-arm-search/settles-a-third-party-claim",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "agents/task-executor/done-with-assumptions",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/task-executor/keeps-launcher-files",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -5337,7 +6233,21 @@
           "doctor": null
         },
         {
+          "name": "agents/wave-reviewer/judges-by-the-repository-bar",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "agents/wave-reviewer/passes-a-clean-diff",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "agents/wave-reviewer/reports-a-bar-departure-as-nit",
           "status": "loads",
           "error": null,
           "previousError": null,
@@ -5673,6 +6583,48 @@
           "doctor": null
         },
         {
+          "name": "skills/review/clean-diff",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/counts-the-files-no-arm-read",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/finding-in-each-of-three-files",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/finds-planted-defects",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/keeps-an-outside-lens-lead",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
+          "name": "skills/review/writes-the-final-counts",
+          "status": "loads",
+          "error": null,
+          "previousError": null,
+          "doctor": null
+        },
+        {
           "name": "skills/start-task/bug-offers-bugfix",
           "status": "loads",
           "error": null,
@@ -5732,28 +6684,39 @@
       "badge": {
         "file": "badges/freethinkingit--dev_tools.svg",
         "anchor": "freethinkingit--dev_tools",
-        "message": "loads on 2.1.316",
+        "message": "loads on 2.1.317",
         "tone": "pass",
         "markdown": "[![claude plugin eval](https://jameskomo.github.io/config-drift-checker/release-report/badges/freethinkingit--dev_tools.svg)](https://jameskomo.github.io/config-drift-checker/release-report/#freethinkingit--dev_tools)"
       }
     }
   ],
   "harness": {
-    "from": "2.1.314",
-    "to": "2.1.316",
-    "headline": "Claude Code 2.1.316 made no changes to the built-in tool definitions.",
+    "from": "2.1.316",
+    "to": "2.1.317",
+    "headline": "Claude Code 2.1.317 changed the instructions of 1 built-in tool (Artifact) and added 1 capability.",
     "counts": {
-      "instruction": 0,
-      "capability": 0,
-      "typeOnly": 0
+      "instruction": 1,
+      "capability": 1,
+      "typeOnly": 7
     },
-    "instructionTools": [],
-    "capabilitiesAdded": 0,
+    "instructionTools": [
+      "Artifact"
+    ],
+    "capabilitiesAdded": 1,
     "capabilitiesRemoved": 0,
     "toolsAdded": [],
     "toolsRemoved": [],
-    "items": [],
-    "page": "diff/2.1.316.html"
+    "items": [
+      {
+        "class": "instruction",
+        "text": "Artifact: new wording for `action`"
+      },
+      {
+        "class": "capability",
+        "text": "Artifact: new parameter `page_token`"
+      }
+    ],
+    "page": "diff/2.1.317.html"
   },
   "history": [
     {
@@ -6074,6 +7037,26 @@
         "from": "2.1.314",
         "headline": "Claude Code 2.1.316 made no changes to the built-in tool definitions.",
         "page": "diff/2.1.316.html"
+      }
+    },
+    {
+      "version": "2.1.317",
+      "previous": "2.1.316",
+      "generatedAt": "2026-11-03T12:59:57.959Z",
+      "totals": {
+        "suites": 20,
+        "cases": 760,
+        "loads": 665,
+        "broke": 0,
+        "fixed": 0,
+        "neverLoaded": 95,
+        "fails": 0,
+        "unchecked": 0
+      },
+      "harness": {
+        "from": "2.1.316",
+        "headline": "Claude Code 2.1.317 changed the instructions of 1 built-in tool (Artifact) and added 1 capability.",
+        "page": "diff/2.1.317.html"
       }
     }
   ]

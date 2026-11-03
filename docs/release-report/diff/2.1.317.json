@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.316",
+  "to": "2.1.317",
+  "tools": {
+    "from": 44,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "Artifact",
+      "decl": "ArtifactInput",
+      "side": "input",
+      "class": "instruction",
+      "kind": "description-changed",
+      "field": "action",
+      "before": "Omit (or 'publish') to publish file_path. 'list' enumerates artifacts — the user's own by default, see `scope`; only `limit` and `scope` may accompany it. 'read' returns the content of the published artifact at `url` (raw HTML for the user's own; an isolated summary, steered by the optional `prompt`, for one someone else owns, though a page published in this session's own Slack channel can come back in full as untrusted content) — see **Calls**. 'watch', 'unwatch', and 'status' manage live-update subscriptions through which a session keeps track of new versions of an artifact published elsewhere, and those aren't available in this session: 'watch' only reports that — this session does not keep track of new versions — and 'status' lists this session's artifact watches (pass `url` to check one). 'upload_asset' adds one local media, PDF, font, or text file to an existing artifact — pass `url` and `file_path` (or `file_paths` for several in one call). 'list_assets' lists the files in an artifact's asset store (pass `url`; `after` continues a listing), 'read_asset' saves one of them to a local file named by its id (pass `url` and `asset_id`, optionally `out_dir`), and 'delete_asset' permanently removes one (pass `url` and `asset_id`). See **Artifact assets** above. 'pin' adds the artifact at `url` to the user's pinned list in their claude.ai sidebar and 'unpin' removes it (nothing else may accompany either) — private to the user, reversible, and no change to who can see the artifact.",
+      "after": "Omit (or 'publish') to publish file_path. 'list' enumerates artifacts — the user's own by default, see `scope`; only `limit`, `scope` and `page_token` may accompany it. 'read' returns the content of the published artifact at `url` (raw HTML for the user's own; an isolated summary, steered by the optional `prompt`, for one someone else owns, though a page published in this session's own Slack channel can come back in full as untrusted content) — see **Calls**. 'watch', 'unwatch', and 'status' manage live-update subscriptions through which a session keeps track of new versions of an artifact published elsewhere, and those aren't available in this session: 'watch' only reports that — this session does not keep track of new versions — and 'status' lists this session's artifact watches (pass `url` to check one). 'upload_asset' adds one local media, PDF, font, or text file to an existing artifact — pass `url` and `file_path` (or `file_paths` for several in one call). 'list_assets' lists the files in an artifact's asset store (pass `url`; `after` continues a listing), 'read_asset' saves one of them to a local file named by its id (pass `url` and `asset_id`, optionally `out_dir`), and 'delete_asset' permanently removes one (pass `url` and `asset_id`). See **Artifact assets** above. 'pin' adds the artifact at `url` to the user's pinned list in their claude.ai sidebar and 'unpin' removes it (nothing else may accompany either) — private to the user, reversible, and no change to who can see the artifact.",
+      "display": "Artifact.action"
+    },
+    {
+      "tool": "Artifact",
+      "decl": "ArtifactInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "page_token",
+      "type": "string",
+      "optional": true,
+      "after": "list only: the `next_page_token` a listing of the same scope gave, to list the artifacts after it.",
+      "nested": 0,
+      "display": "Artifact.page_token"
+    },
+    {
+      "tool": "Artifact",
+      "decl": "ArtifactOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "{scope=shared|all}.next_page_token",
+      "type": "string",
+      "optional": true,
+      "after": "",
+      "nested": 0,
+      "display": "Artifact.{scope=shared|all}.next_page_token"
+    },
+    {
+      "tool": "Glob",
+      "decl": "GlobOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "timedOut",
+      "type": "boolean",
+      "optional": true,
+      "after": "True when the time limit stopped the search after these paths were read, so more matches may exist. Absent otherwise.",
+      "nested": 0,
+      "display": "Glob.timedOut"
+    },
+    {
+      "tool": "Grep",
+      "decl": "GrepOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "timedOut",
+      "type": "boolean",
+      "optional": true,
+      "after": "",
+      "nested": 0,
+      "display": "Grep.timedOut"
+    },
+    {
+      "tool": "Read",
+      "decl": "FileReadOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-removed",
+      "field": "{type=file_unchanged}.file",
+      "type": "object",
+      "optional": false,
+      "before": "",
+      "nested": 1,
+      "display": "Read.{type=file_unchanged}.file"
+    },
+    {
+      "tool": "Read",
+      "decl": "FileReadOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-removed",
+      "field": "{type=file_unchanged}.source",
+      "type": "\"seeded\"",
+      "optional": true,
+      "before": "Set when the dedup matched a startup-seeded entry (CLAUDE.md / nested memory) rather than a prior Read tool_result",
+      "nested": 0,
+      "display": "Read.{type=file_unchanged}.source"
+    },
+    {
+      "tool": "Read",
+      "decl": "FileReadOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-removed",
+      "field": "{type=file_unchanged}.type",
+      "type": "\"file_unchanged\"",
+      "optional": false,
+      "before": "",
+      "nested": 0,
+      "display": "Read.{type=file_unchanged}.type"
+    },
+    {
+      "tool": "TaskCreate",
+      "decl": "TaskCreateOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "task.description",
+      "type": "string",
+      "optional": true,
+      "after": "The task's description as saved. It can differ from the tool_use input if Claude Code corrects a malformed call or a PreToolUse hook changes the input. Absent in results from older Claude Code versions.",
+      "nested": 0,
+      "display": "TaskCreate.task.description"
+    }
+  ],
+  "summary": {
+    "from": "2.1.316",
+    "to": "2.1.317",
+    "headline": "Claude Code 2.1.317 changed the instructions of 1 built-in tool (Artifact) and added 1 capability.",
+    "counts": {
+      "instruction": 1,
+      "capability": 1,
+      "typeOnly": 7
+    },
+    "instructionTools": [
+      "Artifact"
+    ],
+    "capabilitiesAdded": 1,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [],
+    "toolsRemoved": [],
+    "items": [
+      {
+        "class": "instruction",
+        "text": "Artifact: new wording for `action`"
+      },
+      {
+        "class": "capability",
+        "text": "Artifact: new parameter `page_token`"
+      }
+    ]
+  }
+}
