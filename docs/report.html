@@ -57,13 +57,13 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
 <header class="verdict">
   <div><p class="eyebrow">config-drift-checker · <b>komo-stack</b> · canary track</p>
     <h1 class="pass"><span class="mark">●</span><span>No drift</span></h1>
-    <p class="lede">5 of 6 cases hold against the baseline. Nothing to do.</p></div>
-  <dl class="stamp"><dt>overall</dt><dd><b class="pass">0.99</b> <span class="from">from 1.00</span></dd><dt>cases</dt><dd><b>5</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>?</b> <span class="moved">moved from claude-sonnet-5</span></dd><dt>claude code</dt><dd><b>2.1.321</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>official</b></dd><dt>cost</dt><dd><b>$0.97</b></dd><dt>when</dt><dd><b>2026-11-09 22:18</b></dd></dl>
+    <p class="lede">6 of 6 cases hold against the baseline. Nothing to do.</p></div>
+  <dl class="stamp"><dt>overall</dt><dd><b class="pass">1.00</b> <span class="from">from 1.00</span></dd><dt>cases</dt><dd><b>6</b> / 6 at 1.00 <span class="from">· 6 of 6 in suite</span></dd><dt>model</dt><dd><b>?</b> <span class="moved">moved from claude-sonnet-5</span></dd><dt>claude code</dt><dd><b>2.1.323</b> <span class="moved">moved from 2.1.258</span></dd><dt>track</dt><dd><b class="track">canary</b></dd><dt>runner</dt><dd><b>official</b></dd><dt>cost</dt><dd><b>$0.97</b></dd><dt>when</dt><dd><b>2026-11-12 23:35</b></dd></dl>
 </header>
 
 <div class="xtr"><b class="t">What this report checks</b> · 81 grader verdicts across 18 agent runs on 6 cases. A plain <code>claude plugin eval</code> run stops there; the chips are this tool's layer on top:
   <div class="chips"><span class="chip pass" title="every case against 2026-10-28">✓ baseline diff</span><span class="chip pass" title="flake vs break from 5 past runs">✓ noise bands</span><span class="chip pass" title="an in-band drop with no recovering run, or one that persisted, is red anyway">✓ escalation guards</span><span class="chip ind" title="needs transcripts: bundled runner, or --keep-temp + trace-keeper">· refusal screening</span><span class="chip ind" title="recorded by the bundled runner">· discovered vs invoked</span><span class="chip pass" title="median turns, cost and time per case against the baseline">✓ efficiency drift</span><span class="chip pass" title="skill frontmatter and eval suite format checked before the run, with no model runs">✓ setup health</span><span class="chip pass" title="6 of 6 suite cases in this run">✓ suite completeness</span></div></div>
-<div class="xtr health"><b class="t">Setup health on Claude Code 2.1.321</b> · skill frontmatter and eval suite format, checked before the run; these checks start no model runs.
+<div class="xtr health"><b class="t">Setup health on Claude Code 2.1.323</b> · skill frontmatter and eval suite format, checked before the run; these checks start no model runs.
   <div class="tiles"><div class="tile t-pass"><span class="tile-h">Skills</span><span class="tile-v">✓ clean</span><span class="tile-s">1 skill checked · 0 errors · 0 warnings</span></div><div class="tile t-pass"><span class="tile-h">Eval suite format</span><span class="tile-v">✓ clean</span><span class="tile-s">loaded 6 of 6 cases · confirmed by the runner</span></div></div>
   <p class="hclean"><span class="pass">✓</span> No setup problems: 1 skill and 6 eval cases pass every static check, and the runner loaded the suite.</p></div>
 
@@ -82,7 +82,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <td class="num">2</td><td class="num">$0.04</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-controller-follows-conventions">spring-controller-follows-conventions</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ci" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">1.00 to 1.00</td><td class="num ">+0.00</td><td class="num">±0.00</td>
       <td class="num">3</td><td class="num">$0.05</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-request-dtos-are-validated-records">spring-request-dtos-are-validated-records</a></td>
-      <td class="num">1.00</td><td class="num"><b>0.94</b></td><td class="num ci" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">0.83 to 1.00</td><td class="num ">-0.06</td><td class="num">±0.00</td>
+      <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ci" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">1.00 to 1.00</td><td class="num ">+0.00</td><td class="num">±0.17</td>
       <td class="num">3</td><td class="num">$0.06</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-service-owns-rules-and-errors">spring-service-owns-rules-and-errors</a></td>
       <td class="num">1.00</td><td class="num"><b>1.00</b></td><td class="num ci" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">1.00 to 1.00</td><td class="num ">+0.00</td><td class="num">±0.00</td>
       <td class="num">3</td><td class="num">$0.07</td><td class="num">3</td></tr><tr class="st-stable"><td><span class="dot stable"></span>stable</td><td><a href="#case-spring-work-triggers-skill">spring-work-triggers-skill</a></td>
@@ -104,7 +104,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">2 turns · $0.07 · 4.0 s </span></header>
+        <span class="meta">2 turns · $0.07 · 3.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· attempted</span><span class="chip skip" title="">· blocked-by-hook</span><span class="chip skip" title="">· no-reset-succeeded</span><span class="chip skip" title="">· reported-blocked</span></div>
       
       
@@ -140,7 +140,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 14 s </span></header>
+        <span class="meta">3 turns · $0.05 · 13 s </span></header>
       <div class="chips"><span class="chip skip" title="">· api-response-wrapper</span><span class="chip skip" title="">· area-request-mapping</span><span class="chip skip" title="">· constructor-injection</span><span class="chip skip" title="">· no-field-injection</span><span class="chip skip" title="">· page-clamping</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -167,7 +167,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article></div></section><section class="case st-stable" id="case-spring-request-dtos-are-validated-records">
     <header class="case-h"><div><h2>spring-request-dtos-are-validated-records</h2></div>
-      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="5" width="5" height="15" rx="1" fill="var(--fail)"><title>run 2: 0.83</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>0.94</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.00</span> <span class="from" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">· passed 2 of 3 (0.21 to 0.94)</span></div></header>
+      <div class="case-num"><svg class="spark" viewBox="0 0 23 22" width="23" height="22" role="img" aria-label="with-arm run scores"><rect x="1" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 1: 1.00</title></rect><rect x="8" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 2: 1.00</title></rect><rect x="15" y="2" width="5" height="18" rx="1" fill="var(--pass)"><title>run 3: 1.00</title></rect></svg><span class="dot stable"></span>stable · <b>1.00</b> <span class="from">from 1.00</span> <span class="from">· noise ±0.17</span> <span class="from" title="95% range: where the true value most likely sits, given how much the runs varied (right 95 times in 100). More runs give a narrower range.">· passed 3 of 3 (0.44 to 1.00)</span></div></header>
     <p class="tags"></p>
     <details class="about"><summary>What this case evaluates</summary>
       
@@ -176,16 +176,16 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.06 · 15 s </span></header>
+        <span class="meta">3 turns · $0.06 · 19 s </span></header>
       <div class="chips"><span class="chip skip" title="">· constraint-annotations</span><span class="chip skip" title="">· dtos-holder</span><span class="chip skip" title="">· record-shapes</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· valid-annotation</span></div>
       
       
       <details><summary>Tool calls (0)</summary><p class="muted">none</p></details>
       
       <details><summary>Response</summary><pre class="resp"></pre></details>
-    </article><article class="run bad">
-      <header><span class="arm with">with</span><b>run 1</b><span class="score bad">0.83</span>
-        <span class="meta">3 turns · $0.06 · 14 s </span></header>
+    </article><article class="run ok">
+      <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
+        <span class="meta">3 turns · $0.06 · 15 s </span></header>
       <div class="chips"><span class="chip skip" title="">· constraint-annotations</span><span class="chip skip" title="">· dtos-holder</span><span class="chip skip" title="">· record-shapes</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· valid-annotation</span></div>
       
       
@@ -212,7 +212,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
     </details>
     <div class="runs"><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 26 s </span></header>
+        <span class="meta">3 turns · $0.07 · 23 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· controller-and-service</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· no-try-catch</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -221,7 +221,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 25 s </span></header>
+        <span class="meta">3 turns · $0.07 · 23 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· controller-and-service</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· no-try-catch</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -230,7 +230,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.07 · 28 s </span></header>
+        <span class="meta">3 turns · $0.07 · 24 s </span></header>
       <div class="chips"><span class="chip skip" title="">· advice-handler</span><span class="chip skip" title="">· controller-and-service</span><span class="chip skip" title="">· no-map-result</span><span class="chip skip" title="">· no-try-catch</span><span class="chip skip" title="">· reviewer-judgment</span><span class="chip skip" title="">· skill-fired</span><span class="chip skip" title="">· throws-domain-exception</span></div>
       
       
@@ -266,7 +266,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">3 turns · $0.05 · 6.0 s </span></header>
+        <span class="meta">3 turns · $0.05 · 9.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· skill-fired</span></div>
       
       
@@ -293,7 +293,7 @@ pre.resp{white-space:pre-wrap;word-break:break-word;background:var(--code);borde
       <details><summary>Response</summary><pre class="resp"></pre></details>
     </article><article class="run ok">
       <header><span class="arm with">with</span><b>run 1</b><span class="score ok">1.00</span>
-        <span class="meta">1 turns · $0.04 · 5.0 s </span></header>
+        <span class="meta">1 turns · $0.04 · 4.0 s </span></header>
       <div class="chips"><span class="chip skip" title="">· is-pinia-store</span><span class="chip skip" title="">· skill-not-fired</span></div>
       
       
