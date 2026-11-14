@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.323",
+  "to": "2.1.325",
+  "tools": {
+    "from": 44,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "ProposeSkills",
+      "decl": "ProposeSkillsInput",
+      "side": "input",
+      "class": "instruction",
+      "kind": "description-changed",
+      "field": "proposals[].skillMd",
+      "before": "The complete SKILL.md exactly as it should be saved: frontmatter plus the full body. When the user saves, the body below the frontmatter becomes the skill's entire instructions and the name and description come from the fields above; other frontmatter keys are not kept. For an improvement this replaces the existing skill's SKILL.md entirely, so read that skill's current SKILL.md first and include everything worth keeping, not only the changes.",
+      "after": "For a new skill or a full rewrite. The complete SKILL.md exactly as it should be saved: frontmatter plus the full body. When the user saves, the body below the frontmatter becomes the skill's entire instructions and the name and description come from the fields above; other frontmatter keys are not kept. For an improvement this replaces the existing skill's SKILL.md entirely, so read that skill's current SKILL.md first and include everything worth keeping, not only the changes.",
+      "display": "ProposeSkills.proposals[].skillMd"
+    },
+    {
+      "tool": "ProposeSkills",
+      "decl": "ProposeSkillsInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "proposals[].edits",
+      "type": "object[]",
+      "optional": true,
+      "after": "For an improvement, in place of skillMd: your changes to the skill's SKILL.md, applied in order. They apply to that file as it is now, not to an earlier proposal of yours. The card shows the whole updated file. The name and description come from the fields above, not from the frontmatter.",
+      "nested": 2,
+      "display": "ProposeSkills.proposals[].edits"
+    },
+    {
+      "tool": "ProposeSkills",
+      "decl": "ProposeSkillsInput",
+      "side": "input",
+      "class": "type-only",
+      "kind": "now-optional",
+      "field": "proposals[].skillMd",
+      "display": "ProposeSkills.proposals[].skillMd"
+    }
+  ],
+  "summary": {
+    "from": "2.1.323",
+    "to": "2.1.325",
+    "headline": "Claude Code 2.1.325 changed the instructions of 1 built-in tool (ProposeSkills) and added 1 capability.",
+    "counts": {
+      "instruction": 1,
+      "capability": 1,
+      "typeOnly": 1
+    },
+    "instructionTools": [
+      "ProposeSkills"
+    ],
+    "capabilitiesAdded": 1,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [],
+    "toolsRemoved": [],
+    "items": [
+      {
+        "class": "instruction",
+        "text": "ProposeSkills: new wording for `proposals[].skillMd`"
+      },
+      {
+        "class": "capability",
+        "text": "ProposeSkills: new parameter `proposals[].edits`"
+      }
+    ]
+  }
+}
