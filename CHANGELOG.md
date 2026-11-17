@@ -2,6 +2,14 @@
 
 All releases: https://github.com/jameskomo/config-drift-checker/releases
 
+## v1.7.2 (2026-11-17)
+GitHub moved `ubuntu-latest` to Ubuntu 26.04 on Nov 16, and Claude Code 2.1.325's official runner
+refused every shell-granting case there, so the canary quietly fell back to the bundled runner. The
+cause was socat: Claude Code's Linux sandbox needs it next to bubblewrap, 26.04 ships bubblewrap but
+not socat, and the Action only installed the two together when bubblewrap was missing. Measured on
+both images and both Claude Code versions: every run with socat ran, every run without it was
+refused. The Action now installs whichever of the two is missing and warns when socat is absent.
+
 ## v1.7.1 (2026-11-02)
 From Oct 31 to Nov 2 every canary on Claude Code 2.1.316 failed because Claude refused our
 subscription token ("Your organization has disabled Claude subscription access for Claude Code"),

@@ -62,3 +62,21 @@ test('action.yml: the free floor runs only on a skip, once per version, and stor
   assert.match(text, /floor:\s+\{ description: .*value: '\$\{\{ steps\.floor\.outputs\.ran \}\}' \}/);
   assert.match(text, /untested-version:\s*\{ description: .*value: '\$\{\{ steps\.floor\.outputs\.untested_version \}\}' \}/);
 });
+
+// Ubuntu 26.04 ships bubblewrap without socat; tying the two installs together refused every shell-granting
+// run on Claude Code 2.1.323 and 2.1.325 until socat was installed on its own (measured on 2026-11-17)
+test('action.yml: the sandbox step installs socat even when bubblewrap is already there', { skip }, async () => {
+  const { mkdtempSync, writeFileSync, chmodSync } = await import('node:fs');
+  const os = await import('node:os'), path = await import('node:path');
+  const install = runBlocks(text).find((b) => b.id === 'install').body;
+  const snippet = install.slice(install.indexOf('# newer Claude Code refuses shell tools'), install.indexOf('# Ubuntu 24.04'));
+  assert.match(snippet, /socat/);
+  const bin = mkdtempSync(path.join(os.tmpdir(), 'sandbox-bin-')), log = path.join(bin, 'sudo.log');
+  const tool = (name, body) => { writeFileSync(path.join(bin, name), `#!/bin/bash\n${body}\n`); chmodSync(path.join(bin, name), 0o755); };
+  tool('uname', 'echo Linux'); tool('bwrap', 'exit 0'); tool('sudo', `echo "$*" >> ${log}`);
+  const r = spawnSync('/bin/bash', ['-e', '-o', 'pipefail', '-c', snippet], { encoding: 'utf8', env: { PATH: bin } });
+  assert.equal(r.status, 0, r.stderr);
+  const calls = readFileSync(log, 'utf8');
+  assert.match(calls, /apt-get install -y -qq socat/);
+  assert.doesNotMatch(calls, /bubblewrap/, 'bubblewrap was already there');
+});

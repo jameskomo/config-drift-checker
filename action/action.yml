@@ -188,9 +188,15 @@ runs:
         v="$FLOOR_VERSION"; [ -n "$v" ] || v="$VERSION_INPUT"; [ -n "$v" ] || v="$HARNESS"; [ -n "$v" ] && [ "$v" != "null" ] || v=latest
         case "$v" in *[!A-Za-z0-9.-]*) echo "::error::claude-code-version '$v' is not a version"; exit 1;; esac
         npm install -g "@anthropic-ai/claude-code@$v" >/dev/null
-        # newer Claude Code refuses shell tools in plugin eval without an OS sandbox (bubblewrap on Linux)
-        if [ "$(uname -s)" = "Linux" ] && ! command -v bwrap >/dev/null 2>&1; then
-          sudo apt-get install -y -qq bubblewrap socat >/dev/null 2>&1 || echo "::notice::could not install bubblewrap; the official runner may fall back to the bundled one"
+        # newer Claude Code refuses shell tools in plugin eval without an OS sandbox, which on Linux needs
+        # both bubblewrap and socat. Install whichever is missing: Ubuntu 26.04 ships bubblewrap but not
+        # socat, and without socat every shell-granting run is refused (measured on 2.1.323 and 2.1.325)
+        if [ "$(uname -s)" = "Linux" ]; then
+          need=(); command -v bwrap >/dev/null 2>&1 || need+=(bubblewrap); command -v socat >/dev/null 2>&1 || need+=(socat)
+          if [ ${#need[@]} -gt 0 ]; then
+            sudo apt-get install -y -qq "${need[@]}" >/dev/null 2>&1 || { sudo apt-get update -qq >/dev/null 2>&1 && sudo apt-get install -y -qq "${need[@]}" >/dev/null 2>&1; } \
+              || echo "::warning::could not install ${need[*]}; Claude Code's sandbox needs them, so the official runner may refuse shell-granting cases"
+          fi
         fi
         # Ubuntu 24.04 (GitHub's ubuntu-latest) restricts unprivileged user namespaces through AppArmor, so
         # bubblewrap cannot start and Claude Code 2.1.310+ refuses every shell-granting run. Lift it for this
@@ -199,7 +205,8 @@ runs:
           if [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" = "1" ]; then
             sudo sysctl -q -w kernel.apparmor_restrict_unprivileged_userns=0 >/dev/null 2>&1 || true
           fi
-          if bwrap --unshare-user --unshare-net --dev-bind / / /bin/true 2>/dev/null; then echo "sandbox=ok" >> "$GITHUB_OUTPUT"
+          if ! command -v socat >/dev/null 2>&1; then echo "sandbox=unavailable" >> "$GITHUB_OUTPUT"; echo "::warning::socat is missing, and Claude Code's sandbox needs it next to bubblewrap; the official runner will refuse shell-granting cases"
+          elif bwrap --unshare-user --unshare-net --dev-bind / / /bin/true 2>/dev/null; then echo "sandbox=ok" >> "$GITHUB_OUTPUT"
           else echo "sandbox=unavailable" >> "$GITHUB_OUTPUT"; echo "::warning::bubblewrap cannot create a sandbox on this runner, so the official runner will refuse shell-granting cases and the bundled runner will run them instead"; fi
         fi
         echo "version=$(claude --version | awk '{print $1}')" >> "$GITHUB_OUTPUT"
