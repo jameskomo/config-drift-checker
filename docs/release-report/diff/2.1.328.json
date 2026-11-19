@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "source": "sdk-tools.d.ts",
+  "from": "2.1.327",
+  "to": "2.1.328",
+  "tools": {
+    "from": 44,
+    "to": 44
+  },
+  "changes": [
+    {
+      "tool": "ReportFindings",
+      "decl": "ReportFindingsInput",
+      "side": "input",
+      "class": "instruction",
+      "kind": "description-changed",
+      "field": "findings[].summary",
+      "before": "One-sentence statement of the defect",
+      "after": "Statement of the defect",
+      "display": "ReportFindings.findings[].summary"
+    },
+    {
+      "tool": "ReportFindings",
+      "decl": "ReportFindingsInput",
+      "side": "input",
+      "class": "capability",
+      "kind": "field-added",
+      "field": "findings[].severity",
+      "type": "\"important\" | \"pre_existing\" | \"nit\"",
+      "optional": true,
+      "after": "Set when the review instructions ask for it. important: a bug the change adds or makes worse; pre_existing: a bug that was there before the change; nit: a minor issue",
+      "nested": 0,
+      "display": "ReportFindings.findings[].severity"
+    },
+    {
+      "tool": "ReportFindings",
+      "decl": "ReportFindingsOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "field-added",
+      "field": "findings[].severity",
+      "type": "\"important\" | \"pre_existing\" | \"nit\"",
+      "optional": true,
+      "after": "Set when the review instructions ask for it. important: a bug the change adds or makes worse; pre_existing: a bug that was there before the change; nit: a minor issue",
+      "nested": 0,
+      "display": "ReportFindings.findings[].severity"
+    },
+    {
+      "tool": "ReportFindings",
+      "decl": "ReportFindingsOutput",
+      "side": "output",
+      "class": "type-only",
+      "kind": "description-changed",
+      "field": "findings[].summary",
+      "before": "One-sentence statement of the defect",
+      "after": "Statement of the defect",
+      "display": "ReportFindings.findings[].summary"
+    }
+  ],
+  "summary": {
+    "from": "2.1.327",
+    "to": "2.1.328",
+    "headline": "Claude Code 2.1.328 changed the instructions of 1 built-in tool (ReportFindings) and added 1 capability.",
+    "counts": {
+      "instruction": 1,
+      "capability": 1,
+      "typeOnly": 2
+    },
+    "instructionTools": [
+      "ReportFindings"
+    ],
+    "capabilitiesAdded": 1,
+    "capabilitiesRemoved": 0,
+    "toolsAdded": [],
+    "toolsRemoved": [],
+    "items": [
+      {
+        "class": "instruction",
+        "text": "ReportFindings: new wording for `findings[].summary`"
+      },
+      {
+        "class": "capability",
+        "text": "ReportFindings: new parameter `findings[].severity`"
+      }
+    ]
+  }
+}
